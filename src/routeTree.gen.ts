@@ -19,6 +19,7 @@ import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppRecurringRouteImport } from './routes/_app/recurring'
 import { Route as AppRechargesRouteImport } from './routes/_app/recharges'
 import { Route as AppIncomeRouteImport } from './routes/_app/income'
+import { Route as AppImportPrintsRouteImport } from './routes/_app/import-prints'
 import { Route as AppImportRouteImport } from './routes/_app/import'
 import { Route as AppGoalsRouteImport } from './routes/_app/goals'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
@@ -75,6 +76,11 @@ const AppIncomeRoute = AppIncomeRouteImport.update({
   path: '/income',
   getParentRoute: () => AppRoute,
 } as any)
+const AppImportPrintsRoute = AppImportPrintsRouteImport.update({
+  id: '/import-prints',
+  path: '/import-prints',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppImportRoute = AppImportRouteImport.update({
   id: '/import',
   path: '/import',
@@ -115,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AppDashboardRoute
   '/goals': typeof AppGoalsRoute
   '/import': typeof AppImportRoute
+  '/import-prints': typeof AppImportPrintsRoute
   '/income': typeof AppIncomeRoute
   '/recharges': typeof AppRechargesRoute
   '/recurring': typeof AppRecurringRoute
@@ -132,6 +139,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AppDashboardRoute
   '/goals': typeof AppGoalsRoute
   '/import': typeof AppImportRoute
+  '/import-prints': typeof AppImportPrintsRoute
   '/income': typeof AppIncomeRoute
   '/recharges': typeof AppRechargesRoute
   '/recurring': typeof AppRecurringRoute
@@ -151,6 +159,7 @@ export interface FileRoutesById {
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/goals': typeof AppGoalsRoute
   '/_app/import': typeof AppImportRoute
+  '/_app/import-prints': typeof AppImportPrintsRoute
   '/_app/income': typeof AppIncomeRoute
   '/_app/recharges': typeof AppRechargesRoute
   '/_app/recurring': typeof AppRecurringRoute
@@ -170,6 +179,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/goals'
     | '/import'
+    | '/import-prints'
     | '/income'
     | '/recharges'
     | '/recurring'
@@ -187,6 +197,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/goals'
     | '/import'
+    | '/import-prints'
     | '/income'
     | '/recharges'
     | '/recurring'
@@ -205,6 +216,7 @@ export interface FileRouteTypes {
     | '/_app/dashboard'
     | '/_app/goals'
     | '/_app/import'
+    | '/_app/import-prints'
     | '/_app/income'
     | '/_app/recharges'
     | '/_app/recurring'
@@ -292,6 +304,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIncomeRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/import-prints': {
+      id: '/_app/import-prints'
+      path: '/import-prints'
+      fullPath: '/import-prints'
+      preLoaderRoute: typeof AppImportPrintsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/import': {
       id: '/_app/import'
       path: '/import'
@@ -344,6 +363,7 @@ interface AppRouteChildren {
   AppDashboardRoute: typeof AppDashboardRoute
   AppGoalsRoute: typeof AppGoalsRoute
   AppImportRoute: typeof AppImportRoute
+  AppImportPrintsRoute: typeof AppImportPrintsRoute
   AppIncomeRoute: typeof AppIncomeRoute
   AppRechargesRoute: typeof AppRechargesRoute
   AppRecurringRoute: typeof AppRecurringRoute
@@ -360,6 +380,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppDashboardRoute: AppDashboardRoute,
   AppGoalsRoute: AppGoalsRoute,
   AppImportRoute: AppImportRoute,
+  AppImportPrintsRoute: AppImportPrintsRoute,
   AppIncomeRoute: AppIncomeRoute,
   AppRechargesRoute: AppRechargesRoute,
   AppRecurringRoute: AppRecurringRoute,
