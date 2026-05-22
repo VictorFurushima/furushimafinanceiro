@@ -30,7 +30,7 @@ export function AppSidebar() {
         <div className="h-9 w-9 rounded-lg bg-gradient-primary shadow-glow flex items-center justify-center">
           <Wallet className="h-4.5 w-4.5 text-primary-foreground" />
         </div>
-        <span className="font-display text-xl font-bold">Cofre</span>
+        <span className="font-display text-xl font-bold">Furushima Financeiro</span>
       </Link>
 
       <nav className="space-y-1 flex-1">

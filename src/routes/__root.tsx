@@ -51,7 +51,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Cofre — Dashboard Financeiro" },
+      { title: "Furushima Financeiro" },
       { name: "description", content: "Controle financeiro pessoal: receitas, despesas, orçamentos e gráficos em tempo real." },
     ],
     links: [{ rel: "stylesheet", href: appCss }],
