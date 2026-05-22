@@ -7,11 +7,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { useAccounts, useCategories } from "@/hooks/use-finance-data";
 import { toISODate } from "@/lib/format";
+import { PAYMENT_METHODS } from "@/lib/finance-constants";
 
 const schema = z.object({
   amount: z.number().positive("Valor deve ser maior que zero"),
@@ -20,21 +22,30 @@ const schema = z.object({
   account_id: z.string().uuid().nullable(),
   occurred_at: z.string(),
   type: z.enum(["income", "expense"]),
+  subcategory: z.string().max(80).optional(),
+  payment_method: z.string().optional(),
+  notes: z.string().max(500).optional(),
 });
 
-export function TransactionDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+export function TransactionDialog({
+  open, onOpenChange, defaultType = "expense",
+}: { open: boolean; onOpenChange: (o: boolean) => void; defaultType?: "income" | "expense" }) {
   const qc = useQueryClient();
   const { data: categories = [] } = useCategories();
   const { data: accounts = [] } = useAccounts();
 
-  const [type, setType] = useState<"income" | "expense">("expense");
+  const [type, setType] = useState<"income" | "expense">(defaultType);
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [categoryId, setCategoryId] = useState<string>("");
   const [accountId, setAccountId] = useState<string>("");
   const [date, setDate] = useState(toISODate(new Date()));
+  const [subcategory, setSubcategory] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<string>("pix");
+  const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => { setType(defaultType); }, [defaultType, open]);
   useEffect(() => {
     if (open && accounts.length > 0 && !accountId) setAccountId(accounts[0].id);
   }, [open, accounts, accountId]);
@@ -56,6 +67,9 @@ export function TransactionDialog({ open, onOpenChange }: { open: boolean; onOpe
       account_id: accountId || null,
       occurred_at: date,
       type,
+      subcategory: subcategory || undefined,
+      payment_method: paymentMethod || undefined,
+      notes: notes || undefined,
     });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "Dados inválidos");
@@ -66,15 +80,22 @@ export function TransactionDialog({ open, onOpenChange }: { open: boolean; onOpe
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) throw new Error("Não autenticado");
       const { error } = await supabase.from("transactions").insert({
-        ...parsed.data,
-        user_id: userData.user.id,
+        amount: parsed.data.amount,
+        type: parsed.data.type,
         description: parsed.data.description ?? null,
+        category_id: parsed.data.category_id,
+        account_id: parsed.data.account_id,
+        occurred_at: parsed.data.occurred_at,
+        subcategory: parsed.data.subcategory ?? null,
+        payment_method: parsed.data.payment_method ?? null,
+        notes: parsed.data.notes ?? null,
+        user_id: userData.user.id,
       });
       if (error) throw error;
       toast.success("Transação adicionada!");
       qc.invalidateQueries({ queryKey: ["transactions"] });
       onOpenChange(false);
-      setAmount(""); setDescription("");
+      setAmount(""); setDescription(""); setSubcategory(""); setNotes("");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao salvar");
     } finally {
@@ -84,7 +105,7 @@ export function TransactionDialog({ open, onOpenChange }: { open: boolean; onOpe
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-card border-border/50">
+      <DialogContent className="bg-card border-border/50 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display text-2xl">Nova transação</DialogTitle>
         </DialogHeader>
@@ -96,9 +117,15 @@ export function TransactionDialog({ open, onOpenChange }: { open: boolean; onOpe
             </TabsList>
           </Tabs>
 
-          <div className="space-y-2">
-            <Label>Valor (R$)</Label>
-            <Input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0,00" inputMode="decimal" required />
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Valor (R$)</Label>
+              <Input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0,00" inputMode="decimal" required autoFocus />
+            </div>
+            <div className="space-y-2">
+              <Label>Data</Label>
+              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -124,6 +151,13 @@ export function TransactionDialog({ open, onOpenChange }: { open: boolean; onOpe
               </Select>
             </div>
             <div className="space-y-2">
+              <Label>Subcategoria</Label>
+              <Input value={subcategory} onChange={(e) => setSubcategory(e.target.value)} placeholder="Opcional" maxLength={80} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
               <Label>Conta</Label>
               <Select value={accountId} onValueChange={setAccountId}>
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
@@ -134,11 +168,22 @@ export function TransactionDialog({ open, onOpenChange }: { open: boolean; onOpe
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label>Forma de pagamento</Label>
+              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {PAYMENT_METHODS.map((p) => (
+                    <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-2">
-            <Label>Data</Label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+            <Label>Observações</Label>
+            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} rows={2} placeholder="Notas internas (opcional)" />
           </div>
 
           <Button type="submit" disabled={saving} className="w-full bg-gradient-primary text-primary-foreground shadow-glow">
