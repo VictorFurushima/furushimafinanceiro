@@ -13,13 +13,16 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppTransactionsRouteImport } from './routes/_app/transactions'
+import { Route as AppTimelineRouteImport } from './routes/_app/timeline'
 import { Route as AppStatisticsRouteImport } from './routes/_app/statistics'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppRecurringRouteImport } from './routes/_app/recurring'
+import { Route as AppRechargesRouteImport } from './routes/_app/recharges'
 import { Route as AppIncomeRouteImport } from './routes/_app/income'
 import { Route as AppImportRouteImport } from './routes/_app/import'
 import { Route as AppGoalsRouteImport } from './routes/_app/goals'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
+import { Route as AppCardsRouteImport } from './routes/_app/cards'
 import { Route as AppBudgetsRouteImport } from './routes/_app/budgets'
 import { Route as AppAccountsRouteImport } from './routes/_app/accounts'
 
@@ -42,6 +45,11 @@ const AppTransactionsRoute = AppTransactionsRouteImport.update({
   path: '/transactions',
   getParentRoute: () => AppRoute,
 } as any)
+const AppTimelineRoute = AppTimelineRouteImport.update({
+  id: '/timeline',
+  path: '/timeline',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppStatisticsRoute = AppStatisticsRouteImport.update({
   id: '/statistics',
   path: '/statistics',
@@ -55,6 +63,11 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
 const AppRecurringRoute = AppRecurringRouteImport.update({
   id: '/recurring',
   path: '/recurring',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRechargesRoute = AppRechargesRouteImport.update({
+  id: '/recharges',
+  path: '/recharges',
   getParentRoute: () => AppRoute,
 } as any)
 const AppIncomeRoute = AppIncomeRouteImport.update({
@@ -77,6 +90,11 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCardsRoute = AppCardsRouteImport.update({
+  id: '/cards',
+  path: '/cards',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppBudgetsRoute = AppBudgetsRouteImport.update({
   id: '/budgets',
   path: '/budgets',
@@ -93,13 +111,16 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/accounts': typeof AppAccountsRoute
   '/budgets': typeof AppBudgetsRoute
+  '/cards': typeof AppCardsRoute
   '/dashboard': typeof AppDashboardRoute
   '/goals': typeof AppGoalsRoute
   '/import': typeof AppImportRoute
   '/income': typeof AppIncomeRoute
+  '/recharges': typeof AppRechargesRoute
   '/recurring': typeof AppRecurringRoute
   '/settings': typeof AppSettingsRoute
   '/statistics': typeof AppStatisticsRoute
+  '/timeline': typeof AppTimelineRoute
   '/transactions': typeof AppTransactionsRoute
 }
 export interface FileRoutesByTo {
@@ -107,13 +128,16 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/accounts': typeof AppAccountsRoute
   '/budgets': typeof AppBudgetsRoute
+  '/cards': typeof AppCardsRoute
   '/dashboard': typeof AppDashboardRoute
   '/goals': typeof AppGoalsRoute
   '/import': typeof AppImportRoute
   '/income': typeof AppIncomeRoute
+  '/recharges': typeof AppRechargesRoute
   '/recurring': typeof AppRecurringRoute
   '/settings': typeof AppSettingsRoute
   '/statistics': typeof AppStatisticsRoute
+  '/timeline': typeof AppTimelineRoute
   '/transactions': typeof AppTransactionsRoute
 }
 export interface FileRoutesById {
@@ -123,13 +147,16 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_app/accounts': typeof AppAccountsRoute
   '/_app/budgets': typeof AppBudgetsRoute
+  '/_app/cards': typeof AppCardsRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/goals': typeof AppGoalsRoute
   '/_app/import': typeof AppImportRoute
   '/_app/income': typeof AppIncomeRoute
+  '/_app/recharges': typeof AppRechargesRoute
   '/_app/recurring': typeof AppRecurringRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/statistics': typeof AppStatisticsRoute
+  '/_app/timeline': typeof AppTimelineRoute
   '/_app/transactions': typeof AppTransactionsRoute
 }
 export interface FileRouteTypes {
@@ -139,13 +166,16 @@ export interface FileRouteTypes {
     | '/login'
     | '/accounts'
     | '/budgets'
+    | '/cards'
     | '/dashboard'
     | '/goals'
     | '/import'
     | '/income'
+    | '/recharges'
     | '/recurring'
     | '/settings'
     | '/statistics'
+    | '/timeline'
     | '/transactions'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -153,13 +183,16 @@ export interface FileRouteTypes {
     | '/login'
     | '/accounts'
     | '/budgets'
+    | '/cards'
     | '/dashboard'
     | '/goals'
     | '/import'
     | '/income'
+    | '/recharges'
     | '/recurring'
     | '/settings'
     | '/statistics'
+    | '/timeline'
     | '/transactions'
   id:
     | '__root__'
@@ -168,13 +201,16 @@ export interface FileRouteTypes {
     | '/login'
     | '/_app/accounts'
     | '/_app/budgets'
+    | '/_app/cards'
     | '/_app/dashboard'
     | '/_app/goals'
     | '/_app/import'
     | '/_app/income'
+    | '/_app/recharges'
     | '/_app/recurring'
     | '/_app/settings'
     | '/_app/statistics'
+    | '/_app/timeline'
     | '/_app/transactions'
   fileRoutesById: FileRoutesById
 }
@@ -214,6 +250,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTransactionsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/timeline': {
+      id: '/_app/timeline'
+      path: '/timeline'
+      fullPath: '/timeline'
+      preLoaderRoute: typeof AppTimelineRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/statistics': {
       id: '/_app/statistics'
       path: '/statistics'
@@ -233,6 +276,13 @@ declare module '@tanstack/react-router' {
       path: '/recurring'
       fullPath: '/recurring'
       preLoaderRoute: typeof AppRecurringRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/recharges': {
+      id: '/_app/recharges'
+      path: '/recharges'
+      fullPath: '/recharges'
+      preLoaderRoute: typeof AppRechargesRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/income': {
@@ -263,6 +313,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/cards': {
+      id: '/_app/cards'
+      path: '/cards'
+      fullPath: '/cards'
+      preLoaderRoute: typeof AppCardsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/budgets': {
       id: '/_app/budgets'
       path: '/budgets'
@@ -283,26 +340,32 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppAccountsRoute: typeof AppAccountsRoute
   AppBudgetsRoute: typeof AppBudgetsRoute
+  AppCardsRoute: typeof AppCardsRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppGoalsRoute: typeof AppGoalsRoute
   AppImportRoute: typeof AppImportRoute
   AppIncomeRoute: typeof AppIncomeRoute
+  AppRechargesRoute: typeof AppRechargesRoute
   AppRecurringRoute: typeof AppRecurringRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppStatisticsRoute: typeof AppStatisticsRoute
+  AppTimelineRoute: typeof AppTimelineRoute
   AppTransactionsRoute: typeof AppTransactionsRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppAccountsRoute: AppAccountsRoute,
   AppBudgetsRoute: AppBudgetsRoute,
+  AppCardsRoute: AppCardsRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppGoalsRoute: AppGoalsRoute,
   AppImportRoute: AppImportRoute,
   AppIncomeRoute: AppIncomeRoute,
+  AppRechargesRoute: AppRechargesRoute,
   AppRecurringRoute: AppRecurringRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppStatisticsRoute: AppStatisticsRoute,
+  AppTimelineRoute: AppTimelineRoute,
   AppTransactionsRoute: AppTransactionsRoute,
 }
 
@@ -316,3 +379,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

@@ -11,16 +11,21 @@ function AppLayout() {
   const { user, loading } = useAuth();
   const qc = useQueryClient();
 
-  // Trigger recurring expense generation when user enters the app (idempotent)
+  // Trigger recurring + recharge automation when user enters the app (idempotent, once/day)
   useEffect(() => {
     if (!user) return;
-    const key = `furushima:recurring-${user.id}-${new Date().toISOString().slice(0, 10)}`;
+    const key = `furushima:auto-${user.id}-${new Date().toISOString().slice(0, 10)}`;
     if (localStorage.getItem(key)) return;
-    supabase.rpc("generate_recurring_transactions").then(({ data, error }) => {
-      if (error) return;
+    (async () => {
+      const [tx, rc, ov] = await Promise.all([
+        supabase.rpc("generate_recurring_transactions"),
+        supabase.rpc("generate_recurring_recharges"),
+        supabase.rpc("mark_overdue_recharges"),
+      ]);
       localStorage.setItem(key, "1");
-      if ((data ?? 0) > 0) qc.invalidateQueries({ queryKey: ["transactions"] });
-    });
+      if ((tx.data ?? 0) > 0) qc.invalidateQueries({ queryKey: ["transactions"] });
+      if ((rc.data ?? 0) > 0 || (ov.data ?? 0) > 0) qc.invalidateQueries({ queryKey: ["recharges"] });
+    })();
   }, [user, qc]);
 
   if (loading) {
