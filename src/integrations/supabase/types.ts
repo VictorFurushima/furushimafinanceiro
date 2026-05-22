@@ -310,6 +310,74 @@ export type Database = {
         }
         Relationships: []
       }
+      ocr_detected_transactions: {
+        Row: {
+          confidence_level: string | null
+          created_at: string
+          detected_account: string | null
+          detected_amount: number | null
+          detected_date: string | null
+          detected_description: string | null
+          detected_payment_method: string | null
+          detected_type: string | null
+          id: string
+          image_id: string
+          possible_duplicate: boolean
+          raw_text: string | null
+          review_status: string
+          saved_transaction_id: string | null
+          suggested_category: string | null
+          suggested_category_id: string | null
+          user_id: string
+        }
+        Insert: {
+          confidence_level?: string | null
+          created_at?: string
+          detected_account?: string | null
+          detected_amount?: number | null
+          detected_date?: string | null
+          detected_description?: string | null
+          detected_payment_method?: string | null
+          detected_type?: string | null
+          id?: string
+          image_id: string
+          possible_duplicate?: boolean
+          raw_text?: string | null
+          review_status?: string
+          saved_transaction_id?: string | null
+          suggested_category?: string | null
+          suggested_category_id?: string | null
+          user_id: string
+        }
+        Update: {
+          confidence_level?: string | null
+          created_at?: string
+          detected_account?: string | null
+          detected_amount?: number | null
+          detected_date?: string | null
+          detected_description?: string | null
+          detected_payment_method?: string | null
+          detected_type?: string | null
+          id?: string
+          image_id?: string
+          possible_duplicate?: boolean
+          raw_text?: string | null
+          review_status?: string
+          saved_transaction_id?: string | null
+          suggested_category?: string | null
+          suggested_category_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ocr_detected_transactions_image_id_fkey"
+            columns: ["image_id"]
+            isOneToOne: false
+            referencedRelation: "uploaded_transaction_images"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -447,6 +515,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      uploaded_transaction_images: {
+        Row: {
+          created_at: string
+          delete_after_processing: boolean
+          error_message: string | null
+          file_name: string
+          id: string
+          image_url: string | null
+          ocr_confidence: string | null
+          processing_status: string
+          storage_path: string
+          upload_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          delete_after_processing?: boolean
+          error_message?: string | null
+          file_name: string
+          id?: string
+          image_url?: string | null
+          ocr_confidence?: string | null
+          processing_status?: string
+          storage_path: string
+          upload_date?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          delete_after_processing?: boolean
+          error_message?: string | null
+          file_name?: string
+          id?: string
+          image_url?: string | null
+          ocr_confidence?: string | null
+          processing_status?: string
+          storage_path?: string
+          upload_date?: string
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {
