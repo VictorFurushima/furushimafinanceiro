@@ -162,7 +162,15 @@ export const extractTransactionsFromImage = createServerFn({ method: "POST" })
       return dups.some((x) => (x.description ?? "").toLowerCase().includes(d.slice(0, 12)) || d.includes((x.description ?? "").toLowerCase().slice(0, 12)));
     };
 
-    const rows: Array<Record<string, unknown>> = [];
+    type OcrRow = {
+      user_id: string; image_id: string;
+      detected_date: string | null; detected_amount: number | null;
+      detected_type: string; detected_description: string | null;
+      detected_payment_method: string | null; detected_account: string | null;
+      suggested_category: string | null; suggested_category_id: string | null;
+      confidence_level: string; review_status: string; possible_duplicate: boolean;
+    };
+    const rows: OcrRow[] = [];
     for (const t of txs) {
       const amt = typeof t.amount === "number" ? Math.abs(t.amount) : null;
       const type = t.type === "income" ? "income" : "expense";
