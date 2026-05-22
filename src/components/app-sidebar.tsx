@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
+import logo from "@/assets/furushima-logo.jpg";
 
 const items = [
   { to: "/dashboard", label: "Visão Geral", icon: LayoutDashboard },
@@ -26,11 +27,12 @@ export function AppSidebar() {
 
   return (
     <aside className="hidden lg:flex flex-col w-64 shrink-0 border-r border-sidebar-border bg-sidebar p-4">
-      <Link to="/dashboard" className="flex items-center gap-2 px-2 py-3 mb-6">
-        <div className="h-9 w-9 rounded-lg bg-gradient-primary shadow-glow flex items-center justify-center">
-          <Wallet className="h-4.5 w-4.5 text-primary-foreground" />
+      <Link to="/dashboard" className="flex items-center gap-3 px-2 py-3 mb-6">
+        <img src={logo} alt="Furushima" className="h-10 w-10 rounded-lg object-cover shadow-glow" />
+        <div className="leading-tight">
+          <span className="font-display text-lg font-bold block">Furushima</span>
+          <span className="text-xs text-muted-foreground">Financeiro</span>
         </div>
-        <span className="font-display text-xl font-bold">Furushima Financeiro</span>
       </Link>
 
       <nav className="space-y-1 flex-1">
