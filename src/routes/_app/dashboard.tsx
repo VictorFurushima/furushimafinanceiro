@@ -327,7 +327,7 @@ function DashboardPage() {
               <p className="text-sm text-muted-foreground py-12 text-center">Sem despesas neste mês.</p>
             ) : (
               <>
-                <div className="h-52">
+                <div className="h-44 sm:h-52">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie data={byCategory} dataKey="value" innerRadius={50} outerRadius={80} paddingAngle={3}>
