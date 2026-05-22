@@ -295,7 +295,7 @@ function DashboardPage() {
         <Card className="lg:col-span-2 bg-gradient-card border-border/50 shadow-card">
           <CardHeader><CardTitle className="font-display">Evolução — últimos 6 meses</CardTitle></CardHeader>
           <CardContent>
-            <div className="h-72">
+            <div className="h-56 sm:h-72 -mx-2 sm:mx-0">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={monthlyData}>
                   <defs>
