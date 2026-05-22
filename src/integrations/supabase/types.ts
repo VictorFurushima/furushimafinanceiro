@@ -44,6 +44,63 @@ export type Database = {
         }
         Relationships: []
       }
+      balance_recharges: {
+        Row: {
+          account_id: string | null
+          card_id: string | null
+          converted_to_income: boolean
+          created_at: string
+          expected_amount: number
+          expected_date: string
+          id: string
+          is_recurring: boolean
+          name: string
+          notes: string | null
+          payment_method: string | null
+          recharge_type: string
+          recurring_day: number | null
+          source_recharge_id: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          card_id?: string | null
+          converted_to_income?: boolean
+          created_at?: string
+          expected_amount: number
+          expected_date: string
+          id?: string
+          is_recurring?: boolean
+          name: string
+          notes?: string | null
+          payment_method?: string | null
+          recharge_type?: string
+          recurring_day?: number | null
+          source_recharge_id?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          card_id?: string | null
+          converted_to_income?: boolean
+          created_at?: string
+          expected_amount?: number
+          expected_date?: string
+          id?: string
+          is_recurring?: boolean
+          name?: string
+          notes?: string | null
+          payment_method?: string | null
+          recharge_type?: string
+          recurring_day?: number | null
+          source_recharge_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       budgets: {
         Row: {
           amount: number
@@ -129,6 +186,87 @@ export type Database = {
           created_at?: string
           id?: string
           monthly_limit?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      credit_card_bills: {
+        Row: {
+          amount: number
+          card_id: string
+          created_at: string
+          due_date: string
+          id: string
+          month: number
+          payment_date: string | null
+          status: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          amount?: number
+          card_id: string
+          created_at?: string
+          due_date: string
+          id?: string
+          month: number
+          payment_date?: string | null
+          status?: string
+          user_id: string
+          year: number
+        }
+        Update: {
+          amount?: number
+          card_id?: string
+          created_at?: string
+          due_date?: string
+          id?: string
+          month?: number
+          payment_date?: string | null
+          status?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      credit_cards: {
+        Row: {
+          bank: string | null
+          closing_day: number
+          color: string
+          created_at: string
+          due_day: number
+          id: string
+          name: string
+          status: string
+          total_limit: number
+          used_limit: number
+          user_id: string
+        }
+        Insert: {
+          bank?: string | null
+          closing_day?: number
+          color?: string
+          created_at?: string
+          due_day?: number
+          id?: string
+          name: string
+          status?: string
+          total_limit?: number
+          used_limit?: number
+          user_id: string
+        }
+        Update: {
+          bank?: string | null
+          closing_day?: number
+          color?: string
+          created_at?: string
+          due_day?: number
+          id?: string
+          name?: string
+          status?: string
+          total_limit?: number
+          used_limit?: number
           user_id?: string
         }
         Relationships: []
@@ -315,7 +453,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      confirm_recharge_as_income: {
+        Args: { p_recharge_id: string }
+        Returns: string
+      }
+      generate_recurring_recharges: { Args: never; Returns: number }
       generate_recurring_transactions: { Args: never; Returns: number }
+      mark_overdue_recharges: { Args: never; Returns: number }
+      pay_credit_card_bill: { Args: { p_bill_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

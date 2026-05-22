@@ -2,6 +2,7 @@ import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard, ArrowLeftRight, Target, Wallet, LogOut,
   Repeat, BarChart3, Upload, Settings, ArrowDownToLine,
+  Inbox, CreditCard, CalendarClock,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -14,6 +15,9 @@ const items = [
   { to: "/dashboard", label: "Visão Geral", short: "Início", icon: LayoutDashboard },
   { to: "/transactions", label: "Transações", short: "Gastos", icon: ArrowLeftRight },
   { to: "/income", label: "Receitas", short: "Receitas", icon: ArrowDownToLine },
+  { to: "/recharges", label: "Recargas de Saldo", short: "Recargas", icon: Inbox },
+  { to: "/cards", label: "Cartões", short: "Cartões", icon: CreditCard },
+  { to: "/timeline", label: "Linha do Tempo", short: "Linha", icon: CalendarClock },
   { to: "/recurring", label: "Assinaturas", short: "Assinaturas", icon: Repeat },
   { to: "/budgets", label: "Orçamentos", short: "Orçamento", icon: Target },
   { to: "/goals", label: "Metas", short: "Metas", icon: Target },
@@ -24,7 +28,7 @@ const items = [
 ] as const;
 
 const mobileItems = items.filter((i) =>
-  ["/dashboard", "/transactions", "/recurring", "/statistics", "/settings"].includes(i.to),
+  ["/dashboard", "/recharges", "/cards", "/timeline", "/settings"].includes(i.to),
 );
 
 export function AppSidebar() {
