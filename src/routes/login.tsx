@@ -73,7 +73,7 @@ function LoginPage() {
           <div className="h-10 w-10 rounded-xl bg-gradient-primary shadow-glow flex items-center justify-center">
             <Wallet className="h-5 w-5 text-primary-foreground" />
           </div>
-          <span className="font-display text-2xl font-bold">Cofre</span>
+          <span className="font-display text-2xl font-bold">Furushima Financeiro</span>
         </Link>
 
         <div className="relative z-10 space-y-8">
@@ -99,7 +99,7 @@ function LoginPage() {
           </div>
         </div>
 
-        <p className="relative z-10 text-xs text-muted-foreground">© Cofre — controle financeiro inteligente</p>
+        <p className="relative z-10 text-xs text-muted-foreground">© Furushima Financeiro — controle financeiro inteligente</p>
       </div>
 
       {/* Form side */}
@@ -109,7 +109,7 @@ function LoginPage() {
             <div className="h-10 w-10 rounded-xl bg-gradient-primary shadow-glow flex items-center justify-center">
               <Wallet className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="font-display text-2xl font-bold">Cofre</span>
+            <span className="font-display text-2xl font-bold">Furushima Financeiro</span>
           </div>
 
           <h2 className="font-display text-3xl font-bold">
