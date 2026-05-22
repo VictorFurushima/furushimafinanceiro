@@ -1,5 +1,8 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, ArrowLeftRight, Target, Wallet, LogOut } from "lucide-react";
+import {
+  LayoutDashboard, ArrowLeftRight, Target, Wallet, LogOut,
+  Repeat, BarChart3, Upload, Settings, ArrowDownToLine,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -8,11 +11,21 @@ import { cn } from "@/lib/utils";
 import logo from "@/assets/furushima-logo.jpg";
 
 const items = [
-  { to: "/dashboard", label: "Visão Geral", icon: LayoutDashboard },
-  { to: "/transactions", label: "Transações", icon: ArrowLeftRight },
-  { to: "/budgets", label: "Orçamentos", icon: Target },
-  { to: "/accounts", label: "Contas", icon: Wallet },
+  { to: "/dashboard", label: "Visão Geral", short: "Início", icon: LayoutDashboard },
+  { to: "/transactions", label: "Transações", short: "Gastos", icon: ArrowLeftRight },
+  { to: "/income", label: "Receitas", short: "Receitas", icon: ArrowDownToLine },
+  { to: "/recurring", label: "Assinaturas", short: "Assinaturas", icon: Repeat },
+  { to: "/budgets", label: "Orçamentos", short: "Orçamento", icon: Target },
+  { to: "/goals", label: "Metas", short: "Metas", icon: Target },
+  { to: "/statistics", label: "Estatísticas", short: "Stats", icon: BarChart3 },
+  { to: "/accounts", label: "Contas", short: "Contas", icon: Wallet },
+  { to: "/import", label: "Importar CSV", short: "Importar", icon: Upload },
+  { to: "/settings", label: "Configurações", short: "Config", icon: Settings },
 ] as const;
+
+const mobileItems = items.filter((i) =>
+  ["/dashboard", "/transactions", "/recurring", "/statistics", "/settings"].includes(i.to),
+);
 
 export function AppSidebar() {
   const path = useRouterState({ select: (r) => r.location.pathname });
@@ -35,7 +48,7 @@ export function AppSidebar() {
         </div>
       </Link>
 
-      <nav className="space-y-1 flex-1">
+      <nav className="space-y-1 flex-1 overflow-y-auto">
         {items.map((it) => {
           const active = path === it.to;
           return (
@@ -56,7 +69,7 @@ export function AppSidebar() {
         })}
       </nav>
 
-      <div className="border-t border-sidebar-border pt-4 space-y-2">
+      <div className="border-t border-sidebar-border pt-4 space-y-2 mt-4">
         <div className="px-3 py-2">
           <p className="text-xs text-muted-foreground">Conectado como</p>
           <p className="text-sm truncate">{user?.email}</p>
@@ -75,15 +88,15 @@ export function MobileNav() {
   return (
     <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-sidebar/95 backdrop-blur border-t border-sidebar-border px-2 py-2">
       <div className="flex items-center justify-around">
-        {items.map((it) => {
+        {mobileItems.map((it) => {
           const active = path === it.to;
           return (
             <Link key={it.to} to={it.to} className={cn(
-              "flex flex-col items-center gap-1 px-3 py-2 rounded-lg text-xs transition",
+              "flex flex-col items-center gap-1 px-3 py-2 rounded-lg text-[10px] transition",
               active ? "text-primary-glow" : "text-muted-foreground"
             )}>
               <it.icon className="h-5 w-5" />
-              {it.label.split(" ")[0]}
+              {it.short}
             </Link>
           );
         })}

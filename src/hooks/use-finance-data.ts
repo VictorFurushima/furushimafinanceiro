@@ -9,6 +9,10 @@ export interface Transaction {
   occurred_at: string;
   account_id: string | null;
   category_id: string | null;
+  subcategory: string | null;
+  payment_method: string | null;
+  notes: string | null;
+  recurring_id: string | null;
   categories?: { name: string; color: string; icon: string } | null;
   accounts?: { name: string; color: string } | null;
 }
@@ -35,6 +39,39 @@ export interface Budget {
   amount: number;
   month: string;
   categories?: { name: string; color: string } | null;
+}
+
+export interface RecurringExpense {
+  id: string;
+  name: string;
+  amount: number;
+  category_id: string | null;
+  account_id: string | null;
+  payment_method: string | null;
+  billing_day: number;
+  frequency: "weekly" | "monthly" | "yearly" | "custom";
+  start_date: string;
+  end_date: string | null;
+  status: "active" | "paused" | "cancelled";
+  notes: string | null;
+  categories?: { name: string; color: string } | null;
+}
+
+export interface Goal {
+  id: string;
+  name: string;
+  target_amount: number;
+  current_amount: number;
+  deadline: string | null;
+  category_id: string | null;
+  color: string;
+  notes: string | null;
+}
+
+export interface CategoryLimit {
+  id: string;
+  category_id: string;
+  monthly_limit: number;
 }
 
 export const useTransactions = (limit?: number) =>
@@ -82,5 +119,38 @@ export const useBudgets = (month: string) =>
         .eq("month", month);
       if (error) throw error;
       return (data ?? []) as unknown as Budget[];
+    },
+  });
+
+export const useRecurring = () =>
+  useQuery({
+    queryKey: ["recurring"],
+    queryFn: async (): Promise<RecurringExpense[]> => {
+      const { data, error } = await supabase
+        .from("recurring_expenses")
+        .select("*, categories(name,color)")
+        .order("billing_day");
+      if (error) throw error;
+      return (data ?? []) as unknown as RecurringExpense[];
+    },
+  });
+
+export const useGoals = () =>
+  useQuery({
+    queryKey: ["goals"],
+    queryFn: async (): Promise<Goal[]> => {
+      const { data, error } = await supabase.from("goals").select("*").order("created_at");
+      if (error) throw error;
+      return (data ?? []) as Goal[];
+    },
+  });
+
+export const useCategoryLimits = () =>
+  useQuery({
+    queryKey: ["category_limits"],
+    queryFn: async (): Promise<CategoryLimit[]> => {
+      const { data, error } = await supabase.from("category_limits").select("*");
+      if (error) throw error;
+      return (data ?? []) as CategoryLimit[];
     },
   });
