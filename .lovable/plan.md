@@ -1,91 +1,81 @@
-## Visão geral
+# Módulo: Recargas de Saldo e Previsão de Entrada
 
-Vou expandir o **Furushima Financeiro** existente (que já tem dashboard, transações, contas, orçamentos e auth) adicionando os módulos pedidos: assinaturas recorrentes com lançamento automático, metas, estatísticas avançadas, importação CSV, filtros globais e configurações. O design dark mode atual (paleta Furushima teal/cyan) será mantido.
+## 1. Banco de dados (migration)
 
-## O que já existe (será reaproveitado)
+Criar 3 novas tabelas com RLS (`auth.uid() = user_id`):
 
-- Auth completo + RLS por usuário
-- Tabelas: `transactions`, `categories`, `accounts`, `budgets`, `profiles`
-- Páginas: Dashboard, Transações, Orçamentos, Contas
-- Sidebar + navegação mobile
-- Hooks `use-finance-data`, formatação BRL
+**`balance_recharges`** — entradas previstas (salário, freelance, reembolso, fatura, liberação de limite, etc.)
+- `name`, `recharge_type` (enum text), `expected_amount`, `expected_date`, `account_id`, `payment_method`, `status` (prevista/confirmada/recebida/atrasada/cancelada), `notes`, `converted_to_income` (bool), `is_recurring` (bool), `recurring_day` (int), `card_id` (opcional, para fatura/limite)
 
-## Mudanças no banco de dados
+**`credit_cards`**
+- `name`, `bank`, `total_limit`, `used_limit`, `closing_day`, `due_day`, `status`, `color`
+- `available_limit` calculado em runtime (`total - used`)
 
-**Novas colunas em `transactions`:**
-- `subcategory` (text, nullable)
-- `payment_method` (text, nullable) — pix, dinheiro, debito, credito, boleto, transferencia
-- `notes` (text, nullable)
-- `recurring_id` (uuid, nullable) — referência à assinatura que gerou
+**`credit_card_bills`**
+- `card_id`, `month`, `year`, `amount`, `due_date`, `payment_date`, `status` (aberta/paga/atrasada)
+- unique `(card_id, month, year)`
 
-**Nova tabela `recurring_expenses`:**
-- name, amount, category_id, payment_method, billing_day (int 1-31), frequency (mensal/semanal/anual), start_date, end_date, status (active/paused/cancelled), last_generated_at
+**Funções SQL (SECURITY DEFINER, auth.uid()):**
+- `generate_recurring_recharges()` — cria recarga prevista do mês para cada recarga recorrente, sem duplicar
+- `mark_overdue_recharges()` — muda status para "atrasada" se data passou e não foi recebida
+- `confirm_recharge_as_income(recharge_id)` — marca como recebida + cria transaction tipo income (exceto fatura/limite)
+- `pay_credit_card_bill(bill_id)` — marca fatura como paga, diminui `used_limit` do cartão
 
-**Nova tabela `goals`:**
-- name, target_amount, current_amount, deadline, category_id, color
+## 2. Hooks (`use-finance-data.ts`)
 
-**Nova tabela `category_limits`:**
-- category_id, monthly_limit
+Adicionar: `useRecharges`, `useCreditCards`, `useCreditCardBills`, `useUpcomingEvents` (recargas + faturas combinadas ordenadas por data).
 
-Todas com RLS por `user_id`.
+## 3. Páginas novas
 
-**Função SQL `generate_recurring_transactions()`** + cron diário (pg_cron) que gera as despesas das assinaturas ativas no dia correto, sem duplicar (idempotente via `recurring_id` + mês).
+- **`/recharges`** — lista de recargas com filtros por status/tipo, dialog para CRUD, botão "marcar como recebida"
+- **`/cards`** — substitui/complementa `/accounts` com foco em cartões: nome, banco, barra de limite usado/disponível, próxima fatura, dialog de pagamento
+- **`/timeline`** — linha do tempo cronológica dos próximos 60 dias (recargas + faturas + transações recorrentes) com cores por tipo
 
-## Novas páginas
+## 4. Componentes novos
 
-```
-/dashboard          ← expandir KPIs (economia, % gasto, próximas assinaturas, comparação mês anterior)
-/transactions       ← adicionar filtros, subcategoria, forma de pagamento, exportar CSV
-/income             ← (nova) registro de receitas dedicado
-/recurring          ← (nova) assinaturas e despesas recorrentes
-/goals              ← (nova) metas com barras de progresso
-/statistics         ← (nova) análises: gasto/mês, média diária/semanal, top 10, dias com mais gasto, formas de pagamento
-/budgets            ← já existe
-/accounts           ← já existe
-/import             ← (nova) importação CSV com validação
-/settings           ← (nova) categorias, limites por categoria, notificações
-```
+- `RechargeDialog` — formulário completo (tipo, valor, data, conta, status, recorrente)
+- `CreditCardDialog` — formulário de cartão
+- `PayBillDialog` — confirma pagamento de fatura
+- `TimelineList` — lista visual com ícones e cores
+- `NextRechargeCard` — card destacado para o dashboard
+- `CardLimitBar` — barra de progresso de limite
 
-## Componentes novos
+## 5. Dashboard
 
-- `RecurringDialog` — criar/editar assinatura
-- `GoalDialog` — criar/editar meta
-- `IncomeDialog` — receita rápida
-- `CsvImportDialog` — upload + preview + validação
-- `TransactionFilters` — filtros globais reutilizáveis
-- `StatCard` extraído para `components/stat-card.tsx`
-- `ProgressBar` para metas/orçamentos
-- Atualizar `TransactionDialog` com subcategoria, forma de pagamento, observação
+Adicionar:
+- Card "Próxima Recarga" (nome, valor, dias restantes)
+- Card "Saldo Previsto fim do mês" (saldo real + recargas previstas/confirmadas - despesas previstas)
+- Card "Total previsto no mês" e "Total confirmado"
+- Seção "Faturas próximas" (badges com dias até vencimento)
+- Seção "Limite disponível por cartão"
+- Alertas no topo: recargas atrasadas, faturas a vencer em 5d, limite < 20%, saldo previsto negativo
 
-## Filtros
+## 6. Sidebar / Navegação
 
-Hook `use-transaction-filters` com: mês, ano, categoria, forma pagamento, tipo, valor min/max, período customizado. Usado em Transações e Estatísticas.
+Adicionar itens: **Recargas** (`Inbox` icon), **Cartões** (`CreditCard` icon), **Linha do Tempo** (`CalendarClock` icon). Atualizar MobileNav.
 
-## CSV
+## 7. Automação
 
-- Export: botão em Transações → gera CSV no navegador
-- Import: parse via PapaParse, validação Zod, preview de erros antes de salvar em lote
+Em `_app.tsx`, junto da chamada de `generate_recurring_transactions`, chamar também:
+- `generate_recurring_recharges()`
+- `mark_overdue_recharges()`
 
-## Automação de recorrentes
+Uma vez por dia, controlado por `localStorage`.
 
-Migration cria função PL/pgSQL `generate_recurring_for_user(user_id)` e cron diário (pg_cron + pg_net chamando endpoint `/api/public/hooks/run-recurring`) — ou mais simples: trigger executado on-demand quando o usuário abre o dashboard (chamando uma server function). Vou usar a abordagem **client-triggered server function** chamada no login/dashboard load para evitar setup de cron e secrets — é idempotente e suficiente.
+## 8. Tipos / constantes
 
-## Design
+`finance-constants.ts`: adicionar `RECHARGE_TYPES`, `RECHARGE_STATUS`, `BILL_STATUS` com labels em PT-BR e cores.
 
-- Mantém paleta Furushima atual (teal/cyan dark)
-- Verde para receitas, vermelho para despesas, accent teal para destaques
-- Cards arredondados, gráficos Recharts (já em uso)
-- Sidebar atualizada com novos itens (ícones lucide: Repeat, Target, BarChart3, Upload, Settings)
+## 9. Notificações
 
-## Ordem de execução
+Componente `FinancialAlerts` no topo do dashboard mostrando avisos críticos (recargas atrasadas, faturas próximas, limite baixo). Usa `sonner` para toasts pontuais.
 
-1. Migration: novas colunas/tabelas + RLS + função de recorrentes
-2. Atualizar `use-finance-data` com novos hooks (recurring, goals, income filter, limits)
-3. Server function `generate-recurring.functions.ts` chamada no app load
-4. Atualizar sidebar com novas rotas
-5. Criar páginas: recurring, goals, statistics, income, import, settings
-6. Atualizar dashboard com KPIs novos
-7. Atualizar TransactionDialog + Transactions com filtros, CSV export, novos campos
-8. Instalar `papaparse` para import
+## Detalhes técnicos
 
-Pronto para começar?
+- RLS: todas as tabelas usam policy `auth.uid() = user_id`
+- Cores semânticas via tokens existentes (`success` para receitas/recargas, `destructive` para atrasos/faturas, `primary` teal para destaque)
+- Mantém paleta Furushima (dark teal/cyan) e tipografia Outfit/Figtree
+- `converted_to_income` previne dupla contabilização
+- `available_limit` é derivado (não armazenado) para evitar inconsistência
+
+Após sua aprovação, executo a migration e implemento todos os arquivos.
