@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
+import logo from "@/assets/furushima-logo.jpg";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
@@ -69,10 +70,8 @@ function LoginPage() {
         <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-primary/30 blur-3xl" />
         <div className="absolute bottom-0 right-0 w-96 h-96 rounded-full bg-primary-glow/20 blur-3xl" />
 
-        <Link to="/" className="relative z-10 flex items-center gap-2">
-          <div className="h-10 w-10 rounded-xl bg-gradient-primary shadow-glow flex items-center justify-center">
-            <Wallet className="h-5 w-5 text-primary-foreground" />
-          </div>
+        <Link to="/" className="relative z-10 flex items-center gap-3">
+          <img src={logo} alt="Furushima" className="h-12 w-12 rounded-xl object-cover shadow-glow" />
           <span className="font-display text-2xl font-bold">Furushima Financeiro</span>
         </Link>
 
@@ -105,10 +104,8 @@ function LoginPage() {
       {/* Form side */}
       <div className="flex items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-md">
-          <div className="lg:hidden mb-8 flex items-center gap-2">
-            <div className="h-10 w-10 rounded-xl bg-gradient-primary shadow-glow flex items-center justify-center">
-              <Wallet className="h-5 w-5 text-primary-foreground" />
-            </div>
+          <div className="lg:hidden mb-8 flex items-center gap-3">
+            <img src={logo} alt="Furushima" className="h-11 w-11 rounded-xl object-cover shadow-glow" />
             <span className="font-display text-2xl font-bold">Furushima Financeiro</span>
           </div>
 
