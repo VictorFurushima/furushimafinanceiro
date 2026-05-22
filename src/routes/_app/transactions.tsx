@@ -1,24 +1,52 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { Plus, Trash2, TrendingUp, TrendingDown } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Plus, Trash2, TrendingUp, TrendingDown, Download, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useTransactions } from "@/hooks/use-finance-data";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTransactions, useCategories } from "@/hooks/use-finance-data";
 import { TransactionDialog } from "@/components/transaction-dialog";
 import { formatCurrency } from "@/lib/format";
+import { PAYMENT_METHODS, paymentLabel } from "@/lib/finance-constants";
 import { supabase } from "@/integrations/supabase/client";
 
-export const Route = createFileRoute("/_app/transactions")({
-  component: TransactionsPage,
-});
+export const Route = createFileRoute("/_app/transactions")({ component: TransactionsPage });
 
 function TransactionsPage() {
   const { data: transactions = [] } = useTransactions();
+  const { data: categories = [] } = useCategories();
   const [open, setOpen] = useState(false);
   const qc = useQueryClient();
+
+  const [search, setSearch] = useState("");
+  const [fType, setFType] = useState<"all" | "income" | "expense">("all");
+  const [fCat, setFCat] = useState<string>("all");
+  const [fPay, setFPay] = useState<string>("all");
+  const [fFrom, setFFrom] = useState("");
+  const [fTo, setFTo] = useState("");
+  const [fMin, setFMin] = useState("");
+  const [fMax, setFMax] = useState("");
+
+  const filtered = useMemo(() => {
+    return transactions.filter((t) => {
+      if (fType !== "all" && t.type !== fType) return false;
+      if (fCat !== "all" && t.category_id !== fCat) return false;
+      if (fPay !== "all" && t.payment_method !== fPay) return false;
+      if (fFrom && t.occurred_at < fFrom) return false;
+      if (fTo && t.occurred_at > fTo) return false;
+      const amt = Number(t.amount);
+      if (fMin && amt < parseFloat(fMin)) return false;
+      if (fMax && amt > parseFloat(fMax)) return false;
+      if (search && !(t.description?.toLowerCase().includes(search.toLowerCase()) || t.categories?.name.toLowerCase().includes(search.toLowerCase()))) return false;
+      return true;
+    });
+  }, [transactions, search, fType, fCat, fPay, fFrom, fTo, fMin, fMax]);
+
+  const clearFilters = () => { setSearch(""); setFType("all"); setFCat("all"); setFPay("all"); setFFrom(""); setFTo(""); setFMin(""); setFMax(""); };
 
   const remove = async (id: string) => {
     const { error } = await supabase.from("transactions").delete().eq("id", id);
@@ -27,32 +55,98 @@ function TransactionsPage() {
     qc.invalidateQueries({ queryKey: ["transactions"] });
   };
 
+  const exportCSV = () => {
+    const header = ["Data", "Tipo", "Valor", "Categoria", "Descrição", "Forma de Pagamento", "Conta"];
+    const rows = filtered.map((t) => [
+      t.occurred_at, t.type === "income" ? "Receita" : "Despesa",
+      String(t.amount).replace(".", ","), t.categories?.name ?? "",
+      (t.description ?? "").replace(/"/g, '""'), paymentLabel(t.payment_method),
+      t.accounts?.name ?? "",
+    ]);
+    const csv = [header, ...rows].map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `transacoes-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+    toast.success("CSV exportado");
+  };
+
+  const total = filtered.reduce((s, t) => s + (t.type === "income" ? Number(t.amount) : -Number(t.amount)), 0);
+
   return (
-    <div className="p-6 lg:p-10 max-w-5xl mx-auto space-y-6">
-      <header className="flex items-center justify-between">
-        <h1 className="font-display text-4xl font-bold">Transações</h1>
-        <Button onClick={() => setOpen(true)} className="bg-gradient-primary text-primary-foreground shadow-glow">
-          <Plus className="h-4 w-4 mr-2" /> Nova
-        </Button>
+    <div className="p-6 lg:p-10 max-w-6xl mx-auto space-y-6">
+      <header className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="font-display text-4xl font-bold">Transações</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {filtered.length} de {transactions.length} · Saldo no filtro: <span className={total >= 0 ? "text-success" : "text-destructive"}>{formatCurrency(total)}</span>
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={exportCSV}><Download className="h-4 w-4 mr-2" />CSV</Button>
+          <Button onClick={() => setOpen(true)} className="bg-gradient-primary text-primary-foreground shadow-glow">
+            <Plus className="h-4 w-4 mr-2" /> Nova
+          </Button>
+        </div>
       </header>
 
       <Card className="bg-gradient-card border-border/50 shadow-card">
-        <CardHeader><CardTitle className="font-display">Todas as transações</CardTitle></CardHeader>
+        <CardContent className="p-4 space-y-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <Input placeholder="Buscar..." value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Select value={fType} onValueChange={(v) => setFType(v as typeof fType)}>
+              <SelectTrigger><SelectValue placeholder="Tipo" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os tipos</SelectItem>
+                <SelectItem value="income">Receitas</SelectItem>
+                <SelectItem value="expense">Despesas</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={fCat} onValueChange={setFCat}>
+              <SelectTrigger><SelectValue placeholder="Categoria" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas categorias</SelectItem>
+                {categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={fPay} onValueChange={setFPay}>
+              <SelectTrigger><SelectValue placeholder="Forma de pagamento" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas formas</SelectItem>
+                {PAYMENT_METHODS.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+            <Input type="date" value={fFrom} onChange={(e) => setFFrom(e.target.value)} placeholder="De" />
+            <Input type="date" value={fTo} onChange={(e) => setFTo(e.target.value)} placeholder="Até" />
+            <Input type="number" placeholder="Valor mín" value={fMin} onChange={(e) => setFMin(e.target.value)} />
+            <Input type="number" placeholder="Valor máx" value={fMax} onChange={(e) => setFMax(e.target.value)} />
+            <Button variant="outline" onClick={clearFilters}><X className="h-4 w-4 mr-2" />Limpar</Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="bg-gradient-card border-border/50 shadow-card">
+        <CardHeader><CardTitle className="font-display">Histórico</CardTitle></CardHeader>
         <CardContent>
-          {transactions.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-12 text-center">Nada por aqui ainda.</p>
+          {filtered.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-12 text-center">Nenhuma transação encontrada.</p>
           ) : (
             <ul className="divide-y divide-border/50">
-              {transactions.map((t) => (
+              {filtered.map((t) => (
                 <li key={t.id} className="flex items-center gap-4 py-3 group">
                   <div className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0"
-                    style={{ background: `${t.categories?.color ?? "#4f46e5"}25`, color: t.categories?.color ?? "#4f46e5" }}>
+                    style={{ background: `${t.categories?.color ?? "#22d3ee"}25`, color: t.categories?.color ?? "#22d3ee" }}>
                     {t.type === "income" ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{t.description || t.categories?.name || "Transação"}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {t.categories?.name ?? "Sem categoria"} · {t.accounts?.name ?? "—"} · {new Date(t.occurred_at).toLocaleDateString("pt-BR")}
+                    <p className="text-xs text-muted-foreground truncate">
+                      {t.categories?.name ?? "Sem categoria"}
+                      {t.subcategory && ` · ${t.subcategory}`}
+                      {" · "}{paymentLabel(t.payment_method)} · {new Date(t.occurred_at).toLocaleDateString("pt-BR")}
                     </p>
                   </div>
                   <span className={`text-sm font-semibold ${t.type === "income" ? "text-success" : "text-destructive"}`}>
