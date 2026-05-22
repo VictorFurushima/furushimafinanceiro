@@ -28,7 +28,7 @@ const items = [
 ] as const;
 
 const mobileItems = items.filter((i) =>
-  ["/dashboard", "/recharges", "/cards", "/timeline", "/settings"].includes(i.to),
+  ["/dashboard", "/transactions", "/income", "/recharges", "/cards", "/recurring", "/settings"].includes(i.to),
 );
 
 export function AppSidebar() {
