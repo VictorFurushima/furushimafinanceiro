@@ -109,6 +109,69 @@ export type Database = {
         }
         Relationships: []
       }
+      category_limits: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          monthly_limit: number
+          user_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          monthly_limit: number
+          user_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          monthly_limit?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      goals: {
+        Row: {
+          category_id: string | null
+          color: string
+          created_at: string
+          current_amount: number
+          deadline: string | null
+          id: string
+          name: string
+          notes: string | null
+          target_amount: number
+          user_id: string
+        }
+        Insert: {
+          category_id?: string | null
+          color?: string
+          created_at?: string
+          current_amount?: number
+          deadline?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          target_amount: number
+          user_id: string
+        }
+        Update: {
+          category_id?: string | null
+          color?: string
+          created_at?: string
+          current_amount?: number
+          deadline?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          target_amount?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -133,6 +196,57 @@ export type Database = {
         }
         Relationships: []
       }
+      recurring_expenses: {
+        Row: {
+          account_id: string | null
+          amount: number
+          billing_day: number
+          category_id: string | null
+          created_at: string
+          end_date: string | null
+          frequency: string
+          id: string
+          name: string
+          notes: string | null
+          payment_method: string | null
+          start_date: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          billing_day?: number
+          category_id?: string | null
+          created_at?: string
+          end_date?: string | null
+          frequency?: string
+          id?: string
+          name: string
+          notes?: string | null
+          payment_method?: string | null
+          start_date?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          billing_day?: number
+          category_id?: string | null
+          created_at?: string
+          end_date?: string | null
+          frequency?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          payment_method?: string | null
+          start_date?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           account_id: string | null
@@ -141,7 +255,11 @@ export type Database = {
           created_at: string
           description: string | null
           id: string
+          notes: string | null
           occurred_at: string
+          payment_method: string | null
+          recurring_id: string | null
+          subcategory: string | null
           type: string
           user_id: string
         }
@@ -152,7 +270,11 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          notes?: string | null
           occurred_at?: string
+          payment_method?: string | null
+          recurring_id?: string | null
+          subcategory?: string | null
           type: string
           user_id: string
         }
@@ -163,7 +285,11 @@ export type Database = {
           created_at?: string
           description?: string | null
           id?: string
+          notes?: string | null
           occurred_at?: string
+          payment_method?: string | null
+          recurring_id?: string | null
+          subcategory?: string | null
           type?: string
           user_id?: string
         }
@@ -189,7 +315,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      generate_recurring_transactions: { Args: never; Returns: number }
     }
     Enums: {
       [_ in never]: never
