@@ -161,15 +161,15 @@ function DashboardPage() {
     alerts.push({ msg: `${upcomingRecharges.length} recarga(s) nos próximos 3 dias`, tone: "warning" });
 
   return (
-    <div className="p-6 lg:p-10 space-y-6 max-w-7xl mx-auto">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+    <div className="p-3 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 max-w-7xl mx-auto">
+      <header className="flex flex-col sm:flex-row sm:flex-wrap sm:items-end sm:justify-between gap-3 sm:gap-4">
         <div>
-          <p className="text-sm text-muted-foreground capitalize">
+          <p className="text-xs sm:text-sm text-muted-foreground capitalize">
             {now.toLocaleDateString("pt-BR", { weekday: "long", day: "numeric", month: "long" })}
           </p>
-          <h1 className="font-display text-4xl font-bold mt-1">Visão Geral</h1>
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold mt-1">Visão Geral</h1>
         </div>
-        <Button onClick={() => setOpenTx(true)} className="bg-gradient-primary text-primary-foreground shadow-glow hover:opacity-90">
+        <Button onClick={() => setOpenTx(true)} className="bg-gradient-primary text-primary-foreground shadow-glow hover:opacity-90 w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" /> Nova transação
         </Button>
       </header>
@@ -179,16 +179,16 @@ function DashboardPage() {
           {alerts.map((a, i) => (
             <Alert key={i} className={a.tone === "destructive" ? "border-destructive/50 bg-destructive/10" : "border-warning/50 bg-warning/10"}>
               <AlertCircle className={`h-4 w-4 ${a.tone === "destructive" ? "text-destructive" : "text-warning"}`} />
-              <AlertDescription>{a.msg}</AlertDescription>
+              <AlertDescription className="text-xs sm:text-sm">{a.msg}</AlertDescription>
             </Alert>
           ))}
         </div>
       )}
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
         <StatCard label="Saldo real" value={formatCurrency(balance)} icon={Wallet} gradient />
-        <StatCard label="Saldo previsto (fim do mês)" value={formatCurrency(saldoPrevisto)} icon={Sparkles}
-          accent={saldoPrevisto >= 0 ? "success" : "destructive"} />
+        <StatCard label="Saldo previsto" value={formatCurrency(saldoPrevisto)} icon={Sparkles}
+          accent={saldoPrevisto >= 0 ? "success" : "destructive"} hint="fim do mês" />
         <StatCard label="Receitas do mês" value={formatCurrency(income)} icon={ArrowUpRight} accent="success" />
         <StatCard label="Despesas do mês" value={formatCurrency(expense)} icon={ArrowDownRight} accent="destructive"
           hint={lastExpense > 0 ? `${deltaVsLast > 0 ? "+" : ""}${deltaVsLast.toFixed(0)}% vs mês passado` : undefined} />
@@ -295,7 +295,7 @@ function DashboardPage() {
         <Card className="lg:col-span-2 bg-gradient-card border-border/50 shadow-card">
           <CardHeader><CardTitle className="font-display">Evolução — últimos 6 meses</CardTitle></CardHeader>
           <CardContent>
-            <div className="h-72">
+            <div className="h-56 sm:h-72 -mx-2 sm:mx-0">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={monthlyData}>
                   <defs>
@@ -327,7 +327,7 @@ function DashboardPage() {
               <p className="text-sm text-muted-foreground py-12 text-center">Sem despesas neste mês.</p>
             ) : (
               <>
-                <div className="h-52">
+                <div className="h-44 sm:h-52">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie data={byCategory} dataKey="value" innerRadius={50} outerRadius={80} paddingAngle={3}>
