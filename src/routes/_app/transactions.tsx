@@ -152,7 +152,7 @@ function TransactionsPage() {
                   <span className={`text-sm font-semibold ${t.type === "income" ? "text-success" : "text-destructive"}`}>
                     {t.type === "income" ? "+" : "−"} {formatCurrency(Number(t.amount))}
                   </span>
-                  <button onClick={() => remove(t.id)} className="opacity-0 group-hover:opacity-100 transition text-muted-foreground hover:text-destructive">
+                  <button type="button" aria-label="Excluir transação" onClick={() => remove(t.id)} className="opacity-0 group-hover:opacity-100 transition text-muted-foreground hover:text-destructive">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </li>
