@@ -12,6 +12,19 @@ import { useAuth } from "@/hooks/use-auth";
 import logo from "@/assets/furushima-logo.jpg";
 
 export const Route = createFileRoute("/login")({
+  head: () => ({
+    meta: [
+      { title: "Entrar — Furushima Financeiro" },
+      { name: "description", content: "Acesse sua conta do Furushima Financeiro para gerenciar receitas, despesas, metas e cartões." },
+      { property: "og:title", content: "Entrar — Furushima Financeiro" },
+      { property: "og:description", content: "Acesse sua conta do Furushima Financeiro para gerenciar receitas, despesas, metas e cartões." },
+      { property: "og:url", content: "https://furushimafinanceiro.lovable.app/login" },
+      { name: "twitter:title", content: "Entrar — Furushima Financeiro" },
+      { name: "twitter:description", content: "Acesse sua conta do Furushima Financeiro para gerenciar receitas, despesas, metas e cartões." },
+      { name: "robots", content: "noindex" },
+    ],
+    links: [{ rel: "canonical", href: "https://furushimafinanceiro.lovable.app/login" }],
+  }),
   validateSearch: (s: Record<string, unknown>) => ({
     next: typeof s.next === "string" ? s.next : undefined,
   }),
@@ -86,7 +99,7 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2">
+    <main className="min-h-screen grid lg:grid-cols-2">
       {/* Hero side */}
       <div className="relative hidden lg:flex flex-col justify-between p-12 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-primary opacity-20" />
@@ -94,7 +107,7 @@ function LoginPage() {
         <div className="absolute bottom-0 right-0 w-96 h-96 rounded-full bg-primary-glow/20 blur-3xl" />
 
         <Link to="/" className="relative z-10 flex items-center gap-3">
-          <img src={logo} alt="Furushima" className="h-12 w-12 rounded-xl object-cover shadow-glow" />
+          <img src={logo} alt="Furushima Financeiro" className="h-12 w-12 rounded-xl object-cover shadow-glow" />
           <span className="font-display text-2xl font-bold">Furushima Financeiro</span>
         </Link>
 
@@ -128,7 +141,7 @@ function LoginPage() {
       <div className="flex items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-md">
           <div className="lg:hidden mb-8 flex items-center gap-3">
-            <img src={logo} alt="Furushima" className="h-11 w-11 rounded-xl object-cover shadow-glow" />
+            <img src={logo} alt="Furushima Financeiro" className="h-11 w-11 rounded-xl object-cover shadow-glow" />
             <span className="font-display text-2xl font-bold">Furushima Financeiro</span>
           </div>
 
@@ -161,6 +174,6 @@ function LoginPage() {
           </p>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

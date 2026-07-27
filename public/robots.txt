@@ -1,0 +1,22 @@
+User-agent: *
+Allow: /
+Disallow: /login
+Disallow: /dashboard
+Disallow: /transactions
+Disallow: /income
+Disallow: /recurring
+Disallow: /goals
+Disallow: /statistics
+Disallow: /accounts
+Disallow: /cards
+Disallow: /recharges
+Disallow: /timeline
+Disallow: /budgets
+Disallow: /settings
+Disallow: /import
+Disallow: /import-prints
+Disallow: /.lovable/
+Disallow: /.mcp/
+Disallow: /.well-known/
+
+Sitemap: https://furushimafinanceiro.lovable.app/sitemap.xml

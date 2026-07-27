@@ -1,0 +1,9 @@
+# Furushima Financeiro
+
+> Dashboard de controle financeiro pessoal com receitas, despesas, orçamentos, metas, cartões e estatísticas em tempo real.
+
+Furushima Financeiro é um aplicativo web para gerenciar finanças pessoais: registrar transações, acompanhar assinaturas recorrentes, definir metas, controlar cartões de crédito e visualizar estatísticas.
+
+## Pages
+
+- [Início](/): Página inicial do Furushima Financeiro.

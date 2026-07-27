@@ -79,7 +79,7 @@ function IncomePage() {
                     </p>
                   </div>
                   <span className="text-sm font-semibold text-success">+ {formatCurrency(Number(t.amount))}</span>
-                  <button onClick={() => remove(t.id)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive">
+                  <button type="button" aria-label="Excluir receita" onClick={() => remove(t.id)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </li>

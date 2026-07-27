@@ -46,7 +46,7 @@ export function AppSidebar() {
   return (
     <aside className="hidden lg:flex flex-col w-64 shrink-0 border-r border-sidebar-border bg-sidebar p-4">
       <Link to="/dashboard" className="flex items-center gap-3 px-2 py-3 mb-6">
-        <img src={logo} alt="Furushima" className="h-10 w-10 rounded-lg object-cover shadow-glow" />
+        <img src={logo} alt="Furushima Financeiro" className="h-10 w-10 rounded-lg object-cover shadow-glow" />
         <div className="leading-tight">
           <span className="font-display text-lg font-bold block">Furushima</span>
           <span className="text-xs text-muted-foreground">Financeiro</span>
