@@ -99,7 +99,7 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2">
+    <main className="min-h-screen grid lg:grid-cols-2">
       {/* Hero side */}
       <div className="relative hidden lg:flex flex-col justify-between p-12 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-primary opacity-20" />
@@ -174,6 +174,6 @@ function LoginPage() {
           </p>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
