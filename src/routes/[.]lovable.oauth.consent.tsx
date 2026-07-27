@@ -119,7 +119,7 @@ function ConsentPage() {
           <div className="text-xs text-muted-foreground">
             <p className="mb-1 font-medium text-foreground">Permissões solicitadas</p>
             <ul className="list-disc pl-5 space-y-0.5">
-              {scopes.map((s) => <li key={s}>{s}</li>)}
+              {scopes.map((s: string) => <li key={s}>{s}</li>)}
             </ul>
           </div>
         )}

@@ -25,7 +25,7 @@ export default defineTool({
     const supa = supabaseForUser(ctx);
     const [txRes, accRes] = await Promise.all([
       supa.from("transactions").select("type, amount").gte("occurred_at", start).lte("occurred_at", end),
-      supa.from("accounts").select("balance"),
+      supa.from("accounts").select("initial_balance"),
     ]);
     if (txRes.error) return errorResult(txRes.error.message);
     if (accRes.error) return errorResult(accRes.error.message);
@@ -36,7 +36,7 @@ export default defineTool({
       if (t.type === "income") income += v;
       else if (t.type === "expense") expense += v;
     }
-    const totalBalance = (accRes.data ?? []).reduce((s, a) => s + Number(a.balance ?? 0), 0);
+    const totalBalance = (accRes.data ?? []).reduce((s, a) => s + Number(a.initial_balance ?? 0), 0);
 
     return jsonResult({
       period: { year: y, month: m, start, end },

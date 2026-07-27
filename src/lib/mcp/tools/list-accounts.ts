@@ -12,7 +12,7 @@ export default defineTool({
     if (authErr) return authErr;
     const { data, error } = await supabaseForUser(ctx)
       .from("accounts")
-      .select("id, name, type, balance, currency, created_at")
+      .select("id, name, type, initial_balance, color, created_at")
       .order("created_at");
     if (error) return errorResult(error.message);
     return jsonResult(data ?? []);
