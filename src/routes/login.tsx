@@ -12,6 +12,9 @@ import { useAuth } from "@/hooks/use-auth";
 import logo from "@/assets/furushima-logo.jpg";
 
 export const Route = createFileRoute("/login")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    next: typeof s.next === "string" ? s.next : undefined,
+  }),
   component: LoginPage,
 });
 
@@ -20,16 +23,31 @@ const schema = z.object({
   password: z.string().min(6, "Mínimo de 6 caracteres").max(72),
 });
 
+function safeNext(next: string | undefined): string {
+  if (!next) return "/dashboard";
+  // Same-origin relative path only.
+  if (!next.startsWith("/") || next.startsWith("//")) return "/dashboard";
+  return next;
+}
+
 function LoginPage() {
   const navigate = useNavigate();
+  const { next } = Route.useSearch();
   const { user, loading: authLoading } = useAuth();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const target = safeNext(next);
+
   if (!authLoading && user) {
-    navigate({ to: "/dashboard" });
+    // Preserve OAuth consent flow: navigate to `next` if present, else dashboard.
+    if (target !== "/dashboard" && target.startsWith("/")) {
+      window.location.assign(target);
+    } else {
+      navigate({ to: "/dashboard" });
+    }
   }
 
   const submit = async (e: FormEvent) => {
@@ -45,7 +63,7 @@ function LoginPage() {
         const { error } = await supabase.auth.signUp({
           email: parsed.data.email,
           password: parsed.data.password,
-          options: { emailRedirectTo: `${window.location.origin}/dashboard` },
+          options: { emailRedirectTo: `${window.location.origin}${target}` },
         });
         if (error) throw error;
         toast.success("Conta criada! Entrando...");
@@ -54,7 +72,12 @@ function LoginPage() {
         if (error) throw error;
         toast.success("Bem-vindo de volta!");
       }
-      navigate({ to: "/dashboard" });
+      // For any non-root target (e.g. OAuth consent), do a full navigation.
+      if (target !== "/dashboard") {
+        window.location.assign(target);
+      } else {
+        navigate({ to: "/dashboard" });
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao autenticar");
     } finally {

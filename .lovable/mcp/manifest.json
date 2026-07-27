@@ -1,0 +1,256 @@
+{
+  "version": 1,
+  "sdk_version": "0.24.0",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://kehdylstnnxwenqnhxrq.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "furushima-financeiro-mcp",
+      "version": "0.1.0",
+      "title": "Furushima Financeiro"
+    },
+    "tools": [
+      {
+        "name": "list_accounts",
+        "title": "Listar contas",
+        "description": "Lista todas as contas (banco, carteira, etc.) do usuário com saldos atuais.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_transactions",
+        "title": "Listar transações",
+        "description": "Lista transações recentes do usuário. Pode filtrar por tipo (income/expense), intervalo de datas (YYYY-MM-DD) e limite. Retorna as mais recentes primeiro.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "income",
+                "expense"
+              ],
+              "description": "Filtra por tipo de transação."
+            },
+            "from_date": {
+              "type": "string",
+              "description": "Data inicial YYYY-MM-DD (inclusive)."
+            },
+            "to_date": {
+              "type": "string",
+              "description": "Data final YYYY-MM-DD (inclusive)."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "description": "Máximo de registros (padrão 50)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_transaction",
+        "title": "Registrar transação",
+        "description": "Cria uma nova transação (receita ou despesa) para o usuário autenticado. O valor deve ser positivo; o tipo (income/expense) determina o sinal contábil.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "income",
+                "expense"
+              ],
+              "description": "Tipo: income (receita) ou expense (despesa)."
+            },
+            "amount": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Valor em BRL, positivo."
+            },
+            "description": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "description": "Descrição curta."
+            },
+            "occurred_at": {
+              "type": "string",
+              "description": "Data YYYY-MM-DD. Padrão: hoje."
+            },
+            "account_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID da conta (opcional)."
+            },
+            "category_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "ID da categoria (opcional)."
+            },
+            "payment_method": {
+              "type": "string",
+              "description": "pix, dinheiro, debito, credito, boleto, transferencia."
+            },
+            "notes": {
+              "type": "string",
+              "maxLength": 500,
+              "description": "Observações adicionais."
+            }
+          },
+          "required": [
+            "type",
+            "amount",
+            "description"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_recharges",
+        "title": "Listar recargas de saldo",
+        "description": "Lista recargas previstas de saldo (salário, freelance, reembolso, fatura, liberação de limite, etc.). Filtros opcionais por status e intervalo.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "prevista",
+                "confirmada",
+                "recebida",
+                "atrasada",
+                "cancelada"
+              ]
+            },
+            "from_date": {
+              "type": "string",
+              "description": "Data inicial YYYY-MM-DD."
+            },
+            "to_date": {
+              "type": "string",
+              "description": "Data final YYYY-MM-DD."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_credit_cards",
+        "title": "Listar cartões de crédito",
+        "description": "Lista cartões de crédito do usuário com limite total, limite usado e limite disponível.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_upcoming_bills",
+        "title": "Listar faturas próximas",
+        "description": "Lista faturas de cartão de crédito, abertas ou atrasadas, ordenadas por vencimento.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "include_paid": {
+              "type": "boolean",
+              "description": "Se true, inclui faturas já pagas. Padrão: false."
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "financial_summary",
+        "title": "Resumo financeiro do mês",
+        "description": "Calcula totais de receitas, despesas e saldo do mês informado (padrão: mês atual). Também retorna soma de saldos de todas as contas.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "year": {
+              "type": "integer",
+              "minimum": 2000,
+              "maximum": 2100
+            },
+            "month": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 12,
+              "description": "Mês 1-12."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
