@@ -12,6 +12,19 @@ import { useAuth } from "@/hooks/use-auth";
 import logo from "@/assets/furushima-logo.jpg";
 
 export const Route = createFileRoute("/login")({
+  head: () => ({
+    meta: [
+      { title: "Entrar — Furushima Financeiro" },
+      { name: "description", content: "Acesse sua conta do Furushima Financeiro para gerenciar receitas, despesas, metas e cartões." },
+      { property: "og:title", content: "Entrar — Furushima Financeiro" },
+      { property: "og:description", content: "Acesse sua conta do Furushima Financeiro para gerenciar receitas, despesas, metas e cartões." },
+      { property: "og:url", content: "https://furushimafinanceiro.lovable.app/login" },
+      { name: "twitter:title", content: "Entrar — Furushima Financeiro" },
+      { name: "twitter:description", content: "Acesse sua conta do Furushima Financeiro para gerenciar receitas, despesas, metas e cartões." },
+      { name: "robots", content: "noindex" },
+    ],
+    links: [{ rel: "canonical", href: "https://furushimafinanceiro.lovable.app/login" }],
+  }),
   validateSearch: (s: Record<string, unknown>) => ({
     next: typeof s.next === "string" ? s.next : undefined,
   }),
