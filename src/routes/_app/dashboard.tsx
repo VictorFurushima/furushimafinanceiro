@@ -34,6 +34,8 @@ function DashboardPage() {
   const { data: recharges = [] } = useRecharges();
   const { data: cards = [] } = useCreditCards();
   const { data: bills = [] } = useCreditCardBills();
+  const fin = useFinancialContext();
+
   const [openTx, setOpenTx] = useState(false);
 
   const now = new Date();
