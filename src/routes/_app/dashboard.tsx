@@ -203,6 +203,13 @@ function DashboardPage() {
           hint={`${formatCurrency(totalConfirmado)} confirmado`} />
         <StatCard label="Maior categoria" value={topCategory?.name ?? "—"} icon={Crown}
           hint={topCategory ? formatCurrency(topCategory.value) : undefined} />
+        <StatCard label="Patrimônio total" value={formatCurrency(fin.patrimonioTotal)} icon={Sparkles} gradient
+          hint="contas + investimentos" />
+        <StatCard label="Investido" value={formatCurrency(fin.valorAtualInvestimentos)} icon={PiggyBank} />
+        <StatCard label="Rendimento" value={formatCurrency(fin.rendimentoTotal)} icon={TrendingUp}
+          accent={fin.rendimentoTotal >= 0 ? "success" : "destructive"} />
+        <StatCard label="Aportes do mês" value={formatCurrency(fin.aportesMes)} icon={TrendingDown} />
+
       </div>
 
       {/* Próxima recarga + Cartões + Faturas */}
