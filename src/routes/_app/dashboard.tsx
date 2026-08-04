@@ -18,9 +18,11 @@ import {
   useAccounts, useCategories, useRecurring, useTransactions,
   useRecharges, useCreditCards, useCreditCardBills,
 } from "@/hooks/use-finance-data";
+import { useFinancialContext } from "@/hooks/use-financial-context";
 import { formatCurrency } from "@/lib/format";
 import { TransactionDialog } from "@/components/transaction-dialog";
 import { StatCard } from "@/components/stat-card";
+
 
 export const Route = createFileRoute("/_app/dashboard")({ component: DashboardPage });
 
@@ -32,6 +34,8 @@ function DashboardPage() {
   const { data: recharges = [] } = useRecharges();
   const { data: cards = [] } = useCreditCards();
   const { data: bills = [] } = useCreditCardBills();
+  const fin = useFinancialContext();
+
   const [openTx, setOpenTx] = useState(false);
 
   const now = new Date();
@@ -199,6 +203,13 @@ function DashboardPage() {
           hint={`${formatCurrency(totalConfirmado)} confirmado`} />
         <StatCard label="Maior categoria" value={topCategory?.name ?? "—"} icon={Crown}
           hint={topCategory ? formatCurrency(topCategory.value) : undefined} />
+        <StatCard label="Patrimônio total" value={formatCurrency(fin.patrimonioTotal)} icon={Sparkles} gradient
+          hint="contas + investimentos" />
+        <StatCard label="Investido" value={formatCurrency(fin.valorAtualInvestimentos)} icon={PiggyBank} />
+        <StatCard label="Rendimento" value={formatCurrency(fin.rendimentoTotal)} icon={TrendingUp}
+          accent={fin.rendimentoTotal >= 0 ? "success" : "destructive"} />
+        <StatCard label="Aportes do mês" value={formatCurrency(fin.aportesMes)} icon={TrendingDown} />
+
       </div>
 
       {/* Próxima recarga + Cartões + Faturas */}

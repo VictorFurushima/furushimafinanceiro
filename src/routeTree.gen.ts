@@ -24,9 +24,12 @@ import { Route as AppGoalsRouteImport } from './routes/_app/goals'
 import { Route as AppImportRouteImport } from './routes/_app/import'
 import { Route as AppImportPrintsRouteImport } from './routes/_app/import-prints'
 import { Route as AppIncomeRouteImport } from './routes/_app/income'
+import { Route as AppInvestmentsRouteImport } from './routes/_app/investments'
+import { Route as AppNotesRouteImport } from './routes/_app/notes'
 import { Route as AppRechargesRouteImport } from './routes/_app/recharges'
 import { Route as AppRecurringRouteImport } from './routes/_app/recurring'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
+import { Route as AppShoppingPlannerRouteImport } from './routes/_app/shopping-planner'
 import { Route as AppStatisticsRouteImport } from './routes/_app/statistics'
 import { Route as AppTimelineRouteImport } from './routes/_app/timeline'
 import { Route as AppTransactionsRouteImport } from './routes/_app/transactions'
@@ -109,6 +112,16 @@ const AppIncomeRoute = AppIncomeRouteImport.update({
   path: '/income',
   getParentRoute: () => AppRoute,
 } as any)
+const AppInvestmentsRoute = AppInvestmentsRouteImport.update({
+  id: '/investments',
+  path: '/investments',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNotesRoute = AppNotesRouteImport.update({
+  id: '/notes',
+  path: '/notes',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppRechargesRoute = AppRechargesRouteImport.update({
   id: '/recharges',
   path: '/recharges',
@@ -122,6 +135,11 @@ const AppRecurringRoute = AppRecurringRouteImport.update({
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppShoppingPlannerRoute = AppShoppingPlannerRouteImport.update({
+  id: '/shopping-planner',
+  path: '/shopping-planner',
   getParentRoute: () => AppRoute,
 } as any)
 const AppStatisticsRoute = AppStatisticsRouteImport.update({
@@ -166,9 +184,12 @@ export interface FileRoutesByFullPath {
   '/import': typeof AppImportRoute
   '/import-prints': typeof AppImportPrintsRoute
   '/income': typeof AppIncomeRoute
+  '/investments': typeof AppInvestmentsRoute
+  '/notes': typeof AppNotesRoute
   '/recharges': typeof AppRechargesRoute
   '/recurring': typeof AppRecurringRoute
   '/settings': typeof AppSettingsRoute
+  '/shopping-planner': typeof AppShoppingPlannerRoute
   '/statistics': typeof AppStatisticsRoute
   '/timeline': typeof AppTimelineRoute
   '/transactions': typeof AppTransactionsRoute
@@ -190,9 +211,12 @@ export interface FileRoutesByTo {
   '/import': typeof AppImportRoute
   '/import-prints': typeof AppImportPrintsRoute
   '/income': typeof AppIncomeRoute
+  '/investments': typeof AppInvestmentsRoute
+  '/notes': typeof AppNotesRoute
   '/recharges': typeof AppRechargesRoute
   '/recurring': typeof AppRecurringRoute
   '/settings': typeof AppSettingsRoute
+  '/shopping-planner': typeof AppShoppingPlannerRoute
   '/statistics': typeof AppStatisticsRoute
   '/timeline': typeof AppTimelineRoute
   '/transactions': typeof AppTransactionsRoute
@@ -216,9 +240,12 @@ export interface FileRoutesById {
   '/_app/import': typeof AppImportRoute
   '/_app/import-prints': typeof AppImportPrintsRoute
   '/_app/income': typeof AppIncomeRoute
+  '/_app/investments': typeof AppInvestmentsRoute
+  '/_app/notes': typeof AppNotesRoute
   '/_app/recharges': typeof AppRechargesRoute
   '/_app/recurring': typeof AppRecurringRoute
   '/_app/settings': typeof AppSettingsRoute
+  '/_app/shopping-planner': typeof AppShoppingPlannerRoute
   '/_app/statistics': typeof AppStatisticsRoute
   '/_app/timeline': typeof AppTimelineRoute
   '/_app/transactions': typeof AppTransactionsRoute
@@ -242,9 +269,12 @@ export interface FileRouteTypes {
     | '/import'
     | '/import-prints'
     | '/income'
+    | '/investments'
+    | '/notes'
     | '/recharges'
     | '/recurring'
     | '/settings'
+    | '/shopping-planner'
     | '/statistics'
     | '/timeline'
     | '/transactions'
@@ -266,9 +296,12 @@ export interface FileRouteTypes {
     | '/import'
     | '/import-prints'
     | '/income'
+    | '/investments'
+    | '/notes'
     | '/recharges'
     | '/recurring'
     | '/settings'
+    | '/shopping-planner'
     | '/statistics'
     | '/timeline'
     | '/transactions'
@@ -291,9 +324,12 @@ export interface FileRouteTypes {
     | '/_app/import'
     | '/_app/import-prints'
     | '/_app/income'
+    | '/_app/investments'
+    | '/_app/notes'
     | '/_app/recharges'
     | '/_app/recurring'
     | '/_app/settings'
+    | '/_app/shopping-planner'
     | '/_app/statistics'
     | '/_app/timeline'
     | '/_app/transactions'
@@ -420,6 +456,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIncomeRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/investments': {
+      id: '/_app/investments'
+      path: '/investments'
+      fullPath: '/investments'
+      preLoaderRoute: typeof AppInvestmentsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/notes': {
+      id: '/_app/notes'
+      path: '/notes'
+      fullPath: '/notes'
+      preLoaderRoute: typeof AppNotesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/recharges': {
       id: '/_app/recharges'
       path: '/recharges'
@@ -439,6 +489,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/shopping-planner': {
+      id: '/_app/shopping-planner'
+      path: '/shopping-planner'
+      fullPath: '/shopping-planner'
+      preLoaderRoute: typeof AppShoppingPlannerRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/statistics': {
@@ -488,9 +545,12 @@ interface AppRouteChildren {
   AppImportRoute: typeof AppImportRoute
   AppImportPrintsRoute: typeof AppImportPrintsRoute
   AppIncomeRoute: typeof AppIncomeRoute
+  AppInvestmentsRoute: typeof AppInvestmentsRoute
+  AppNotesRoute: typeof AppNotesRoute
   AppRechargesRoute: typeof AppRechargesRoute
   AppRecurringRoute: typeof AppRecurringRoute
   AppSettingsRoute: typeof AppSettingsRoute
+  AppShoppingPlannerRoute: typeof AppShoppingPlannerRoute
   AppStatisticsRoute: typeof AppStatisticsRoute
   AppTimelineRoute: typeof AppTimelineRoute
   AppTransactionsRoute: typeof AppTransactionsRoute
@@ -505,9 +565,12 @@ const AppRouteChildren: AppRouteChildren = {
   AppImportRoute: AppImportRoute,
   AppImportPrintsRoute: AppImportPrintsRoute,
   AppIncomeRoute: AppIncomeRoute,
+  AppInvestmentsRoute: AppInvestmentsRoute,
+  AppNotesRoute: AppNotesRoute,
   AppRechargesRoute: AppRechargesRoute,
   AppRecurringRoute: AppRecurringRoute,
   AppSettingsRoute: AppSettingsRoute,
+  AppShoppingPlannerRoute: AppShoppingPlannerRoute,
   AppStatisticsRoute: AppStatisticsRoute,
   AppTimelineRoute: AppTimelineRoute,
   AppTransactionsRoute: AppTransactionsRoute,

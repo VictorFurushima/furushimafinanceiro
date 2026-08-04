@@ -2,12 +2,14 @@ import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard, ArrowLeftRight, Target, Wallet, LogOut,
   Repeat, BarChart3, Upload, Settings, ArrowDownToLine,
-  Inbox, CreditCard, CalendarClock, ScanLine,
+  Inbox, CreditCard, CalendarClock, ScanLine, PiggyBank, StickyNote, ShoppingCart,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
+import { useRole } from "@/hooks/use-role";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/furushima-logo.jpg";
 
@@ -15,6 +17,9 @@ const items = [
   { to: "/dashboard", label: "Visão Geral", short: "Início", icon: LayoutDashboard },
   { to: "/transactions", label: "Transações", short: "Gastos", icon: ArrowLeftRight },
   { to: "/income", label: "Receitas", short: "Receitas", icon: ArrowDownToLine },
+  { to: "/investments", label: "Investimentos", short: "Invest.", icon: PiggyBank },
+  { to: "/shopping-planner", label: "Planejador de Compras", short: "Compras", icon: ShoppingCart },
+  { to: "/notes", label: "Anotações", short: "Notas", icon: StickyNote },
   { to: "/recharges", label: "Recargas de Saldo", short: "Recargas", icon: Inbox },
   { to: "/cards", label: "Cartões", short: "Cartões", icon: CreditCard },
   { to: "/timeline", label: "Linha do Tempo", short: "Linha", icon: CalendarClock },
@@ -29,12 +34,15 @@ const items = [
 ] as const;
 
 const mobileItems = items.filter((i) =>
-  ["/dashboard", "/transactions", "/income", "/import-prints", "/recharges", "/recurring", "/settings"].includes(i.to),
+  ["/dashboard", "/transactions", "/investments", "/shopping-planner", "/notes", "/recharges", "/settings"].includes(i.to),
 );
+
 
 export function AppSidebar() {
   const path = useRouterState({ select: (r) => r.location.pathname });
   const { user } = useAuth();
+  const { isViewer } = useRole();
+
   const navigate = useNavigate();
 
   const logout = async () => {
@@ -78,7 +86,11 @@ export function AppSidebar() {
         <div className="px-3 py-2">
           <p className="text-xs text-muted-foreground">Conectado como</p>
           <p className="text-sm truncate">{user?.email}</p>
+          {isViewer && (
+            <Badge variant="outline" className="mt-1 text-[10px]">Modo espectador</Badge>
+          )}
         </div>
+
         <button onClick={logout} className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent transition">
           <LogOut className="h-4 w-4" />
           Sair
