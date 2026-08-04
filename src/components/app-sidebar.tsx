@@ -86,7 +86,11 @@ export function AppSidebar() {
         <div className="px-3 py-2">
           <p className="text-xs text-muted-foreground">Conectado como</p>
           <p className="text-sm truncate">{user?.email}</p>
+          {isViewer && (
+            <Badge variant="outline" className="mt-1 text-[10px]">Modo espectador</Badge>
+          )}
         </div>
+
         <button onClick={logout} className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent transition">
           <LogOut className="h-4 w-4" />
           Sair
