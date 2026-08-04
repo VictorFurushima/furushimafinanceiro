@@ -18,9 +18,11 @@ import {
   useAccounts, useCategories, useRecurring, useTransactions,
   useRecharges, useCreditCards, useCreditCardBills,
 } from "@/hooks/use-finance-data";
+import { useFinancialContext } from "@/hooks/use-financial-context";
 import { formatCurrency } from "@/lib/format";
 import { TransactionDialog } from "@/components/transaction-dialog";
 import { StatCard } from "@/components/stat-card";
+
 
 export const Route = createFileRoute("/_app/dashboard")({ component: DashboardPage });
 
