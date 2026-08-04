@@ -41,6 +41,8 @@ const mobileItems = items.filter((i) =>
 export function AppSidebar() {
   const path = useRouterState({ select: (r) => r.location.pathname });
   const { user } = useAuth();
+  const { isViewer } = useRole();
+
   const navigate = useNavigate();
 
   const logout = async () => {
