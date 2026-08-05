@@ -117,7 +117,7 @@ export function RechargeDialog({
             <Input value={name} onChange={(e) => setName(e.target.value)}
               placeholder="Ex: Salário, Freelance, Reembolso..." required maxLength={100} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Tipo</Label>
               <Select value={type} onValueChange={setType}>
@@ -132,7 +132,7 @@ export function RechargeDialog({
               <Input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0,00" inputMode="decimal" required />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Data esperada</Label>
               <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
@@ -158,7 +158,7 @@ export function RechargeDialog({
               </Select>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Conta</Label>
                 <Select value={accountId} onValueChange={setAccountId}>

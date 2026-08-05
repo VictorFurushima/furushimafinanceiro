@@ -103,7 +103,7 @@ export function RecurringDialog({
             <Label>Nome</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Netflix, Spotify..." required maxLength={100} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Valor (R$)</Label>
               <Input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0,00" inputMode="decimal" required />
@@ -113,7 +113,7 @@ export function RecurringDialog({
               <Input type="number" min={1} max={31} value={billingDay} onChange={(e) => setBillingDay(parseInt(e.target.value) || 1)} required />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Categoria</Label>
               <Select value={categoryId} onValueChange={setCategoryId}>
@@ -133,7 +133,7 @@ export function RecurringDialog({
               </Select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Forma de pagamento</Label>
               <Select value={paymentMethod} onValueChange={setPaymentMethod}>
@@ -153,7 +153,7 @@ export function RecurringDialog({
               </Select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Início</Label>
               <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />

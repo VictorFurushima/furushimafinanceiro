@@ -85,11 +85,11 @@ function RechargesPage() {
   };
 
   return (
-    <div className="p-6 lg:p-10 space-y-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-10 space-y-6 max-w-7xl mx-auto">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-sm text-muted-foreground">Previsão de entradas e liberação de limite</p>
-          <h1 className="font-display text-4xl font-bold mt-1">Recargas de Saldo</h1>
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold mt-1">Recargas de Saldo</h1>
         </div>
         <Button onClick={() => { setEditing(null); setOpen(true); }}
           className="bg-gradient-primary text-primary-foreground shadow-glow">

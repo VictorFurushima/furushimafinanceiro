@@ -103,9 +103,9 @@ function StatisticsPage() {
   const PALETTE = ["#22d3ee", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
 
   return (
-    <div className="p-6 lg:p-10 max-w-7xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 lg:p-10 max-w-7xl mx-auto space-y-6">
       <header className="flex items-center justify-between flex-wrap gap-4">
-        <h1 className="font-display text-4xl font-bold">Estatísticas</h1>
+        <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold">Estatísticas</h1>
         <Select value={String(months)} onValueChange={(v) => setMonths(parseInt(v))}>
           <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -127,7 +127,7 @@ function StatisticsPage() {
         <Card className="bg-gradient-card border-border/50 shadow-card">
           <CardHeader><CardTitle className="font-display">Receitas vs Despesas</CardTitle></CardHeader>
           <CardContent>
-            <div className="h-72">
+            <div className="h-56 sm:h-72">
               <ResponsiveContainer>
                 <BarChart data={monthlyData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.28 0.05 215)" />
@@ -145,7 +145,7 @@ function StatisticsPage() {
         <Card className="bg-gradient-card border-border/50 shadow-card">
           <CardHeader><CardTitle className="font-display">Gastos por dia da semana</CardTitle></CardHeader>
           <CardContent>
-            <div className="h-72">
+            <div className="h-56 sm:h-72">
               <ResponsiveContainer>
                 <BarChart data={dayHeat}>
                   <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.28 0.05 215)" />
@@ -162,7 +162,7 @@ function StatisticsPage() {
         <Card className="bg-gradient-card border-border/50 shadow-card">
           <CardHeader><CardTitle className="font-display">Evolução do saldo</CardTitle></CardHeader>
           <CardContent>
-            <div className="h-72">
+            <div className="h-56 sm:h-72">
               <ResponsiveContainer>
                 <LineChart data={balanceEvo}>
                   <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.28 0.05 215)" />
@@ -182,7 +182,7 @@ function StatisticsPage() {
             {paymentBreakdown.length === 0 ? (
               <p className="text-sm text-muted-foreground py-12 text-center">Sem dados de forma de pagamento.</p>
             ) : (
-              <div className="h-72">
+              <div className="h-56 sm:h-72">
                 <ResponsiveContainer>
                   <PieChart>
                     <Pie data={paymentBreakdown} dataKey="value" innerRadius={55} outerRadius={90} paddingAngle={3}>

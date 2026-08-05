@@ -165,7 +165,7 @@ function ImportPrintsPage() {
   };
 
   return (
-    <div className="p-3 sm:p-6 lg:p-10 max-w-6xl mx-auto space-y-6">
+    <div className="p-3 sm:p-4 sm:p-6 lg:p-10 max-w-6xl mx-auto space-y-6">
       <header>
         <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold">Importar por Print</h1>
         <p className="text-sm text-muted-foreground mt-1">

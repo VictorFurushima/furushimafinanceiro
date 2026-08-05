@@ -79,7 +79,7 @@ export function CreditCardDialog({
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Nome</Label>
               <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Nubank" required maxLength={60} />
@@ -89,7 +89,7 @@ export function CreditCardDialog({
               <Input value={bank} onChange={(e) => setBank(e.target.value)} placeholder="Ex: Nubank" maxLength={60} />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Limite total (R$)</Label>
               <Input value={total} onChange={(e) => setTotal(e.target.value)} inputMode="decimal" placeholder="0,00" required />
@@ -99,7 +99,7 @@ export function CreditCardDialog({
               <Input value={used} onChange={(e) => setUsed(e.target.value)} inputMode="decimal" placeholder="0,00" />
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="space-y-2">
               <Label>Fechamento</Label>
               <Input type="number" min={1} max={31} value={closing} onChange={(e) => setClosing(parseInt(e.target.value) || 1)} />

@@ -96,9 +96,9 @@ function ImportPage() {
   };
 
   return (
-    <div className="p-6 lg:p-10 max-w-5xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 lg:p-10 max-w-5xl mx-auto space-y-6">
       <header>
-        <h1 className="font-display text-4xl font-bold">Importar CSV</h1>
+        <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold">Importar CSV</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Colunas aceitas: <code className="text-primary">Data, Valor, Categoria, Descrição, Forma de Pagamento, Tipo</code>
         </p>

@@ -70,7 +70,7 @@ export function GoalDialog({
             <Label>Nome</Label>
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Viagem, Reserva..." required maxLength={100} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Valor alvo (R$)</Label>
               <Input value={target} onChange={(e) => setTarget(e.target.value)} placeholder="0,00" required />
@@ -80,7 +80,7 @@ export function GoalDialog({
               <Input value={current} onChange={(e) => setCurrent(e.target.value)} placeholder="0,00" />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Prazo</Label>
               <Input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} />

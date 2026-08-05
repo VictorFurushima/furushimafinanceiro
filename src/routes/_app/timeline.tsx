@@ -99,10 +99,10 @@ function TimelinePage() {
   }, [events]);
 
   return (
-    <div className="p-6 lg:p-10 space-y-6 max-w-4xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-10 space-y-6 max-w-4xl mx-auto">
       <header>
         <p className="text-sm text-muted-foreground">Próximos 60 dias</p>
-        <h1 className="font-display text-4xl font-bold mt-1">Linha do Tempo Financeira</h1>
+        <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold mt-1">Linha do Tempo Financeira</h1>
       </header>
 
       <Card className="bg-gradient-card border-border/50 shadow-card">

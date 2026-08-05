@@ -60,7 +60,7 @@ export function BillDialog({ open, onOpenChange }: { open: boolean; onOpenChange
               </SelectContent>
             </Select>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Mês</Label>
               <Input type="number" min={1} max={12} value={month} onChange={(e) => setMonth(parseInt(e.target.value) || 1)} />
@@ -70,7 +70,7 @@ export function BillDialog({ open, onOpenChange }: { open: boolean; onOpenChange
               <Input type="number" min={2020} max={2100} value={year} onChange={(e) => setYear(parseInt(e.target.value) || today.getFullYear())} />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Valor (R$)</Label>
               <Input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="decimal" placeholder="0,00" required />

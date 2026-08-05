@@ -37,12 +37,14 @@ function AppLayout() {
   }
   if (!user) return <Navigate to="/login" />;
   return (
-    <div className="min-h-screen flex w-full">
+    <div className="min-h-screen flex w-full overflow-x-hidden">
       <AppSidebar />
-      <main className="flex-1 pb-20 lg:pb-0">
+      <main className="flex-1 min-w-0 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-0">
         <Outlet />
       </main>
+
       <MobileNav />
     </div>
+
   );
 }

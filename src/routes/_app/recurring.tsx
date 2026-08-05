@@ -58,10 +58,10 @@ function RecurringPage() {
   const create = () => { setEditing(null); setOpen(true); };
 
   return (
-    <div className="p-6 lg:p-10 max-w-6xl mx-auto space-y-6">
-      <header className="flex items-center justify-between">
+    <div className="p-4 sm:p-6 lg:p-10 max-w-6xl mx-auto space-y-6">
+      <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-4xl font-bold">Assinaturas</h1>
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold">Assinaturas</h1>
           <p className="text-sm text-muted-foreground mt-1">
             {active.length} ativas · {formatCurrency(monthlyTotal)} por mês
           </p>
@@ -126,7 +126,7 @@ function RecurringPage() {
                     </p>
                   </div>
                   <span className="text-sm font-semibold text-destructive">{formatCurrency(Number(i.amount))}</span>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+                  <div className="flex items-center gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition">
                     <button onClick={() => toggleStatus(i)} className="p-2 text-muted-foreground hover:text-primary">
                       {i.status === "active" ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                     </button>

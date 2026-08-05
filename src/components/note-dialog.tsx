@@ -97,7 +97,7 @@ export function NoteDialog({
             <Label htmlFor="note-content">Conteúdo</Label>
             <Textarea id="note-content" value={content} onChange={(e) => setContent(e.target.value)} rows={6} maxLength={5000} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="note-date">Data</Label>
               <Input id="note-date" type="date" value={noteDate} onChange={(e) => setNoteDate(e.target.value)} />

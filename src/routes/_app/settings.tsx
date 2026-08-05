@@ -125,7 +125,7 @@ function SettingsPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-10 max-w-5xl mx-auto space-y-6">
+    <div className="p-4 sm:p-4 sm:p-6 lg:p-10 max-w-5xl mx-auto space-y-6">
       <h1 className="font-display text-3xl sm:text-4xl font-bold">Configurações</h1>
       {!isAdmin && (
         <p className="text-sm text-muted-foreground rounded-lg bg-secondary/30 p-3">{VIEWER_MESSAGE}</p>
@@ -159,7 +159,7 @@ function SettingsPage() {
                   <span className="text-xs text-muted-foreground">({c.type === "income" ? "receita" : "despesa"})</span>
                 </span>
                 {isAdmin && (
-                  <button onClick={() => delCategory(c.id)} aria-label={`Excluir categoria ${c.name}`} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive">
+                  <button onClick={() => delCategory(c.id)} aria-label={`Excluir categoria ${c.name}`} className="p-2 -m-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 text-muted-foreground hover:text-destructive">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 )}

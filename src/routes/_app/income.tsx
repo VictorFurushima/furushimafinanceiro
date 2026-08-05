@@ -34,10 +34,10 @@ function IncomePage() {
   };
 
   return (
-    <div className="p-6 lg:p-10 max-w-5xl mx-auto space-y-6">
-      <header className="flex items-center justify-between">
+    <div className="p-4 sm:p-6 lg:p-10 max-w-5xl mx-auto space-y-6">
+      <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-4xl font-bold">Receitas</h1>
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold">Receitas</h1>
           <p className="text-sm text-muted-foreground mt-1">Entradas de dinheiro</p>
         </div>
         <Button onClick={() => setOpen(true)} className="bg-success text-success-foreground hover:bg-success/90">
@@ -79,7 +79,7 @@ function IncomePage() {
                     </p>
                   </div>
                   <span className="text-sm font-semibold text-success">+ {formatCurrency(Number(t.amount))}</span>
-                  <button type="button" aria-label="Excluir receita" onClick={() => remove(t.id)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive">
+                  <button type="button" aria-label="Excluir receita" onClick={() => remove(t.id)} className="p-2 -m-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 text-muted-foreground hover:text-destructive">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </li>
