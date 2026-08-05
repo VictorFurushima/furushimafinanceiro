@@ -1,10 +1,14 @@
+import { useState } from "react";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard, ArrowLeftRight, Target, Wallet, LogOut,
   Repeat, BarChart3, Upload, Settings, ArrowDownToLine,
-  Inbox, CreditCard, CalendarClock, ScanLine, PiggyBank, StickyNote, ShoppingCart,
+  Inbox, CreditCard, CalendarClock, ScanLine, PiggyBank, StickyNote, ShoppingCart, Menu,
 } from "lucide-react";
 import { toast } from "sonner";
+
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -34,8 +38,9 @@ const items = [
 ] as const;
 
 const mobileItems = items.filter((i) =>
-  ["/dashboard", "/transactions", "/investments", "/shopping-planner", "/notes", "/recharges", "/settings"].includes(i.to),
+  ["/dashboard", "/transactions", "/investments", "/recharges"].includes(i.to),
 );
+
 
 
 export function AppSidebar() {
@@ -102,22 +107,104 @@ export function AppSidebar() {
 
 export function MobileNav() {
   const path = useRouterState({ select: (r) => r.location.pathname });
+  const [open, setOpen] = useState(false);
+  const { user } = useAuth();
+  const { isViewer } = useRole();
+  const navigate = useNavigate();
+
+  const logout = async () => {
+    setOpen(false);
+    await supabase.auth.signOut();
+    toast.success("Até logo!");
+    navigate({ to: "/login" });
+  };
+
+  const moreActive = !mobileItems.some((i) => i.to === path);
+
   return (
-    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-sidebar/95 backdrop-blur border-t border-sidebar-border px-2 py-2">
-      <div className="flex items-center justify-around">
+    <nav
+      className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-sidebar/95 backdrop-blur border-t border-sidebar-border px-1 pt-1"
+      style={{ paddingBottom: "max(0.25rem, env(safe-area-inset-bottom))" }}
+    >
+      <div className="flex items-stretch justify-around">
         {mobileItems.map((it) => {
           const active = path === it.to;
           return (
             <Link key={it.to} to={it.to} className={cn(
-              "flex flex-col items-center gap-1 px-3 py-2 rounded-lg text-[10px] transition",
+              "flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 rounded-lg text-[10px] leading-tight transition",
               active ? "text-primary-glow" : "text-muted-foreground"
             )}>
               <it.icon className="h-5 w-5" />
-              {it.short}
+              <span className="truncate max-w-full">{it.short}</span>
             </Link>
           );
         })}
+
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetTrigger asChild>
+            <button
+              type="button"
+              aria-label="Abrir menu completo"
+              className={cn(
+                "flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 rounded-lg text-[10px] leading-tight transition",
+                moreActive ? "text-primary-glow" : "text-muted-foreground",
+              )}
+            >
+              <Menu className="h-5 w-5" />
+              Mais
+            </button>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-[86vw] max-w-sm p-0 flex flex-col bg-sidebar">
+            <SheetHeader className="p-4 pb-3 border-b border-sidebar-border text-left">
+              <SheetTitle className="flex items-center gap-3">
+                <img src={logo} alt="Furushima Financeiro" className="h-9 w-9 rounded-lg object-cover" />
+                <span className="font-display">Furushima Financeiro</span>
+              </SheetTitle>
+            </SheetHeader>
+
+            <div className="flex-1 overflow-y-auto p-3 space-y-1 overscroll-contain">
+              {items.map((it) => {
+                const active = path === it.to;
+                return (
+                  <Link
+                    key={it.to}
+                    to={it.to}
+                    onClick={() => setOpen(false)}
+                    className={cn(
+                      "flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition",
+                      active
+                        ? "bg-gradient-primary text-primary-foreground shadow-glow font-medium"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent",
+                    )}
+                  >
+                    <it.icon className="h-4.5 w-4.5 shrink-0" />
+                    <span className="truncate">{it.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+
+            <div
+              className="border-t border-sidebar-border p-3 space-y-2"
+              style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+            >
+              <div className="px-2">
+                <p className="text-xs text-muted-foreground">Conectado como</p>
+                <p className="text-sm truncate">{user?.email}</p>
+                {isViewer && <Badge variant="outline" className="mt-1 text-[10px]">Modo espectador</Badge>}
+              </div>
+              <button
+                onClick={logout}
+                className="flex min-h-11 w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent transition"
+              >
+                <LogOut className="h-4 w-4" />
+                Sair
+              </button>
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
     </nav>
   );
 }
+

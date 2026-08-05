@@ -57,9 +57,9 @@ function AccountsPage() {
   };
 
   return (
-    <div className="p-6 lg:p-10 max-w-5xl mx-auto space-y-6">
-      <header className="flex items-center justify-between">
-        <h1 className="font-display text-4xl font-bold">Contas</h1>
+    <div className="p-4 sm:p-6 lg:p-10 max-w-5xl mx-auto space-y-6">
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold">Contas</h1>
         <Button onClick={() => setOpen(true)} className="bg-gradient-primary text-primary-foreground shadow-glow">
           <Plus className="h-4 w-4 mr-2" /> Nova
         </Button>
@@ -80,7 +80,7 @@ function AccountsPage() {
                   <div className="h-12 w-12 rounded-xl flex items-center justify-center" style={{ background: `${a.color}25`, color: a.color }}>
                     <Icon className="h-6 w-6" />
                   </div>
-                  <button onClick={() => remove(a.id)} className="opacity-0 group-hover:opacity-100 transition text-muted-foreground hover:text-destructive">
+                  <button onClick={() => remove(a.id)} className="p-2 -m-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition text-muted-foreground hover:text-destructive">
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>

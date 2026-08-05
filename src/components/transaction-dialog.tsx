@@ -117,7 +117,7 @@ export function TransactionDialog({
             </TabsList>
           </Tabs>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Valor (R$)</Label>
               <Input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0,00" inputMode="decimal" required autoFocus />
@@ -133,7 +133,7 @@ export function TransactionDialog({
             <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Ex: Almoço, Salário..." maxLength={200} />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Categoria</Label>
               <Select value={categoryId} onValueChange={setCategoryId}>
@@ -156,7 +156,7 @@ export function TransactionDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Conta</Label>
               <Select value={accountId} onValueChange={setAccountId}>

@@ -50,11 +50,11 @@ function CardsPage() {
   const openBills = bills.filter((b) => b.status !== "paga");
 
   return (
-    <div className="p-6 lg:p-10 space-y-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-10 space-y-6 max-w-7xl mx-auto">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-sm text-muted-foreground">Limites, faturas e vencimentos</p>
-          <h1 className="font-display text-4xl font-bold mt-1">Cartões de Crédito</h1>
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold mt-1">Cartões de Crédito</h1>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setBillOpen(true)}>

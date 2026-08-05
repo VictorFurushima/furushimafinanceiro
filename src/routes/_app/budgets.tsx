@@ -58,10 +58,10 @@ function BudgetsPage() {
   });
 
   return (
-    <div className="p-6 lg:p-10 max-w-5xl mx-auto space-y-6">
-      <header className="flex items-center justify-between">
+    <div className="p-4 sm:p-6 lg:p-10 max-w-5xl mx-auto space-y-6">
+      <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-4xl font-bold">Orçamentos</h1>
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold">Orçamentos</h1>
           <p className="text-sm text-muted-foreground mt-1 capitalize">
             {monthDate.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}
           </p>

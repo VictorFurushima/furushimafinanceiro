@@ -118,7 +118,7 @@ function ShoppingPlannerPage() {
   };
 
   return (
-    <div className="p-3 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 max-w-6xl mx-auto">
+    <div className="p-3 sm:p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 max-w-6xl mx-auto">
       <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div>
           <p className="text-xs sm:text-sm text-muted-foreground">Decida antes de gastar</p>

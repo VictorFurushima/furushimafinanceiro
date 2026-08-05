@@ -161,7 +161,7 @@ function InvestmentsPage() {
   const reminderInvestment = investments.find((i) => i.id === settings?.reminder_investment_id);
 
   return (
-    <div className="p-3 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 max-w-7xl mx-auto">
+    <div className="p-3 sm:p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 max-w-7xl mx-auto">
       <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div>
           <p className="text-xs sm:text-sm text-muted-foreground">Carteira, rendimento e projeções</p>
