@@ -14,14 +14,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  useCategories, useRecurring, useRecentTransactions,
-  useRecharges, useCreditCards, useCreditCardBills,
-} from "@/hooks/use-finance-data";
+import { useRecentTransactions } from "@/hooks/use-finance-data";
 import {
   useFinancialOverview, useMonthlySummary, useSpendingByCategory, useMonthlySeries,
+  useDashboardSnapshot, EMPTY_SNAPSHOT,
 } from "@/hooks/use-finance-aggregates";
-import { useFinancialContext } from "@/hooks/use-financial-context";
 import { formatCurrency } from "@/lib/format";
 import { TransactionDialog } from "@/components/transaction-dialog";
 import { StatCard } from "@/components/stat-card";
@@ -32,7 +29,6 @@ export const Route = createFileRoute("/_app/dashboard")({ component: DashboardPa
 
 function DashboardPage() {
   const now = new Date();
-  const today = new Date(now.toDateString());
 
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -45,12 +41,7 @@ function DashboardPage() {
   const { data: spending = [] } = useSpendingByCategory(iso(monthStart), iso(monthEnd));
   const { data: series = [] } = useMonthlySeries(6);
   const { data: recent = [] } = useRecentTransactions(6);
-  const { data: categories = [] } = useCategories();
-  const { data: recurring = [] } = useRecurring();
-  const { data: recharges = [] } = useRecharges();
-  const { data: cards = [] } = useCreditCards();
-  const { data: bills = [] } = useCreditCardBills();
-  const fin = useFinancialContext();
+  const { data: snap = EMPTY_SNAPSHOT } = useDashboardSnapshot();
 
   const [openTx, setOpenTx] = useState(false);
 
@@ -63,58 +54,19 @@ function DashboardPage() {
 
   const balance = overview?.saldo_disponivel ?? 0;
 
-  // ---- RECHARGES ----
-  const monthRecharges = recharges.filter((r) => {
-    const d = new Date(r.expected_date);
-    return d >= monthStart && d <= monthEnd && r.status !== "cancelada";
-  });
-  const totalPrevisto = monthRecharges
-    .filter((r) => r.status === "prevista" || r.status === "confirmada")
-    .filter((r) => r.recharge_type !== "bill_payment" && r.recharge_type !== "limit_release")
-    .reduce((s, r) => s + r.expected_amount, 0);
-  const totalConfirmado = monthRecharges
-    .filter((r) => r.status === "confirmada" || r.status === "recebida")
-    .filter((r) => r.recharge_type !== "bill_payment" && r.recharge_type !== "limit_release")
-    .reduce((s, r) => s + r.expected_amount, 0);
-
-  const nextRecharge = useMemo(() => {
-    return recharges
-      .filter((r) => r.status === "prevista" || r.status === "confirmada")
-      .filter((r) => new Date(r.expected_date) >= today)
-      .sort((a, b) => a.expected_date.localeCompare(b.expected_date))[0];
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recharges]);
-
-  const daysToRecharge = nextRecharge
-    ? Math.ceil((new Date(nextRecharge.expected_date).getTime() - today.getTime()) / 86400000)
-    : null;
-
-  const overdueRecharges = recharges.filter((r) => r.status === "atrasada");
-  const upcomingRecharges = recharges
-    .filter((r) => r.status === "prevista" || r.status === "confirmada")
-    .filter((r) => {
-      const d = new Date(r.expected_date);
-      return d >= today && (d.getTime() - today.getTime()) / 86400000 <= 3;
-    });
+  // ---- RECHARGES (agregado no Postgres) ----
+  const totalPrevisto = snap.recharges_previsto_mes;
+  const totalConfirmado = snap.recharges_confirmado_mes;
+  const nextRecharge = snap.next_recharge;
+  const daysToRecharge = nextRecharge ? nextRecharge.days : null;
 
   // Saldo previsto fim do mês = saldo atual + previstas restantes - recorrentes futuras
-  const remainingRecharges = monthRecharges
-    .filter((r) => r.status === "prevista" || r.status === "confirmada")
-    .filter((r) => r.recharge_type !== "bill_payment" && r.recharge_type !== "limit_release")
-    .reduce((s, r) => s + r.expected_amount, 0);
   const remainingSubs = overview?.contas_pendentes ?? 0;
-  const saldoPrevisto = balance + remainingRecharges - remainingSubs;
+  const saldoPrevisto = balance + snap.recharges_restante_mes - remainingSubs;
 
-  // ---- CARDS / BILLS ----
-  const openBills = bills.filter((b) => b.status !== "paga");
-  const upcomingBills = openBills
-    .map((b) => ({ ...b, days: Math.ceil((new Date(b.due_date).getTime() - today.getTime()) / 86400000) }))
-    .filter((b) => b.days <= 5)
-    .sort((a, b) => a.days - b.days);
-  const lowLimitCards = cards.filter((c) => {
-    const avail = c.total_limit - c.used_limit;
-    return c.total_limit > 0 && avail / c.total_limit < 0.2;
-  });
+  // ---- CARDS / BILLS (agregado no Postgres) ----
+  const cards = snap.cards;
+  const upcomingBills = snap.upcoming_bills;
 
   const monthlyData = useMemo(
     () =>
@@ -136,18 +88,17 @@ function DashboardPage() {
   const topCategory = byCategory[0];
 
   const alerts: { msg: string; tone: "destructive" | "warning" }[] = [];
-  if (overdueRecharges.length > 0)
-    alerts.push({ msg: `${overdueRecharges.length} recarga(s) atrasada(s)`, tone: "destructive" });
-  if (upcomingBills.length > 0)
-    alerts.push({ msg: `${upcomingBills.length} fatura(s) vencendo em até 5 dias`, tone: "warning" });
-  if (lowLimitCards.length > 0)
-    alerts.push({ msg: `Limite abaixo de 20% em ${lowLimitCards.length} cartão(ões)`, tone: "warning" });
+  if (snap.recharges_overdue_count > 0)
+    alerts.push({ msg: `${snap.recharges_overdue_count} recarga(s) atrasada(s)`, tone: "destructive" });
+  if (snap.upcoming_bills_count > 0)
+    alerts.push({ msg: `${snap.upcoming_bills_count} fatura(s) vencendo em até 5 dias`, tone: "warning" });
+  if (snap.cards_low_limit_count > 0)
+    alerts.push({ msg: `Limite abaixo de 20% em ${snap.cards_low_limit_count} cartão(ões)`, tone: "warning" });
   if (saldoPrevisto < 0)
     alerts.push({ msg: "Saldo previsto para o fim do mês está negativo", tone: "destructive" });
-  if (upcomingRecharges.length > 0)
-    alerts.push({ msg: `${upcomingRecharges.length} recarga(s) nos próximos 3 dias`, tone: "warning" });
+  if (snap.recharges_upcoming_count > 0)
+    alerts.push({ msg: `${snap.recharges_upcoming_count} recarga(s) nos próximos 3 dias`, tone: "warning" });
 
-  void categories;
 
 
   return (
@@ -189,12 +140,13 @@ function DashboardPage() {
           hint={`${formatCurrency(totalConfirmado)} confirmado`} />
         <StatCard label="Maior categoria" value={topCategory?.name ?? "—"} icon={Crown}
           hint={topCategory ? formatCurrency(topCategory.value) : undefined} />
-        <StatCard label="Patrimônio total" value={formatCurrency(fin.patrimonioTotal)} icon={Sparkles} gradient
+        <StatCard label="Patrimônio total" value={formatCurrency(overview?.patrimonio_total ?? 0)} icon={Sparkles} gradient
           hint="contas + investimentos" />
-        <StatCard label="Investido" value={formatCurrency(fin.valorAtualInvestimentos)} icon={PiggyBank} />
-        <StatCard label="Rendimento" value={formatCurrency(fin.rendimentoTotal)} icon={TrendingUp}
-          accent={fin.rendimentoTotal >= 0 ? "success" : "destructive"} />
-        <StatCard label="Aportes do mês" value={formatCurrency(fin.aportesMes)} icon={TrendingDown} />
+        <StatCard label="Investido" value={formatCurrency(overview?.valor_atual_investimentos ?? 0)} icon={PiggyBank} />
+        <StatCard label="Rendimento" value={formatCurrency(overview?.rendimento_total ?? 0)} icon={TrendingUp}
+          accent={(overview?.rendimento_total ?? 0) >= 0 ? "success" : "destructive"} />
+        <StatCard label="Aportes do mês" value={formatCurrency(overview?.aportes_mes ?? 0)} icon={TrendingDown} />
+
 
       </div>
 
@@ -265,11 +217,11 @@ function DashboardPage() {
             ) : (
               <ul className="space-y-2">
                 {upcomingBills.slice(0, 4).map((b) => {
-                  const card = cards.find((c) => c.id === b.card_id);
                   return (
                     <li key={b.id} className="flex items-center justify-between p-2 rounded-lg bg-secondary/40">
                       <div>
-                        <p className="text-sm font-medium">{card?.name ?? "Cartão"}</p>
+                        <p className="text-sm font-medium">{b.card_name ?? "Cartão"}</p>
+
                         <p className="text-xs text-muted-foreground">
                           {b.days <= 0 ? "Vencida" : `Vence em ${b.days}d`}
                         </p>
@@ -391,15 +343,8 @@ function DashboardPage() {
           </CardHeader>
           <CardContent>
             {(() => {
-              const subs = recurring
-                .filter((r) => r.status === "active" && r.frequency === "monthly")
-                .map((r) => {
-                  const next = new Date(now.getFullYear(), now.getMonth(), r.billing_day);
-                  if (next < now) next.setMonth(next.getMonth() + 1);
-                  return { ...r, next, days: Math.ceil((next.getTime() - now.getTime()) / 86400000) };
-                })
-                .sort((a, b) => a.days - b.days)
-                .slice(0, 4);
+              const subs = snap.upcoming_subscriptions;
+
               if (subs.length === 0) return <p className="text-sm text-muted-foreground py-8 text-center">Nenhuma assinatura ativa.</p>;
               return (
                 <ul className="space-y-2">

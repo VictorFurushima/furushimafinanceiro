@@ -200,3 +200,92 @@ export const useStatisticsExtras = (from: string, to: string, top = 10) =>
       };
     },
   });
+
+export interface DashboardSnapshot {
+  recharges_previsto_mes: number;
+  recharges_confirmado_mes: number;
+  recharges_restante_mes: number;
+  next_recharge: {
+    name: string;
+    expected_amount: number;
+    expected_date: string;
+    days: number;
+  } | null;
+  recharges_overdue_count: number;
+  recharges_upcoming_count: number;
+  cards: { id: string; name: string; total_limit: number; used_limit: number }[];
+  cards_count: number;
+  cards_low_limit_count: number;
+  upcoming_bills: {
+    id: string;
+    card_name: string | null;
+    amount: number;
+    due_date: string;
+    days: number;
+  }[];
+  upcoming_bills_count: number;
+  upcoming_subscriptions: { id: string; name: string; amount: number; days: number }[];
+}
+
+export const EMPTY_SNAPSHOT: DashboardSnapshot = {
+  recharges_previsto_mes: 0,
+  recharges_confirmado_mes: 0,
+  recharges_restante_mes: 0,
+  next_recharge: null,
+  recharges_overdue_count: 0,
+  recharges_upcoming_count: 0,
+  cards: [],
+  cards_count: 0,
+  cards_low_limit_count: 0,
+  upcoming_bills: [],
+  upcoming_bills_count: 0,
+  upcoming_subscriptions: [],
+};
+
+export const useDashboardSnapshot = () =>
+  useQuery({
+    queryKey: financeKeys.dashboardSnapshot,
+    queryFn: async (): Promise<DashboardSnapshot> => {
+      const { data, error } = await supabase.rpc("get_dashboard_snapshot");
+      if (error) throw error;
+      const raw = (data ?? {}) as Partial<DashboardSnapshot>;
+      const nr = raw.next_recharge;
+      return {
+        recharges_previsto_mes: num(raw.recharges_previsto_mes),
+        recharges_confirmado_mes: num(raw.recharges_confirmado_mes),
+        recharges_restante_mes: num(raw.recharges_restante_mes),
+        next_recharge: nr
+          ? {
+              name: nr.name,
+              expected_amount: num(nr.expected_amount),
+              expected_date: nr.expected_date,
+              days: num(nr.days),
+            }
+          : null,
+        recharges_overdue_count: num(raw.recharges_overdue_count),
+        recharges_upcoming_count: num(raw.recharges_upcoming_count),
+        cards: (raw.cards ?? []).map((c) => ({
+          id: c.id,
+          name: c.name,
+          total_limit: num(c.total_limit),
+          used_limit: num(c.used_limit),
+        })),
+        cards_count: num(raw.cards_count),
+        cards_low_limit_count: num(raw.cards_low_limit_count),
+        upcoming_bills: (raw.upcoming_bills ?? []).map((b) => ({
+          id: b.id,
+          card_name: b.card_name,
+          amount: num(b.amount),
+          due_date: b.due_date,
+          days: num(b.days),
+        })),
+        upcoming_bills_count: num(raw.upcoming_bills_count),
+        upcoming_subscriptions: (raw.upcoming_subscriptions ?? []).map((s) => ({
+          id: s.id,
+          name: s.name,
+          amount: num(s.amount),
+          days: num(s.days),
+        })),
+      };
+    },
+  });
