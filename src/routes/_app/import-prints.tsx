@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidateFinance } from "@/lib/query-keys";
 import { useAuth } from "@/hooks/use-auth";
 import { useCategories, useAccounts } from "@/hooks/use-finance-data";
 import { PAYMENT_METHODS } from "@/lib/finance-constants";
@@ -258,7 +259,7 @@ function ImportPrintsPage() {
                 categories={categories} accounts={accounts}
                 onChanged={() => {
                   qc.invalidateQueries({ queryKey: ["ocr-detected"] });
-                  qc.invalidateQueries({ queryKey: ["transactions"] });
+                  invalidateFinance(qc, "transactions");
                 }} />
             ))}
           </CardContent>

@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { useCreditCards, useCreditCardBills, type CreditCard } from "@/hooks/use-finance-data";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidateFinance } from "@/lib/query-keys";
 import { formatCurrency } from "@/lib/format";
 import { CreditCardDialog } from "@/components/credit-card-dialog";
 import { BillDialog } from "@/components/bill-dialog";
@@ -36,15 +37,14 @@ function CardsPage() {
     const { error } = await supabase.from("credit_cards").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
     toast.success("Cartão excluído");
-    qc.invalidateQueries({ queryKey: ["credit_cards"] });
+    invalidateFinance(qc, "cards");
   };
 
   const payBill = async (billId: string) => {
     const { error } = await supabase.rpc("pay_credit_card_bill", { p_bill_id: billId });
     if (error) { toast.error(error.message); return; }
     toast.success("Fatura paga — limite recarregado");
-    qc.invalidateQueries({ queryKey: ["credit_card_bills"] });
-    qc.invalidateQueries({ queryKey: ["credit_cards"] });
+    invalidateFinance(qc, "cards");
   };
 
   const openBills = bills.filter((b) => b.status !== "paga");

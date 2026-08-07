@@ -12,6 +12,7 @@ import { useGoals, type Goal } from "@/hooks/use-finance-data";
 import { formatCurrency } from "@/lib/format";
 import { GoalDialog } from "@/components/goal-dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidateFinance } from "@/lib/query-keys";
 
 export const Route = createFileRoute("/_app/goals")({ component: GoalsPage });
 
@@ -26,14 +27,14 @@ function GoalsPage() {
     const { error } = await supabase.from("goals").delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Removida");
-    qc.invalidateQueries({ queryKey: ["goals"] });
+    invalidateFinance(qc, "goals");
   };
 
   const updateAmount = async (g: Goal, delta: number) => {
     const newAmount = Math.max(0, Number(g.current_amount) + delta);
     const { error } = await supabase.from("goals").update({ current_amount: newAmount }).eq("id", g.id);
     if (error) return toast.error(error.message);
-    qc.invalidateQueries({ queryKey: ["goals"] });
+    invalidateFinance(qc, "goals");
   };
 
   return (

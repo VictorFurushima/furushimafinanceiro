@@ -22,6 +22,7 @@ import { StatCard } from "@/components/stat-card";
 import { InvestmentDialog } from "@/components/investment-dialog";
 import { InvestmentMoveDialog, type MoveKind } from "@/components/investment-move-dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidateFinance } from "@/lib/query-keys";
 import { useInvestments, useInvestmentEvents, useUserSettings, type Investment } from "@/hooks/use-app-data";
 import { useRole, VIEWER_MESSAGE } from "@/hooks/use-role";
 import { useSelic, formatSelicTimestamp } from "@/hooks/use-selic";
@@ -150,7 +151,7 @@ function InvestmentsPage() {
     const { error } = await supabase.from("investments").delete().eq("id", inv.id);
     if (error) return toast.error(error.message);
     toast.success("Investimento excluído");
-    qc.invalidateQueries({ queryKey: ["investments"] });
+    invalidateFinance(qc, "investments");
   };
 
   const openMove = (inv: Investment, kind: MoveKind) => {

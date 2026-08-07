@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidateFinance } from "@/lib/query-keys";
 import type { Investment } from "@/hooks/use-app-data";
 import {
   INVESTMENT_TYPES, LIQUIDITY_OPTIONS, RISK_OPTIONS, INVESTMENT_STATUS, investmentTypeColor,
@@ -110,8 +111,7 @@ export function InvestmentDialog({
         if (error) throw error;
       }
       toast.success(editing ? "Investimento atualizado" : "Investimento criado");
-      qc.invalidateQueries({ queryKey: ["investments"] });
-      qc.invalidateQueries({ queryKey: ["investment_events"] });
+      invalidateFinance(qc, "investments");
       onOpenChange(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao salvar");

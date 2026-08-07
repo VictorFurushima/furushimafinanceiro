@@ -11,7 +11,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
-import { useBudgets, useCategories, useTransactions } from "@/hooks/use-finance-data";
+import { useBudgets, useCategories } from "@/hooks/use-finance-data";
+import { useSpendingByCategory } from "@/hooks/use-finance-aggregates";
+import { invalidateFinance } from "@/lib/query-keys";
 import { formatCurrency, firstOfMonth, toISODate } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -22,9 +24,10 @@ export const Route = createFileRoute("/_app/budgets")({
 function BudgetsPage() {
   const monthDate = firstOfMonth();
   const monthStr = toISODate(monthDate);
+  const monthEnd = toISODate(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0));
   const { data: budgets = [] } = useBudgets(monthStr);
   const { data: categories = [] } = useCategories();
-  const { data: transactions = [] } = useTransactions();
+  const { data: spending = [] } = useSpendingByCategory(monthStr, monthEnd);
   const qc = useQueryClient();
 
   const [open, setOpen] = useState(false);
@@ -45,17 +48,14 @@ function BudgetsPage() {
     );
     if (error) return toast.error(error.message);
     toast.success("Orçamento salvo");
-    qc.invalidateQueries({ queryKey: ["budgets"] });
+    invalidateFinance(qc, "budgets");
     setOpen(false); setAmount(""); setCategoryId("");
   };
 
-  const spentByCat = new Map<string, number>();
-  transactions.forEach((t) => {
-    if (t.type !== "expense" || !t.category_id) return;
-    const d = new Date(t.occurred_at);
-    if (d.getMonth() !== monthDate.getMonth() || d.getFullYear() !== monthDate.getFullYear()) return;
-    spentByCat.set(t.category_id, (spentByCat.get(t.category_id) ?? 0) + Number(t.amount));
-  });
+  const spentByCat = new Map<string, number>(
+    spending.filter((s) => s.category_id).map((s) => [s.category_id as string, s.total]),
+  );
+
 
   return (
     <div className="p-4 sm:p-6 lg:p-10 max-w-5xl mx-auto space-y-6">

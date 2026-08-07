@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidateFinance } from "@/lib/query-keys";
 import { useAccounts } from "@/hooks/use-finance-data";
 import type { Investment } from "@/hooks/use-app-data";
 import { formatCurrency, toISODate } from "@/lib/format";
@@ -74,9 +75,8 @@ export function InvestmentMoveDialog({
         if (error) throw error;
         toast.success("Valor atualizado");
       }
-      qc.invalidateQueries({ queryKey: ["investments"] });
-      qc.invalidateQueries({ queryKey: ["investment_events"] });
-      qc.invalidateQueries({ queryKey: ["transactions"] });
+      invalidateFinance(qc, "investments");
+      invalidateFinance(qc, "transactions");
       setAmount(""); setNotes("");
       onOpenChange(false);
     } catch (err) {

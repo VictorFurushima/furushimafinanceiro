@@ -12,6 +12,7 @@ import { formatCurrency } from "@/lib/format";
 import { paymentLabel, FREQUENCIES } from "@/lib/finance-constants";
 import { RecurringDialog } from "@/components/recurring-dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidateFinance } from "@/lib/query-keys";
 
 export const Route = createFileRoute("/_app/recurring")({ component: RecurringPage });
 
@@ -43,7 +44,7 @@ function RecurringPage() {
     const { error } = await supabase.from("recurring_expenses").delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Removida");
-    qc.invalidateQueries({ queryKey: ["recurring"] });
+    invalidateFinance(qc, "recurring");
   };
 
   const toggleStatus = async (it: RecurringExpense) => {
@@ -51,7 +52,7 @@ function RecurringPage() {
     const { error } = await supabase.from("recurring_expenses").update({ status: newStatus }).eq("id", it.id);
     if (error) return toast.error(error.message);
     toast.success(newStatus === "active" ? "Ativada" : "Pausada");
-    qc.invalidateQueries({ queryKey: ["recurring"] });
+    invalidateFinance(qc, "recurring");
   };
 
   const edit = (it: RecurringExpense) => { setEditing(it); setOpen(true); };

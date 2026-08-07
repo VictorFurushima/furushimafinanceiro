@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { NoteDialog, NOTE_LINK_TYPES, noteLinkLabel } from "@/components/note-dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidateFinance } from "@/lib/query-keys";
 import { useNotes, type Note } from "@/hooks/use-app-data";
 import { useRole, VIEWER_MESSAGE } from "@/hooks/use-role";
 
@@ -49,7 +50,7 @@ function NotesPage() {
     const { error } = await supabase.from("notes").delete().eq("id", n.id);
     if (error) return toast.error(error.message);
     toast.success("Nota excluída");
-    qc.invalidateQueries({ queryKey: ["notes"] });
+    invalidateFinance(qc, "notes");
   };
 
   return (

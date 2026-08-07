@@ -1042,6 +1042,52 @@ export type Database = {
       }
       generate_recurring_recharges: { Args: never; Returns: number }
       generate_recurring_transactions: { Args: never; Returns: number }
+      get_account_balances: {
+        Args: never
+        Returns: {
+          balance: number
+          color: string
+          id: string
+          initial_balance: number
+          name: string
+          type: string
+        }[]
+      }
+      get_financial_overview: { Args: never; Returns: Json }
+      get_monthly_financial_summary: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          aportes: number
+          despesas: number
+          receitas: number
+          resgates: number
+          saldo_liquido: number
+        }[]
+      }
+      get_monthly_series: {
+        Args: { p_months?: number }
+        Returns: {
+          aportes: number
+          despesas: number
+          month: string
+          receitas: number
+          resgates: number
+        }[]
+      }
+      get_spending_by_category: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          category_id: string
+          color: string
+          icon: string
+          name: string
+          total: number
+        }[]
+      }
+      get_statistics_extras: {
+        Args: { p_from: string; p_to: string; p_top?: number }
+        Returns: Json
+      }
       grant_viewer_access: { Args: { p_email: string }; Returns: string }
       has_role: {
         Args: {

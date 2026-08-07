@@ -6,32 +6,43 @@ import { toast } from "sonner";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useTransactions } from "@/hooks/use-finance-data";
+import { useTransactionsPage } from "@/hooks/use-finance-data";
+import { useMonthlySummary } from "@/hooks/use-finance-aggregates";
+import { invalidateFinance } from "@/lib/query-keys";
 import { formatCurrency } from "@/lib/format";
 import { TransactionDialog } from "@/components/transaction-dialog";
 import { supabase } from "@/integrations/supabase/client";
 
+const iso = (d: Date) => d.toISOString().slice(0, 10);
+const PAGE_SIZE = 50;
+
 export const Route = createFileRoute("/_app/income")({ component: IncomePage });
 
 function IncomePage() {
-  const { data: transactions = [] } = useTransactions();
   const [open, setOpen] = useState(false);
+  const [page, setPage] = useState(0);
   const qc = useQueryClient();
-  const incomes = transactions.filter((t) => t.type === "income");
 
   const now = new Date();
-  const monthIncomes = incomes.filter((t) => {
-    const d = new Date(t.occurred_at);
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  });
-  const monthTotal = monthIncomes.reduce((s, t) => s + Number(t.amount), 0);
-  const totalAll = incomes.reduce((s, t) => s + Number(t.amount), 0);
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+  const { data: monthSummary } = useMonthlySummary(iso(monthStart), iso(monthEnd));
+  const { data: allTime } = useMonthlySummary("1900-01-01", iso(monthEnd));
+  const { data, isFetching } = useTransactionsPage({ type: "income", page, pageSize: PAGE_SIZE });
+
+  const incomes = data?.rows ?? [];
+  const totalCount = data?.count ?? 0;
+  const pageCount = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const monthTotal = monthSummary?.receitas ?? 0;
+  const totalAll = allTime?.receitas ?? 0;
 
   const remove = async (id: string) => {
     const { error } = await supabase.from("transactions").delete().eq("id", id);
     if (error) return toast.error(error.message);
-    qc.invalidateQueries({ queryKey: ["transactions"] });
+    invalidateFinance(qc, "transactions");
   };
+
 
   return (
     <div className="p-4 sm:p-6 lg:p-10 max-w-5xl mx-auto space-y-6">
@@ -86,7 +97,22 @@ function IncomePage() {
               ))}
             </ul>
           )}
+
+          {totalCount > PAGE_SIZE && (
+            <div className="flex items-center justify-between gap-3 pt-4 mt-2 border-t border-border/50">
+              <Button variant="outline" size="sm" disabled={page === 0 || isFetching}
+                onClick={() => setPage((p) => Math.max(0, p - 1))}>
+                Anterior
+              </Button>
+              <span className="text-xs text-muted-foreground">Página {page + 1} de {pageCount}</span>
+              <Button variant="outline" size="sm" disabled={page + 1 >= pageCount || isFetching}
+                onClick={() => setPage((p) => p + 1)}>
+                Próxima
+              </Button>
+            </div>
+          )}
         </CardContent>
+
       </Card>
 
       <TransactionDialog open={open} onOpenChange={setOpen} defaultType="income" />

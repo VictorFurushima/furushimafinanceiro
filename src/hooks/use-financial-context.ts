@@ -1,9 +1,6 @@
 import { useMemo } from "react";
-import {
-  useAccounts, useTransactions, useRecurring, useRecharges,
-  useCreditCardBills, useGoals, useCategoryLimits,
-} from "@/hooks/use-finance-data";
-import { useInvestments, useUserSettings, DEFAULT_SETTINGS } from "@/hooks/use-app-data";
+import { useGoals } from "@/hooks/use-finance-data";
+import { useFinancialOverview } from "@/hooks/use-finance-aggregates";
 import type { ContextoFinanceiro } from "@/lib/shopping-analysis";
 
 export interface FinancialOverview {
@@ -20,91 +17,33 @@ export interface FinancialOverview {
   loading: boolean;
 }
 
-const isRealFlow = (flow?: string | null) => (flow ?? "real") === "real";
-
+/**
+ * Todo o cálculo pesado acontece no Postgres (get_financial_overview).
+ * Aqui só montamos o contexto do planejador com metas (payload pequeno).
+ */
 export function useFinancialContext(): FinancialOverview {
-  const { data: accounts = [], isLoading: l1 } = useAccounts();
-  const { data: transactions = [], isLoading: l2 } = useTransactions();
-  const { data: recurring = [] } = useRecurring();
-  const { data: recharges = [] } = useRecharges();
-  const { data: bills = [] } = useCreditCardBills();
+  const { data: ov, isLoading } = useFinancialOverview();
   const { data: goals = [] } = useGoals();
-  const { data: limits = [] } = useCategoryLimits();
-  const { data: investments = [], isLoading: l3 } = useInvestments();
-  const { data: settingsRow } = useUserSettings();
-
-  const settings = { ...DEFAULT_SETTINGS, ...(settingsRow ?? {}) };
 
   return useMemo(() => {
-    const now = new Date();
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    const inMonth = (iso: string) => {
-      const d = new Date(iso);
-      return d >= monthStart && d <= monthEnd;
-    };
-
-    // Saldo disponível: contas e carteira física (todos os movimentos afetam a conta)
-    const saldoDisponivel =
-      accounts.reduce((s, a) => s + Number(a.initial_balance), 0) +
-      transactions.reduce(
-        (s, t) => s + (t.type === "income" ? Number(t.amount) : -Number(t.amount)),
-        0,
-      );
-
-    const ativos = investments.filter((i) => i.status !== "resgatado");
-    const totalInvestido = ativos.reduce((s, i) => s + i.invested_amount, 0);
-    const valorAtualInvestimentos = ativos.reduce((s, i) => s + i.current_amount, 0);
-    const rendimentoTotal = valorAtualInvestimentos - totalInvestido;
-
-    const mes = transactions.filter((t) => inMonth(t.occurred_at));
-    const gastosReaisMes = mes
-      .filter((t) => t.type === "expense" && isRealFlow(t.flow))
-      .reduce((s, t) => s + Number(t.amount), 0);
-    const receitasReaisMes = mes
-      .filter((t) => t.type === "income" && isRealFlow(t.flow))
-      .reduce((s, t) => s + Number(t.amount), 0);
-    const aportesMes = mes
-      .filter((t) => t.flow === "contribution")
-      .reduce((s, t) => s + Number(t.amount), 0);
-    const resgatesMes = mes
-      .filter((t) => t.flow === "redemption")
-      .reduce((s, t) => s + Number(t.amount), 0);
-
-    const gastosFixos = recurring
-      .filter((r) => r.status === "active" && r.frequency === "monthly")
-      .reduce((s, r) => s + Number(r.amount), 0);
-    const contasPendentes = recurring
-      .filter((r) => r.status === "active" && r.frequency === "monthly" && r.billing_day >= now.getDate())
-      .reduce((s, r) => s + Number(r.amount), 0);
-    const faturasAbertas = bills
-      .filter((b) => b.status !== "paga")
-      .reduce((s, b) => s + Number(b.amount), 0);
-    const faturasPrevistas = bills
-      .filter((b) => b.status !== "paga" && inMonth(b.due_date))
-      .reduce((s, b) => s + Number(b.amount), 0);
-
-    // Apenas receitas seguras (recorrentes / fixas). Receita variável não entra.
-    const receitasPrevistasSeguras = recharges
-      .filter((r) => r.recharge_type === "fixed_income")
-      .filter((r) => r.status === "prevista" || r.status === "confirmada" || r.status === "recebida")
-      .filter((r) => inMonth(r.expected_date))
-      .reduce((s, r) => s + r.expected_amount, 0);
-
-    const aportesProgramados = settings.reminder_enabled ? Number(settings.reminder_amount) : 0;
+    const o = ov;
+    const receitasPrevistasSeguras = o?.receitas_previstas_seguras ?? 0;
+    const receitasReaisMes = o?.receitas_reais_mes ?? 0;
+    const saldoDisponivel = o?.saldo_disponivel ?? 0;
+    const valorAtualInvestimentos = o?.valor_atual_investimentos ?? 0;
 
     const contexto: ContextoFinanceiro = {
       saldoDisponivel,
-      contasPendentes,
-      faturasAbertas,
-      reservaMinima: Number(settings.min_reserve),
+      contasPendentes: o?.contas_pendentes ?? 0,
+      faturasAbertas: o?.faturas_abertas ?? 0,
+      reservaMinima: o?.min_reserve ?? 0,
       receitasPrevistasSeguras: receitasPrevistasSeguras || receitasReaisMes,
-      gastosFixos,
-      faturasPrevistas,
-      aportesProgramados,
+      gastosFixos: o?.gastos_fixos ?? 0,
+      faturasPrevistas: o?.faturas_previstas ?? 0,
+      aportesProgramados: o?.aportes_programados ?? 0,
       metasObrigatorias: 0,
-      maxFreeBalancePct: Number(settings.max_free_balance_pct),
-      maxIncomeInstallmentPct: Number(settings.max_income_installment_pct),
+      maxFreeBalancePct: o?.max_free_balance_pct ?? 30,
+      maxIncomeInstallmentPct: o?.max_income_installment_pct ?? 20,
       rendaMensal: receitasPrevistasSeguras || receitasReaisMes,
       orcamentoCategoria: null,
       metas: goals.map((g) => ({
@@ -117,17 +56,16 @@ export function useFinancialContext(): FinancialOverview {
 
     return {
       saldoDisponivel,
-      totalInvestido,
+      totalInvestido: o?.total_investido ?? 0,
       valorAtualInvestimentos,
-      rendimentoTotal,
-      patrimonioTotal: saldoDisponivel + valorAtualInvestimentos,
-      gastosReaisMes,
+      rendimentoTotal: o?.rendimento_total ?? 0,
+      patrimonioTotal: o?.patrimonio_total ?? saldoDisponivel + valorAtualInvestimentos,
+      gastosReaisMes: o?.gastos_reais_mes ?? 0,
       receitasReaisMes,
-      aportesMes,
-      resgatesMes,
+      aportesMes: o?.aportes_mes ?? 0,
+      resgatesMes: o?.resgates_mes ?? 0,
       contexto,
-      loading: l1 || l2 || l3,
+      loading: isLoading,
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accounts, transactions, recurring, recharges, bills, goals, limits, investments, settingsRow, l1, l2, l3]);
+  }, [ov, goals, isLoading]);
 }

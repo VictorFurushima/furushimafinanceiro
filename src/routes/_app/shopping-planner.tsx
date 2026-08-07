@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { StatCard } from "@/components/stat-card";
 import { ShoppingDialog } from "@/components/shopping-dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidateFinance } from "@/lib/query-keys";
 import { useShoppingItems, type ShoppingItem } from "@/hooks/use-app-data";
 import { useFinancialContext } from "@/hooks/use-financial-context";
 import { useRole, VIEWER_MESSAGE } from "@/hooks/use-role";
@@ -82,7 +83,7 @@ function ShoppingPlannerPage() {
     const { error } = await supabase.from("shopping_items").delete().eq("id", i.id);
     if (error) return toast.error(error.message);
     toast.success("Item removido");
-    qc.invalidateQueries({ queryKey: ["shopping_items"] });
+    invalidateFinance(qc, "shopping");
   };
 
   const marcarComprado = async (i: ShoppingItem, precoFinal: number) => {
@@ -105,8 +106,8 @@ function ShoppingPlannerPage() {
       .update({ status: "comprado", transaction_id: tx.id }).eq("id", i.id);
     if (error) return toast.error(error.message);
     toast.success("Compra registrada nas transações");
-    qc.invalidateQueries({ queryKey: ["shopping_items"] });
-    qc.invalidateQueries({ queryKey: ["transactions"] });
+    invalidateFinance(qc, "shopping");
+    invalidateFinance(qc, "transactions");
   };
 
   const adiar = async (i: ShoppingItem) => {
@@ -114,7 +115,7 @@ function ShoppingPlannerPage() {
     const { error } = await supabase.from("shopping_items").update({ status: "adiado" }).eq("id", i.id);
     if (error) return toast.error(error.message);
     toast.success("Compra adiada");
-    qc.invalidateQueries({ queryKey: ["shopping_items"] });
+    invalidateFinance(qc, "shopping");
   };
 
   return (

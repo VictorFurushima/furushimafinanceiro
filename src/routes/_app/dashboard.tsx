@@ -15,20 +15,36 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
-  useAccounts, useCategories, useRecurring, useTransactions,
+  useCategories, useRecurring, useRecentTransactions,
   useRecharges, useCreditCards, useCreditCardBills,
 } from "@/hooks/use-finance-data";
+import {
+  useFinancialOverview, useMonthlySummary, useSpendingByCategory, useMonthlySeries,
+} from "@/hooks/use-finance-aggregates";
 import { useFinancialContext } from "@/hooks/use-financial-context";
 import { formatCurrency } from "@/lib/format";
 import { TransactionDialog } from "@/components/transaction-dialog";
 import { StatCard } from "@/components/stat-card";
 
+const iso = (d: Date) => d.toISOString().slice(0, 10);
 
 export const Route = createFileRoute("/_app/dashboard")({ component: DashboardPage });
 
 function DashboardPage() {
-  const { data: transactions = [] } = useTransactions();
-  const { data: accounts = [] } = useAccounts();
+  const now = new Date();
+  const today = new Date(now.toDateString());
+
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const prevStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+
+  const { data: overview } = useFinancialOverview();
+  const { data: month } = useMonthlySummary(iso(monthStart), iso(monthEnd));
+  const { data: prevMonth } = useMonthlySummary(iso(prevStart), iso(prevEnd));
+  const { data: spending = [] } = useSpendingByCategory(iso(monthStart), iso(monthEnd));
+  const { data: series = [] } = useMonthlySeries(6);
+  const { data: recent = [] } = useRecentTransactions(6);
   const { data: categories = [] } = useCategories();
   const { data: recurring = [] } = useRecurring();
   const { data: recharges = [] } = useRecharges();
@@ -38,33 +54,16 @@ function DashboardPage() {
 
   const [openTx, setOpenTx] = useState(false);
 
-  const now = new Date();
-  const today = new Date(now.toDateString());
-
-  const thisMonth = transactions.filter((t) => {
-    const d = new Date(t.occurred_at);
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  });
-  const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const lastMonth = transactions.filter((t) => {
-    const d = new Date(t.occurred_at);
-    return d.getMonth() === lastMonthDate.getMonth() && d.getFullYear() === lastMonthDate.getFullYear();
-  });
-
-  const income = thisMonth.filter((t) => t.type === "income").reduce((s, t) => s + Number(t.amount), 0);
-  const expense = thisMonth.filter((t) => t.type === "expense").reduce((s, t) => s + Number(t.amount), 0);
-  const lastExpense = lastMonth.filter((t) => t.type === "expense").reduce((s, t) => s + Number(t.amount), 0);
+  const income = month?.receitas ?? 0;
+  const expense = month?.despesas ?? 0;
+  const lastExpense = prevMonth?.despesas ?? 0;
   const economy = income - expense;
   const pctSpent = income > 0 ? (expense / income) * 100 : 0;
   const deltaVsLast = lastExpense > 0 ? ((expense - lastExpense) / lastExpense) * 100 : 0;
 
-  const balance =
-    accounts.reduce((s, a) => s + Number(a.initial_balance), 0) +
-    transactions.reduce((s, t) => s + (t.type === "income" ? Number(t.amount) : -Number(t.amount)), 0);
+  const balance = overview?.saldo_disponivel ?? 0;
 
   // ---- RECHARGES ----
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
   const monthRecharges = recharges.filter((r) => {
     const d = new Date(r.expected_date);
     return d >= monthStart && d <= monthEnd && r.status !== "cancelada";
@@ -83,6 +82,7 @@ function DashboardPage() {
       .filter((r) => r.status === "prevista" || r.status === "confirmada")
       .filter((r) => new Date(r.expected_date) >= today)
       .sort((a, b) => a.expected_date.localeCompare(b.expected_date))[0];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recharges]);
 
   const daysToRecharge = nextRecharge
@@ -102,10 +102,7 @@ function DashboardPage() {
     .filter((r) => r.status === "prevista" || r.status === "confirmada")
     .filter((r) => r.recharge_type !== "bill_payment" && r.recharge_type !== "limit_release")
     .reduce((s, r) => s + r.expected_amount, 0);
-  const remainingSubs = recurring
-    .filter((r) => r.status === "active" && r.frequency === "monthly")
-    .filter((r) => r.billing_day >= now.getDate())
-    .reduce((s, r) => s + Number(r.amount), 0);
+  const remainingSubs = overview?.contas_pendentes ?? 0;
   const saldoPrevisto = balance + remainingRecharges - remainingSubs;
 
   // ---- CARDS / BILLS ----
@@ -119,38 +116,24 @@ function DashboardPage() {
     return c.total_limit > 0 && avail / c.total_limit < 0.2;
   });
 
-  const monthlyData = useMemo(() => {
-    const months: { label: string; key: string; income: number; expense: number }[] = [];
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      months.push({
-        label: d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", ""),
-        key: `${d.getFullYear()}-${d.getMonth()}`, income: 0, expense: 0,
-      });
-    }
-    transactions.forEach((t) => {
-      const d = new Date(t.occurred_at);
-      const k = `${d.getFullYear()}-${d.getMonth()}`;
-      const m = months.find((x) => x.key === k);
-      if (m) { if (t.type === "income") m.income += Number(t.amount); else m.expense += Number(t.amount); }
-    });
-    return months;
-  }, [transactions]);
+  const monthlyData = useMemo(
+    () =>
+      series.map((p) => ({
+        label: new Date(`${p.month}T00:00:00`)
+          .toLocaleDateString("pt-BR", { month: "short" })
+          .replace(".", ""),
+        income: p.receitas,
+        expense: p.despesas,
+      })),
+    [series],
+  );
 
-  const byCategory = useMemo(() => {
-    const map = new Map<string, { name: string; value: number; color: string }>();
-    thisMonth.filter((t) => t.type === "expense").forEach((t) => {
-      const cat = categories.find((c) => c.id === t.category_id);
-      const key = cat?.id ?? "none";
-      const cur = map.get(key) ?? { name: cat?.name ?? "Sem categoria", value: 0, color: cat?.color ?? "#64748b" };
-      cur.value += Number(t.amount);
-      map.set(key, cur);
-    });
-    return Array.from(map.values()).sort((a, b) => b.value - a.value);
-  }, [thisMonth, categories]);
+  const byCategory = useMemo(
+    () => spending.map((s) => ({ name: s.name, value: s.total, color: s.color })),
+    [spending],
+  );
 
   const topCategory = byCategory[0];
-  const recent = transactions.slice(0, 6);
 
   const alerts: { msg: string; tone: "destructive" | "warning" }[] = [];
   if (overdueRecharges.length > 0)
@@ -163,6 +146,9 @@ function DashboardPage() {
     alerts.push({ msg: "Saldo previsto para o fim do mês está negativo", tone: "destructive" });
   if (upcomingRecharges.length > 0)
     alerts.push({ msg: `${upcomingRecharges.length} recarga(s) nos próximos 3 dias`, tone: "warning" });
+
+  void categories;
+
 
   return (
     <div className="p-3 sm:p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 max-w-7xl mx-auto">

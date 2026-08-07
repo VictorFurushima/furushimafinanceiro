@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { AppSidebar, MobileNav } from "@/components/app-sidebar";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidateFinance } from "@/lib/query-keys";
 
 export const Route = createFileRoute("/_app")({ component: AppLayout });
 
@@ -23,8 +24,8 @@ function AppLayout() {
         supabase.rpc("mark_overdue_recharges"),
       ]);
       localStorage.setItem(key, "1");
-      if ((tx.data ?? 0) > 0) qc.invalidateQueries({ queryKey: ["transactions"] });
-      if ((rc.data ?? 0) > 0 || (ov.data ?? 0) > 0) qc.invalidateQueries({ queryKey: ["recharges"] });
+      if ((tx.data ?? 0) > 0) invalidateFinance(qc, "transactions");
+      if ((rc.data ?? 0) > 0 || (ov.data ?? 0) > 0) invalidateFinance(qc, "recharges");
     })();
   }, [user, qc]);
 

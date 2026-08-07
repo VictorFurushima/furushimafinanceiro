@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidateFinance } from "@/lib/query-keys";
 import { useCategories, useAccounts, type RecurringExpense } from "@/hooks/use-finance-data";
 import { PAYMENT_METHODS, FREQUENCIES, RECURRING_STATUS } from "@/lib/finance-constants";
 import { toISODate } from "@/lib/format";
@@ -85,7 +86,7 @@ export function RecurringDialog({
         : await supabase.from("recurring_expenses").insert(payload);
       if (error) throw error;
       toast.success(editing ? "Atualizada" : "Assinatura criada");
-      qc.invalidateQueries({ queryKey: ["recurring"] });
+      invalidateFinance(qc, "recurring");
       onOpenChange(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao salvar");

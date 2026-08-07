@@ -8,9 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidateFinance } from "@/lib/query-keys";
 import { useAuth } from "@/hooks/use-auth";
 import { useInvestments, useShoppingItems, type Note } from "@/hooks/use-app-data";
-import { useGoals, useTransactions } from "@/hooks/use-finance-data";
+import { useGoals, useRecentTransactions } from "@/hooks/use-finance-data";
 import { toISODate } from "@/lib/format";
 
 export const NOTE_LINK_TYPES = [
@@ -32,7 +33,7 @@ export function NoteDialog({
   const { data: investments = [] } = useInvestments();
   const { data: goals = [] } = useGoals();
   const { data: shopping = [] } = useShoppingItems();
-  const { data: transactions = [] } = useTransactions(50);
+  const { data: transactions = [] } = useRecentTransactions(50);
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -77,7 +78,7 @@ export function NoteDialog({
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success(editing ? "Nota atualizada" : "Nota criada");
-    qc.invalidateQueries({ queryKey: ["notes"] });
+    invalidateFinance(qc, "notes");
     onOpenChange(false);
   };
 

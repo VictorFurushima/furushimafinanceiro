@@ -7,100 +7,102 @@ import {
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useTransactions, useCategories, useAccounts } from "@/hooks/use-finance-data";
+import {
+  useMonthlySeries, useSpendingByCategory, useStatisticsExtras,
+} from "@/hooks/use-finance-aggregates";
 import { formatCurrency } from "@/lib/format";
 import { paymentLabel } from "@/lib/finance-constants";
+
+const iso = (d: Date) => d.toISOString().slice(0, 10);
 
 export const Route = createFileRoute("/_app/statistics")({ component: StatisticsPage });
 
 function StatisticsPage() {
-  const { data: transactions = [] } = useTransactions();
-  const { data: categories = [] } = useCategories();
-  const { data: accounts = [] } = useAccounts();
   const [months, setMonths] = useState(6);
 
   const now = new Date();
-  const monthlyData = useMemo(() => {
-    const arr: { label: string; income: number; expense: number; net: number }[] = [];
-    for (let i = months - 1; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const next = new Date(d.getFullYear(), d.getMonth() + 1, 1);
-      const tx = transactions.filter((t) => {
-        const dt = new Date(t.occurred_at);
-        return dt >= d && dt < next;
-      });
-      const inc = tx.filter((t) => t.type === "income").reduce((s, t) => s + Number(t.amount), 0);
-      const exp = tx.filter((t) => t.type === "expense").reduce((s, t) => s + Number(t.amount), 0);
-      arr.push({
-        label: d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", ""),
-        income: inc, expense: exp, net: inc - exp,
-      });
-    }
-    return arr;
-  }, [transactions, months]);
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const prevStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+  const periodStart = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);
 
-  const thisMonth = transactions.filter((t) => {
-    const d = new Date(t.occurred_at);
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear() && t.type === "expense";
-  });
-  const lastMonth = transactions.filter((t) => {
-    const d = new Date(t.occurred_at);
-    const last = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    return d.getMonth() === last.getMonth() && d.getFullYear() === last.getFullYear() && t.type === "expense";
-  });
+  const { data: series = [] } = useMonthlySeries(months);
+  const { data: curCats = [] } = useSpendingByCategory(iso(monthStart), iso(monthEnd));
+  const { data: prevCats = [] } = useSpendingByCategory(iso(prevStart), iso(prevEnd));
+  const { data: extras } = useStatisticsExtras(iso(periodStart), iso(monthEnd), 10);
+
+  const monthlyData = useMemo(
+    () =>
+      series.map((p) => ({
+        label: new Date(`${p.month}T00:00:00`)
+          .toLocaleDateString("pt-BR", { month: "short" })
+          .replace(".", ""),
+        income: p.receitas,
+        expense: p.despesas,
+        net: p.receitas - p.despesas,
+      })),
+    [series],
+  );
 
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const dayElapsed = now.getDate();
-  const totalThisMonth = thisMonth.reduce((s, t) => s + Number(t.amount), 0);
+  const totalThisMonth = useMemo(() => curCats.reduce((s, c) => s + c.total, 0), [curCats]);
+  const totalLastMonth = useMemo(() => prevCats.reduce((s, c) => s + c.total, 0), [prevCats]);
   const dailyAvg = totalThisMonth / Math.max(1, dayElapsed);
   const weeklyAvg = dailyAvg * 7;
 
   const catCompare = useMemo(() => {
-    const cur = new Map<string, number>();
-    const prev = new Map<string, number>();
-    thisMonth.forEach((t) => t.category_id && cur.set(t.category_id, (cur.get(t.category_id) ?? 0) + Number(t.amount)));
-    lastMonth.forEach((t) => t.category_id && prev.set(t.category_id, (prev.get(t.category_id) ?? 0) + Number(t.amount)));
-    const result: { name: string; cur: number; prev: number; delta: number; color: string }[] = [];
-    categories.forEach((c) => {
-      const cc = cur.get(c.id) ?? 0; const pp = prev.get(c.id) ?? 0;
-      if (cc > 0 || pp > 0) result.push({ name: c.name, cur: cc, prev: pp, delta: cc - pp, color: c.color });
+    const prevMap = new Map(prevCats.map((c) => [c.category_id ?? "none", c.total]));
+    const rows = curCats.map((c) => {
+      const key = c.category_id ?? "none";
+      const pp = prevMap.get(key) ?? 0;
+      prevMap.delete(key);
+      return { name: c.name, cur: c.total, prev: pp, delta: c.total - pp, color: c.color };
     });
-    return result.sort((a, b) => b.cur - a.cur);
-  }, [thisMonth, lastMonth, categories]);
+    prevCats.forEach((c) => {
+      const key = c.category_id ?? "none";
+      if (prevMap.has(key)) {
+        rows.push({ name: c.name, cur: 0, prev: c.total, delta: -c.total, color: c.color });
+        prevMap.delete(key);
+      }
+    });
+    return rows.sort((a, b) => b.cur - a.cur);
+  }, [curCats, prevCats]);
 
   const grew = [...catCompare].filter((c) => c.delta > 0).sort((a, b) => b.delta - a.delta)[0];
   const shrunk = [...catCompare].filter((c) => c.delta < 0).sort((a, b) => a.delta - b.delta)[0];
 
   const dayHeat = useMemo(() => {
     const days = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-    const arr = days.map((d) => ({ day: d, total: 0 }));
-    transactions.filter((t) => t.type === "expense").forEach((t) => {
-      arr[new Date(t.occurred_at).getDay()].total += Number(t.amount);
-    });
-    return arr;
-  }, [transactions]);
+    return days.map((d, i) => ({
+      day: d,
+      total: extras?.day_of_week.find((x) => x.dow === i)?.total ?? 0,
+    }));
+  }, [extras]);
 
-  const paymentBreakdown = useMemo(() => {
-    const map = new Map<string, number>();
-    transactions.filter((t) => t.type === "expense" && t.payment_method).forEach((t) => {
-      map.set(t.payment_method!, (map.get(t.payment_method!) ?? 0) + Number(t.amount));
-    });
-    return Array.from(map.entries()).map(([k, v]) => ({ name: paymentLabel(k), value: v })).sort((a, b) => b.value - a.value);
-  }, [transactions]);
+  const paymentBreakdown = useMemo(
+    () => (extras?.payment_breakdown ?? []).map((p) => ({ name: paymentLabel(p.method), value: p.total })),
+    [extras],
+  );
 
-  const top10 = [...transactions.filter((t) => t.type === "expense")].sort((a, b) => Number(b.amount) - Number(a.amount)).slice(0, 10);
+  const top10 = extras?.top_expenses ?? [];
 
   const balanceEvo = useMemo(() => {
-    const initial = accounts.reduce((s, a) => s + Number(a.initial_balance), 0);
-    const sorted = [...transactions].sort((a, b) => new Date(a.occurred_at).getTime() - new Date(b.occurred_at).getTime());
-    let bal = initial;
-    return sorted.map((t) => {
-      bal += t.type === "income" ? Number(t.amount) : -Number(t.amount);
-      return { date: new Date(t.occurred_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }), balance: bal };
+    let bal = extras?.opening_balance ?? 0;
+    return series.map((p) => {
+      bal += p.receitas - p.despesas;
+      return {
+        date: new Date(`${p.month}T00:00:00`)
+          .toLocaleDateString("pt-BR", { month: "short", year: "2-digit" })
+          .replace(".", ""),
+        balance: bal,
+      };
     });
-  }, [transactions, accounts]);
+  }, [series, extras]);
 
   const PALETTE = ["#22d3ee", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
+
 
   return (
     <div className="p-4 sm:p-6 lg:p-10 max-w-7xl mx-auto space-y-6">
@@ -120,7 +122,7 @@ function StatisticsPage() {
         <StatBox label="Gasto este mês" value={formatCurrency(totalThisMonth)} />
         <StatBox label="Média diária" value={formatCurrency(dailyAvg)} hint={`em ${dayElapsed} de ${daysInMonth} dias`} />
         <StatBox label="Média semanal" value={formatCurrency(weeklyAvg)} />
-        <StatBox label="Mês passado" value={formatCurrency(lastMonth.reduce((s, t) => s + Number(t.amount), 0))} />
+        <StatBox label="Mês passado" value={formatCurrency(totalLastMonth)} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -241,7 +243,7 @@ function StatisticsPage() {
                 <li key={t.id} className="flex items-center justify-between text-sm py-1.5">
                   <span className="flex items-center gap-3 min-w-0">
                     <span className="text-xs text-muted-foreground w-5">{i + 1}.</span>
-                    <span className="truncate">{t.description || t.categories?.name || "—"}</span>
+                    <span className="truncate">{t.description || t.category_name || "—"}</span>
                   </span>
                   <span className="font-semibold text-destructive shrink-0 ml-2">{formatCurrency(Number(t.amount))}</span>
                 </li>
