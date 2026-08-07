@@ -10,11 +10,9 @@ export default defineTool({
   handler: async (_input, ctx) => {
     const authErr = requireAuth(ctx);
     if (authErr) return authErr;
-    const { data, error } = await supabaseForUser(ctx)
-      .from("accounts")
-      .select("id, name, type, initial_balance, color, created_at")
-      .order("created_at");
+    const { data, error } = await supabaseForUser(ctx).rpc("get_account_balances");
     if (error) return errorResult(error.message);
     return jsonResult(data ?? []);
+
   },
 });
