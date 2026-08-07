@@ -140,12 +140,13 @@ function DashboardPage() {
           hint={`${formatCurrency(totalConfirmado)} confirmado`} />
         <StatCard label="Maior categoria" value={topCategory?.name ?? "—"} icon={Crown}
           hint={topCategory ? formatCurrency(topCategory.value) : undefined} />
-        <StatCard label="Patrimônio total" value={formatCurrency(fin.patrimonioTotal)} icon={Sparkles} gradient
+        <StatCard label="Patrimônio total" value={formatCurrency(overview?.patrimonio_total ?? 0)} icon={Sparkles} gradient
           hint="contas + investimentos" />
-        <StatCard label="Investido" value={formatCurrency(fin.valorAtualInvestimentos)} icon={PiggyBank} />
-        <StatCard label="Rendimento" value={formatCurrency(fin.rendimentoTotal)} icon={TrendingUp}
-          accent={fin.rendimentoTotal >= 0 ? "success" : "destructive"} />
-        <StatCard label="Aportes do mês" value={formatCurrency(fin.aportesMes)} icon={TrendingDown} />
+        <StatCard label="Investido" value={formatCurrency(overview?.valor_atual_investimentos ?? 0)} icon={PiggyBank} />
+        <StatCard label="Rendimento" value={formatCurrency(overview?.rendimento_total ?? 0)} icon={TrendingUp}
+          accent={(overview?.rendimento_total ?? 0) >= 0 ? "success" : "destructive"} />
+        <StatCard label="Aportes do mês" value={formatCurrency(overview?.aportes_mes ?? 0)} icon={TrendingDown} />
+
 
       </div>
 
