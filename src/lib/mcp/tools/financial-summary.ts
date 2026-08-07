@@ -23,28 +23,30 @@ export default defineTool({
     const end = endDate.toISOString().slice(0, 10);
 
     const supa = supabaseForUser(ctx);
-    const [txRes, accRes] = await Promise.all([
-      supa.from("transactions").select("type, amount").gte("occurred_at", start).lte("occurred_at", end),
-      supa.from("accounts").select("initial_balance"),
+    const [sumRes, accRes] = await Promise.all([
+      supa.rpc("get_monthly_financial_summary", { p_from: start, p_to: end }),
+      supa.rpc("get_account_balances"),
     ]);
-    if (txRes.error) return errorResult(txRes.error.message);
+    if (sumRes.error) return errorResult(sumRes.error.message);
     if (accRes.error) return errorResult(accRes.error.message);
 
-    let income = 0, expense = 0;
-    for (const t of txRes.data ?? []) {
-      const v = Number(t.amount ?? 0);
-      if (t.type === "income") income += v;
-      else if (t.type === "expense") expense += v;
-    }
-    const totalBalance = (accRes.data ?? []).reduce((s, a) => s + Number(a.initial_balance ?? 0), 0);
+    const row = (sumRes.data ?? [])[0];
+    const income = Number(row?.receitas ?? 0);
+    const expense = Number(row?.despesas ?? 0);
+    const totalBalance = (accRes.data ?? []).reduce(
+      (s: number, a: { balance: number | string | null }) => s + Number(a.balance ?? 0),
+      0,
+    );
 
     return jsonResult({
       period: { year: y, month: m, start, end },
       income,
       expense,
-      net: income - expense,
+      net: Number(row?.saldo_liquido ?? income - expense),
+      aportes: Number(row?.aportes ?? 0),
+      resgates: Number(row?.resgates ?? 0),
       total_account_balance: totalBalance,
-      transaction_count: txRes.data?.length ?? 0,
     });
+
   },
 });
