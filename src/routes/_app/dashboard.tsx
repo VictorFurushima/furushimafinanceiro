@@ -217,11 +217,11 @@ function DashboardPage() {
             ) : (
               <ul className="space-y-2">
                 {upcomingBills.slice(0, 4).map((b) => {
-                  const card = cards.find((c) => c.id === b.card_id);
                   return (
                     <li key={b.id} className="flex items-center justify-between p-2 rounded-lg bg-secondary/40">
                       <div>
-                        <p className="text-sm font-medium">{card?.name ?? "Cartão"}</p>
+                        <p className="text-sm font-medium">{b.card_name ?? "Cartão"}</p>
+
                         <p className="text-xs text-muted-foreground">
                           {b.days <= 0 ? "Vencida" : `Vence em ${b.days}d`}
                         </p>
