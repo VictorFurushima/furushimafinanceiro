@@ -81,7 +81,7 @@ function ImportPrintsPage() {
     queryFn: async (): Promise<DetectedTx[]> => {
       const { data, error } = await supabase
         .from("ocr_detected_transactions")
-        .select("id, image_id, detected_date, detected_amount, detected_type, detected_description, detected_payment_method, detected_account, suggested_category, suggested_category_id, confidence_level, review_status, possible_duplicate, raw_text, created_at")
+        .select("id, image_id, detected_date, detected_amount, detected_type, detected_description, detected_payment_method, detected_account, suggested_category, suggested_category_id, confidence_level, review_status, possible_duplicate")
         .neq("review_status", "saved")
         .neq("review_status", "ignored")
         .order("created_at", { ascending: false });
