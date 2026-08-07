@@ -343,15 +343,8 @@ function DashboardPage() {
           </CardHeader>
           <CardContent>
             {(() => {
-              const subs = recurring
-                .filter((r) => r.status === "active" && r.frequency === "monthly")
-                .map((r) => {
-                  const next = new Date(now.getFullYear(), now.getMonth(), r.billing_day);
-                  if (next < now) next.setMonth(next.getMonth() + 1);
-                  return { ...r, next, days: Math.ceil((next.getTime() - now.getTime()) / 86400000) };
-                })
-                .sort((a, b) => a.days - b.days)
-                .slice(0, 4);
+              const subs = snap.upcoming_subscriptions;
+
               if (subs.length === 0) return <p className="text-sm text-muted-foreground py-8 text-center">Nenhuma assinatura ativa.</p>;
               return (
                 <ul className="space-y-2">
