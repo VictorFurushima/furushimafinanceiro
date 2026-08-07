@@ -29,6 +29,8 @@ export const financeKeys = {
   monthlySeries: (months: number) => ["finance", "monthly-series", months] as const,
   statisticsExtras: (from: string, to: string) =>
     ["finance", "statistics-extras", from, to] as const,
+  dashboardSnapshot: ["finance", "dashboard-snapshot"] as const,
+
 
   // listas
   transactions: ["transactions"] as const,
