@@ -70,7 +70,7 @@ function ImportPrintsPage() {
     queryFn: async (): Promise<ImageRow[]> => {
       const { data, error } = await supabase
         .from("uploaded_transaction_images")
-        .select("id, file_name, storage_path, image_url, processing_status, ocr_confidence, error_message, upload_date").order("upload_date", { ascending: false });
+        .select("id, file_name, storage_path, processing_status, ocr_confidence, error_message, upload_date").order("upload_date", { ascending: false });
       if (error) throw error;
       return data as ImageRow[];
     },
