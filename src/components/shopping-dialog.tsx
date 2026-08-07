@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidateFinance } from "@/lib/query-keys";
 import { useAuth } from "@/hooks/use-auth";
 import { useAccounts, useCategories, useCreditCards } from "@/hooks/use-finance-data";
 import { useFinancialContext } from "@/hooks/use-financial-context";
@@ -133,13 +134,13 @@ export function ShoppingDialog({
       if (gErr) toast.error(`Item salvo, mas a meta falhou: ${gErr.message}`);
       else {
         await supabase.from("shopping_items").update({ goal_id: goal.id }).eq("id", itemId);
-        qc.invalidateQueries({ queryKey: ["goals"] });
+        invalidateFinance(qc, "goals");
       }
     }
 
     setSaving(false);
     toast.success(editing ? "Compra atualizada" : "Compra planejada salva");
-    qc.invalidateQueries({ queryKey: ["shopping_items"] });
+    invalidateFinance(qc, "shopping");
     onOpenChange(false);
   };
 

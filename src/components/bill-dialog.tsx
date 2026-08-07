@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidateFinance } from "@/lib/query-keys";
 import { useCreditCards } from "@/hooks/use-finance-data";
 
 export function BillDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
@@ -38,7 +39,7 @@ export function BillDialog({ open, onOpenChange }: { open: boolean; onOpenChange
       }, { onConflict: "card_id,month,year" });
       if (error) throw error;
       toast.success("Fatura registrada");
-      qc.invalidateQueries({ queryKey: ["credit_card_bills"] });
+      invalidateFinance(qc, "cards");
       onOpenChange(false);
       setCardId(""); setAmount(""); setDueDate("");
     } catch (err) {

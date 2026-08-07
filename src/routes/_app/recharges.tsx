@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useRecharges, type BalanceRecharge } from "@/hooks/use-finance-data";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidateFinance } from "@/lib/query-keys";
 import { formatCurrency } from "@/lib/format";
 import {
   RECHARGE_TYPES, RECHARGE_STATUS, rechargeTypeLabel, rechargeTypeColor,
@@ -69,8 +70,8 @@ function RechargesPage() {
           ? "Recarga marcada como recebida"
           : "Recarga convertida em receita",
       );
-      qc.invalidateQueries({ queryKey: ["recharges"] });
-      qc.invalidateQueries({ queryKey: ["transactions"] });
+      invalidateFinance(qc, "recharges");
+      invalidateFinance(qc, "transactions");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro");
     }
@@ -81,7 +82,7 @@ function RechargesPage() {
     const { error } = await supabase.from("balance_recharges").delete().eq("id", id);
     if (error) { toast.error(error.message); return; }
     toast.success("Recarga excluída");
-    qc.invalidateQueries({ queryKey: ["recharges"] });
+    invalidateFinance(qc, "recharges");
   };
 
   return (

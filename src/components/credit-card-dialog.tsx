@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidateFinance } from "@/lib/query-keys";
 import type { CreditCard } from "@/hooks/use-finance-data";
 
 const schema = z.object({
@@ -63,7 +64,7 @@ export function CreditCardDialog({
         : await supabase.from("credit_cards").insert(payload);
       if (error) throw error;
       toast.success(editing ? "Cartão atualizado" : "Cartão criado");
-      qc.invalidateQueries({ queryKey: ["credit_cards"] });
+      invalidateFinance(qc, "cards");
       onOpenChange(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao salvar");

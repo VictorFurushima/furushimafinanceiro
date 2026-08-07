@@ -1,5 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { financeKeys, type TransactionFilters } from "@/lib/query-keys";
+
+export type { TransactionFilters };
+
 
 export interface Transaction {
   id: string;
@@ -82,25 +86,74 @@ export interface CreditCardBill {
   status: "aberta" | "paga" | "atrasada";
 }
 
-export const useTransactions = (limit?: number) =>
+const TX_COLUMNS =
+  "id, amount, type, description, occurred_at, account_id, category_id, subcategory, payment_method, notes, recurring_id, flow, categories(name,color,icon), accounts(name,color)";
+
+/** Evita que o supabase-js analise a string de select no nível de tipos. */
+const sel = (s: string): string => s;
+
+export interface TransactionPage {
+  rows: Transaction[];
+  count: number;
+}
+
+/** Lista paginada no servidor. Filtros vão para o PostgREST, não para o browser. */
+export const useTransactionsPage = (filters: TransactionFilters) =>
   useQuery({
-    queryKey: ["transactions", limit ?? "all"],
-    queryFn: async (): Promise<Transaction[]> => {
-      const q = supabase.from("transactions")
-        .select("*, categories(name,color,icon), accounts(name,color)")
+    queryKey: financeKeys.transactionsList(filters),
+    placeholderData: keepPreviousData,
+    queryFn: async (): Promise<TransactionPage> => {
+      const page = filters.page ?? 0;
+      const pageSize = filters.pageSize ?? 50;
+      let q = supabase
+        .from("transactions")
+        .select(sel(TX_COLUMNS), { count: "exact" })
         .order("occurred_at", { ascending: false })
-        .order("created_at", { ascending: false });
-      const { data, error } = limit ? await q.limit(limit) : await q;
+        .order("created_at", { ascending: false })
+        .range(page * pageSize, page * pageSize + pageSize - 1);
+
+      if (filters.type && filters.type !== "all") q = q.eq("type", filters.type);
+      if (filters.categoryId && filters.categoryId !== "all") q = q.eq("category_id", filters.categoryId);
+      if (filters.accountId && filters.accountId !== "all") q = q.eq("account_id", filters.accountId);
+      if (filters.paymentMethod && filters.paymentMethod !== "all")
+        q = q.eq("payment_method", filters.paymentMethod);
+      if (filters.from) q = q.gte("occurred_at", filters.from);
+      if (filters.to) q = q.lte("occurred_at", filters.to);
+      if (filters.min) q = q.gte("amount", Number(filters.min));
+      if (filters.max) q = q.lte("amount", Number(filters.max));
+      if (filters.search) q = q.ilike("description", `%${filters.search}%`);
+
+      const { data, error, count } = await q.returns<Transaction[]>();
       if (error) throw error;
-      return (data ?? []) as unknown as Transaction[];
+      return { rows: data ?? [], count: count ?? 0 };
+    },
+  });
+
+/** Somente as últimas N transações (dialogs, listas resumidas). */
+export const useRecentTransactions = (limit = 10) =>
+  useQuery({
+    queryKey: financeKeys.transactionsRecent(limit),
+    queryFn: async (): Promise<Transaction[]> => {
+      const { data, error } = await supabase
+        .from("transactions")
+        .select(sel(TX_COLUMNS))
+        .order("occurred_at", { ascending: false })
+        .order("created_at", { ascending: false })
+        .limit(limit)
+        .returns<Transaction[]>();
+      if (error) throw error;
+      return data ?? [];
     },
   });
 
 export const useCategories = () =>
   useQuery({
-    queryKey: ["categories"],
+    queryKey: financeKeys.categories,
     queryFn: async (): Promise<Category[]> => {
-      const { data, error } = await supabase.from("categories").select("*").order("name");
+      const { data, error } = await supabase
+        .from("categories")
+        .select("id, name, type, color, icon")
+        .order("name");
       if (error) throw error;
       return (data ?? []) as Category[];
     },
@@ -108,9 +161,12 @@ export const useCategories = () =>
 
 export const useAccounts = () =>
   useQuery({
-    queryKey: ["accounts"],
+    queryKey: financeKeys.accounts,
     queryFn: async (): Promise<Account[]> => {
-      const { data, error } = await supabase.from("accounts").select("*").order("created_at");
+      const { data, error } = await supabase
+        .from("accounts")
+        .select("id, name, type, initial_balance, color")
+        .order("created_at");
       if (error) throw error;
       return (data ?? []).map((a) => ({ ...a, initial_balance: Number(a.initial_balance) })) as Account[];
     },
@@ -118,41 +174,57 @@ export const useAccounts = () =>
 
 export const useBudgets = (month: string) =>
   useQuery({
-    queryKey: ["budgets", month],
+    queryKey: financeKeys.budgets(month),
     queryFn: async (): Promise<Budget[]> => {
-      const { data, error } = await supabase.from("budgets")
-        .select("*, categories(name,color)").eq("month", month);
+      const { data, error } = await supabase
+        .from("budgets")
+        .select(sel("id, category_id, amount, month, categories(name,color)"))
+        .eq("month", month)
+        .returns<Budget[]>();
       if (error) throw error;
-      return (data ?? []) as unknown as Budget[];
+      return data ?? [];
     },
   });
 
 export const useRecurring = () =>
   useQuery({
-    queryKey: ["recurring"],
+    queryKey: financeKeys.recurring,
     queryFn: async (): Promise<RecurringExpense[]> => {
-      const { data, error } = await supabase.from("recurring_expenses")
-        .select("*, categories(name,color)").order("billing_day");
+      const { data, error } = await supabase
+        .from("recurring_expenses")
+        .select(
+          sel(
+            "id, name, amount, category_id, account_id, payment_method, billing_day, frequency, start_date, end_date, status, notes, categories(name,color)",
+          ),
+        )
+        .order("billing_day")
+        .returns<RecurringExpense[]>();
       if (error) throw error;
-      return (data ?? []) as unknown as RecurringExpense[];
+      return data ?? [];
     },
   });
 
 export const useGoals = () =>
   useQuery({
-    queryKey: ["goals"],
+    queryKey: financeKeys.goals,
     queryFn: async (): Promise<Goal[]> => {
-      const { data, error } = await supabase.from("goals").select("*").order("created_at");
+      const { data, error } = await supabase
+        .from("goals")
+        .select("id, name, target_amount, current_amount, deadline, category_id, color, notes")
+        .order("created_at");
       if (error) throw error;
       return (data ?? []) as Goal[];
     },
   });
 
+
 export const useCategoryLimits = () =>
   useQuery({
-    queryKey: ["category_limits"],
+    queryKey: financeKeys.categoryLimits,
     queryFn: async (): Promise<CategoryLimit[]> => {
-      const { data, error } = await supabase.from("category_limits").select("*");
+      const { data, error } = await supabase
+        .from("category_limits")
+        .select("id, category_id, monthly_limit");
       if (error) throw error;
       return (data ?? []) as CategoryLimit[];
     },
@@ -160,10 +232,14 @@ export const useCategoryLimits = () =>
 
 export const useRecharges = () =>
   useQuery({
-    queryKey: ["recharges"],
+    queryKey: financeKeys.recharges,
     queryFn: async (): Promise<BalanceRecharge[]> => {
-      const { data, error } = await supabase.from("balance_recharges")
-        .select("*").order("expected_date", { ascending: true });
+      const { data, error } = await supabase
+        .from("balance_recharges")
+        .select(
+          "id, name, recharge_type, expected_amount, expected_date, account_id, card_id, payment_method, status, notes, converted_to_income, is_recurring, recurring_day, source_recharge_id",
+        )
+        .order("expected_date", { ascending: true });
       if (error) throw error;
       return ((data ?? []) as unknown as BalanceRecharge[]).map((r) => ({
         ...r, expected_amount: Number(r.expected_amount),
@@ -173,10 +249,12 @@ export const useRecharges = () =>
 
 export const useCreditCards = () =>
   useQuery({
-    queryKey: ["credit_cards"],
+    queryKey: financeKeys.creditCards,
     queryFn: async (): Promise<CreditCard[]> => {
-      const { data, error } = await supabase.from("credit_cards")
-        .select("*").order("created_at");
+      const { data, error } = await supabase
+        .from("credit_cards")
+        .select("id, name, bank, total_limit, used_limit, closing_day, due_day, status, color")
+        .order("created_at");
       if (error) throw error;
       return ((data ?? []) as unknown as CreditCard[]).map((c) => ({
         ...c, total_limit: Number(c.total_limit), used_limit: Number(c.used_limit),
@@ -186,13 +264,16 @@ export const useCreditCards = () =>
 
 export const useCreditCardBills = () =>
   useQuery({
-    queryKey: ["credit_card_bills"],
+    queryKey: financeKeys.creditCardBills,
     queryFn: async (): Promise<CreditCardBill[]> => {
-      const { data, error } = await supabase.from("credit_card_bills")
-        .select("*").order("due_date", { ascending: true });
+      const { data, error } = await supabase
+        .from("credit_card_bills")
+        .select("id, card_id, month, year, amount, due_date, payment_date, status")
+        .order("due_date", { ascending: true });
       if (error) throw error;
       return ((data ?? []) as unknown as CreditCardBill[]).map((b) => ({
         ...b, amount: Number(b.amount),
       }));
     },
+
   });

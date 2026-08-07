@@ -16,7 +16,7 @@ export default defineTool({
     if (authErr) return authErr;
     let q = supabaseForUser(ctx)
       .from("credit_card_bills")
-      .select("*")
+      .select("id, card_id, month, year, amount, due_date, payment_date, status")
       .order("due_date", { ascending: true })
       .limit(limit ?? 50);
     if (!include_paid) q = q.in("status", ["aberta", "atrasada"]);

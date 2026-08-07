@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidateFinance } from "@/lib/query-keys";
 import { useAccounts, useCategories } from "@/hooks/use-finance-data";
 import { toISODate } from "@/lib/format";
 import { PAYMENT_METHODS } from "@/lib/finance-constants";
@@ -93,7 +94,7 @@ export function TransactionDialog({
       });
       if (error) throw error;
       toast.success("Transação adicionada!");
-      qc.invalidateQueries({ queryKey: ["transactions"] });
+      invalidateFinance(qc, "transactions");
       onOpenChange(false);
       setAmount(""); setDescription(""); setSubcategory(""); setNotes("");
     } catch (err) {

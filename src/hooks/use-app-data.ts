@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { financeKeys } from "@/lib/query-keys";
+
 
 export interface Investment {
   id: string;
@@ -109,11 +111,13 @@ const num = (v: unknown) => Number(v ?? 0);
 
 export const useInvestments = () =>
   useQuery({
-    queryKey: ["investments"],
+    queryKey: financeKeys.investments,
     queryFn: async (): Promise<Investment[]> => {
       const { data, error } = await supabase
         .from("investments")
-        .select("*")
+        .select(
+          "id, name, inv_type, institution, invested_amount, current_amount, initial_amount, applied_at, maturity_date, liquidity, risk, objective, notes, status, is_emergency_reserve, color, created_at",
+        )
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []).map((i) => ({
@@ -127,9 +131,14 @@ export const useInvestments = () =>
 
 export const useInvestmentEvents = (investmentId?: string) =>
   useQuery({
-    queryKey: ["investment_events", investmentId ?? "all"],
+    queryKey: financeKeys.investmentEvents(investmentId),
     queryFn: async (): Promise<InvestmentEvent[]> => {
-      let q = supabase.from("investment_events").select("*").order("occurred_at", { ascending: false });
+      let q = supabase
+        .from("investment_events")
+        .select(
+          "id, investment_id, event_type, amount, previous_amount, new_amount, occurred_at, account_id, transaction_id, notes, created_at",
+        )
+        .order("occurred_at", { ascending: false });
       if (investmentId) q = q.eq("investment_id", investmentId);
       const { data, error } = await q;
       if (error) throw error;
@@ -139,11 +148,11 @@ export const useInvestmentEvents = (investmentId?: string) =>
 
 export const useNotes = () =>
   useQuery({
-    queryKey: ["notes"],
+    queryKey: financeKeys.notes,
     queryFn: async (): Promise<Note[]> => {
       const { data, error } = await supabase
         .from("notes")
-        .select("*")
+        .select("id, title, content, note_date, link_type, link_id, created_by, created_at, updated_at")
         .order("note_date", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Note[];
@@ -152,11 +161,13 @@ export const useNotes = () =>
 
 export const useShoppingItems = () =>
   useQuery({
-    queryKey: ["shopping_items"],
+    queryKey: financeKeys.shoppingItems,
     queryFn: async (): Promise<ShoppingItem[]> => {
       const { data, error } = await supabase
         .from("shopping_items")
-        .select("*")
+        .select(
+          "id, item, category_id, store, link, price, shipping, discount, interest, desired_date, priority, purchase_type, payment_method, account_id, card_id, installments, down_payment, notes, image_url, status, score, transaction_id, goal_id, created_at",
+        )
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []).map((s) => ({
@@ -172,9 +183,14 @@ export const useShoppingItems = () =>
 
 export const useUserSettings = () =>
   useQuery({
-    queryKey: ["user_settings"],
+    queryKey: financeKeys.userSettings,
     queryFn: async (): Promise<UserSettings | null> => {
-      const { data, error } = await supabase.from("user_settings").select("*").maybeSingle();
+      const { data, error } = await supabase
+        .from("user_settings")
+        .select(
+          "user_id, min_reserve, max_free_balance_pct, max_income_installment_pct, allow_low_score_wants, min_priority_auto, purchase_alerts, reminder_enabled, reminder_day, reminder_amount, reminder_message, reminder_investment_id, reminder_last_shown",
+        )
+        .maybeSingle();
       if (error) throw error;
       if (!data) return null;
       return {
@@ -189,8 +205,9 @@ export const useUserSettings = () =>
 
 export const useViewers = (enabled: boolean) =>
   useQuery({
-    queryKey: ["my_viewers"],
+    queryKey: financeKeys.viewers,
     enabled,
+
     queryFn: async (): Promise<{ user_id: string; email: string; created_at: string }[]> => {
       const { data, error } = await supabase.rpc("list_my_viewers");
       if (error) throw error;

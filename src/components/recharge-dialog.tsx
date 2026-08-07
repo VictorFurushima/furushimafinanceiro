@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidateFinance } from "@/lib/query-keys";
 import { useAccounts, useCreditCards, type BalanceRecharge } from "@/hooks/use-finance-data";
 import { PAYMENT_METHODS, RECHARGE_TYPES, RECHARGE_STATUS } from "@/lib/finance-constants";
 import { toISODate } from "@/lib/format";
@@ -96,7 +97,7 @@ export function RechargeDialog({
         : await supabase.from("balance_recharges").insert(payload);
       if (error) throw error;
       toast.success(editing ? "Recarga atualizada" : "Recarga criada");
-      qc.invalidateQueries({ queryKey: ["recharges"] });
+      invalidateFinance(qc, "recharges");
       onOpenChange(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao salvar");

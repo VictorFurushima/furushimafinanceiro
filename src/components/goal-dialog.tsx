@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidateFinance } from "@/lib/query-keys";
 import type { Goal } from "@/hooks/use-finance-data";
 
 export function GoalDialog({
@@ -52,7 +53,7 @@ export function GoalDialog({
         : await supabase.from("goals").insert(payload);
       if (error) throw error;
       toast.success(editing ? "Meta atualizada" : "Meta criada");
-      qc.invalidateQueries({ queryKey: ["goals"] });
+      invalidateFinance(qc, "goals");
       onOpenChange(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao salvar");

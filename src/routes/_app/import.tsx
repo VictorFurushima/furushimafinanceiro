@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useCategories } from "@/hooks/use-finance-data";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidateFinance } from "@/lib/query-keys";
 import { formatCurrency } from "@/lib/format";
 import { PAYMENT_METHODS } from "@/lib/finance-constants";
 
@@ -88,7 +89,7 @@ function ImportPage() {
       const { error } = await supabase.from("transactions").insert(payload);
       if (error) throw error;
       toast.success(`${valid.length} transações importadas!`);
-      qc.invalidateQueries({ queryKey: ["transactions"] });
+      invalidateFinance(qc, "transactions");
       setRows([]);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro");

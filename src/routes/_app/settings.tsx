@@ -14,6 +14,7 @@ import { useCategories, useCategoryLimits } from "@/hooks/use-finance-data";
 import { useUserSettings, useViewers, useInvestments, DEFAULT_SETTINGS } from "@/hooks/use-app-data";
 import { useRole, VIEWER_MESSAGE } from "@/hooks/use-role";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidateFinance } from "@/lib/query-keys";
 import { formatCurrency } from "@/lib/format";
 
 export const Route = createFileRoute("/_app/settings")({ component: SettingsPage });
@@ -56,7 +57,7 @@ function SettingsPage() {
     });
     if (error) return toast.error(error.message);
     toast.success("Categoria criada");
-    qc.invalidateQueries({ queryKey: ["categories"] });
+    invalidateFinance(qc, "categories");
     setNewCat("");
   };
 
@@ -65,7 +66,7 @@ function SettingsPage() {
     if (!confirm("Excluir esta categoria?")) return;
     const { error } = await supabase.from("categories").delete().eq("id", id);
     if (error) return toast.error(error.message);
-    qc.invalidateQueries({ queryKey: ["categories"] });
+    invalidateFinance(qc, "categories");
   };
 
   const setLimit = async (e: FormEvent) => {
@@ -78,7 +79,7 @@ function SettingsPage() {
     }, { onConflict: "user_id,category_id" });
     if (error) return toast.error(error.message);
     toast.success("Limite definido");
-    qc.invalidateQueries({ queryKey: ["category_limits"] });
+    invalidateFinance(qc, "categoryLimits");
     setLimitAmount("");
   };
 
@@ -86,7 +87,7 @@ function SettingsPage() {
     if (!guard()) return;
     const { error } = await supabase.from("category_limits").delete().eq("id", id);
     if (error) return toast.error(error.message);
-    qc.invalidateQueries({ queryKey: ["category_limits"] });
+    invalidateFinance(qc, "categoryLimits");
   };
 
   const savePrefs = async (e: FormEvent) => {
@@ -98,7 +99,7 @@ function SettingsPage() {
     );
     if (error) return toast.error(error.message);
     toast.success("Preferências salvas");
-    qc.invalidateQueries({ queryKey: ["user_settings"] });
+    invalidateFinance(qc, "settings");
   };
 
   const grantViewer = async (e: FormEvent) => {
@@ -113,7 +114,7 @@ function SettingsPage() {
     if (data === "forbidden") return toast.error(VIEWER_MESSAGE);
     toast.success("Acesso de visualização concedido");
     setViewerEmail("");
-    qc.invalidateQueries({ queryKey: ["my_viewers"] });
+    invalidateFinance(qc, "viewers");
   };
 
   const revokeViewer = async (uid: string) => {
@@ -121,7 +122,7 @@ function SettingsPage() {
     const { error } = await supabase.rpc("revoke_viewer_access", { p_user_id: uid });
     if (error) return toast.error(error.message);
     toast.success("Acesso revogado");
-    qc.invalidateQueries({ queryKey: ["my_viewers"] });
+    invalidateFinance(qc, "viewers");
   };
 
   return (

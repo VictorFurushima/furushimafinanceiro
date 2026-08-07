@@ -10,7 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useAccounts, useTransactions } from "@/hooks/use-finance-data";
+import { useAccountBalances } from "@/hooks/use-finance-aggregates";
+import { invalidateFinance } from "@/lib/query-keys";
+
 import { formatCurrency } from "@/lib/format";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -26,8 +28,8 @@ const typeLabels: Record<string, string> = {
 };
 
 function AccountsPage() {
-  const { data: accounts = [] } = useAccounts();
-  const { data: transactions = [] } = useTransactions();
+  const { data: accounts = [] } = useAccountBalances();
+
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -45,7 +47,7 @@ function AccountsPage() {
     });
     if (error) return toast.error(error.message);
     toast.success("Conta criada");
-    qc.invalidateQueries({ queryKey: ["accounts"] });
+    invalidateFinance(qc, "accounts");
     setOpen(false); setName(""); setBalance("0");
   };
 
@@ -53,7 +55,7 @@ function AccountsPage() {
     const { error } = await supabase.from("accounts").delete().eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Removida");
-    qc.invalidateQueries({ queryKey: ["accounts"] });
+    invalidateFinance(qc, "accounts");
   };
 
   return (
@@ -68,10 +70,8 @@ function AccountsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {accounts.map((a) => {
           const Icon = typeIcons[a.type] ?? Wallet;
-          const flow = transactions
-            .filter((t) => t.account_id === a.id)
-            .reduce((s, t) => s + (t.type === "income" ? Number(t.amount) : -Number(t.amount)), 0);
-          const total = Number(a.initial_balance) + flow;
+          const total = a.balance;
+
           return (
             <Card key={a.id} className="bg-gradient-card border-border/50 shadow-card group relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-20" style={{ background: a.color }} />

@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidateFinance } from "@/lib/query-keys";
 import { useAuth } from "@/hooks/use-auth";
 import { useCategories, useAccounts } from "@/hooks/use-finance-data";
 import { PAYMENT_METHODS } from "@/lib/finance-constants";
@@ -69,7 +70,7 @@ function ImportPrintsPage() {
     queryFn: async (): Promise<ImageRow[]> => {
       const { data, error } = await supabase
         .from("uploaded_transaction_images")
-        .select("*").order("upload_date", { ascending: false });
+        .select("id, file_name, storage_path, image_url, processing_status, ocr_confidence, error_message, upload_date").order("upload_date", { ascending: false });
       if (error) throw error;
       return data as ImageRow[];
     },
@@ -80,7 +81,7 @@ function ImportPrintsPage() {
     queryFn: async (): Promise<DetectedTx[]> => {
       const { data, error } = await supabase
         .from("ocr_detected_transactions")
-        .select("*")
+        .select("id, image_id, detected_date, detected_amount, detected_type, detected_description, detected_payment_method, detected_account, suggested_category, suggested_category_id, confidence_level, review_status, possible_duplicate, raw_text, created_at")
         .neq("review_status", "saved")
         .neq("review_status", "ignored")
         .order("created_at", { ascending: false });
@@ -258,7 +259,7 @@ function ImportPrintsPage() {
                 categories={categories} accounts={accounts}
                 onChanged={() => {
                   qc.invalidateQueries({ queryKey: ["ocr-detected"] });
-                  qc.invalidateQueries({ queryKey: ["transactions"] });
+                  invalidateFinance(qc, "transactions");
                 }} />
             ))}
           </CardContent>
