@@ -1,33 +1,15 @@
 import { createFileRoute, Outlet, Navigate } from "@tanstack/react-router";
-import { useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { AppSidebar, MobileNav } from "@/components/app-sidebar";
-import { supabase } from "@/integrations/supabase/client";
-import { invalidateFinance } from "@/lib/query-keys";
 
 export const Route = createFileRoute("/_app")({ component: AppLayout });
 
 function AppLayout() {
   const { user, loading } = useAuth();
-  const qc = useQueryClient();
 
-  // Trigger recurring + recharge automation when user enters the app (idempotent, once/day)
-  useEffect(() => {
-    if (!user) return;
-    const key = `furushima:auto-${user.id}-${new Date().toISOString().slice(0, 10)}`;
-    if (localStorage.getItem(key)) return;
-    (async () => {
-      const [tx, rc, ov] = await Promise.all([
-        supabase.rpc("generate_recurring_transactions"),
-        supabase.rpc("generate_recurring_recharges"),
-        supabase.rpc("mark_overdue_recharges"),
-      ]);
-      localStorage.setItem(key, "1");
-      if ((tx.data ?? 0) > 0) invalidateFinance(qc, "transactions");
-      if ((rc.data ?? 0) > 0 || (ov.data ?? 0) > 0) invalidateFinance(qc, "recharges");
-    })();
-  }, [user, qc]);
+  // A automação de recorrências/recargas roda no backend (pg_cron:
+  // private.run_financial_daily_maintenance, diariamente às 03:10 America/Sao_Paulo).
+
 
   if (loading) {
     return (
