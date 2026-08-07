@@ -12,7 +12,7 @@ export default defineTool({
     if (authErr) return authErr;
     const { data, error } = await supabaseForUser(ctx)
       .from("credit_cards")
-      .select("*")
+      .select("id, name, bank, total_limit, used_limit, closing_day, due_day, status, color, created_at")
       .order("created_at");
     if (error) return errorResult(error.message);
     const enriched = (data ?? []).map((c) => ({
