@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { invalidateFinance } from "@/lib/query-keys";
 import { useRole, VIEWER_MESSAGE } from "@/hooks/use-role";
 import { useEvents, type CalendarEvent } from "@/hooks/use-schedule-data";
-import { pushEventToGoogle } from "@/lib/calendar-sync.functions";
+import { pushEventToGoogle, deleteEventEverywhere } from "@/lib/calendar-sync.functions";
 import {
   addDays, categoryColor, categoryLabel, endOfDay, endOfMonth, fmtTime,
   localDateISO, startOfDay, startOfMonth, startOfWeek,
@@ -36,6 +36,9 @@ function AgendaPage() {
   const { isAdmin } = useRole();
   const qc = useQueryClient();
   const push = useServerFn(pushEventToGoogle);
+  const removeEverywhere = useServerFn(deleteEventEverywhere);
+  const [slotDialogStart, setSlotDialogStart] = useState<Date | null>(null);
+
 
   const [view, setView] = useState<ViewMode>("week");
   const [anchor, setAnchor] = useState(() => new Date());
