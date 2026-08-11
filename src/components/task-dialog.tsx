@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { invalidateFinance } from "@/lib/query-keys";
 import { useAuth } from "@/hooks/use-auth";
-import { useRoutines, type Task } from "@/hooks/use-schedule-data";
+import { useRoutines, useLinkableEvents, type Task } from "@/hooks/use-schedule-data";
 import {
   EVENT_CATEGORIES, PRIORITIES, TASK_STATUSES, toLocalInput,
 } from "@/lib/schedule-constants";
@@ -22,6 +22,7 @@ export function TaskDialog({
   const qc = useQueryClient();
   const { user } = useAuth();
   const { data: routines = [] } = useRoutines();
+  const { data: linkableEvents = [] } = useLinkableEvents();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -31,6 +32,7 @@ export function TaskDialog({
   const [dueAt, setDueAt] = useState("");
   const [estimated, setEstimated] = useState("");
   const [routineId, setRoutineId] = useState("none");
+  const [eventId, setEventId] = useState("none");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -43,6 +45,7 @@ export function TaskDialog({
     setDueAt(editing?.due_at ? toLocalInput(editing.due_at) : "");
     setEstimated(editing?.estimated_minutes ? String(editing.estimated_minutes) : "");
     setRoutineId(editing?.routine_id ?? "none");
+    setEventId(editing?.event_id ?? "none");
   }, [open, editing]);
 
   const submit = async (e: FormEvent) => {
@@ -61,6 +64,7 @@ export function TaskDialog({
       due_at: dueAt ? new Date(dueAt).toISOString() : null,
       estimated_minutes: estimated ? Number(estimated) : null,
       routine_id: routineId === "none" ? null : routineId,
+      event_id: eventId === "none" ? null : eventId,
       completed_at: status === "concluida" ? new Date().toISOString() : null,
     };
 
@@ -142,6 +146,21 @@ export function TaskDialog({
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Compromisso vinculado</Label>
+            <Select value={eventId} onValueChange={setEventId}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Sem vínculo</SelectItem>
+                {linkableEvents.map((ev) => (
+                  <SelectItem key={ev.id} value={ev.id}>
+                    {new Date(ev.starts_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })} · {ev.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">

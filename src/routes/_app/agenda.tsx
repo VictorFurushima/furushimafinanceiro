@@ -81,11 +81,40 @@ function AgendaPage() {
   const remove = async (e: CalendarEvent) => {
     if (!isAdmin) return toast.error(VIEWER_MESSAGE);
     if (!confirm(`Excluir "${e.title}"?`)) return;
-    const { error } = await supabase.from("calendar_events").delete().eq("id", e.id);
-    if (error) return toast.error(error.message);
-    toast.success("Compromisso excluído");
+    // Exclusão passa pelo servidor: remove o espelho no Google antes do registro local.
+    const res = await removeEverywhere({ data: { eventId: e.id } });
     invalidateFinance(qc, "events");
+    if (res.deleted) toast.success("Compromisso excluído");
+    else if (res.reason === "remote_error")
+      toast.error("Não foi possível remover no Google. O compromisso local foi mantido.");
+    else toast.error("Compromisso não encontrado");
   };
+
+  /** Planejamento inteligente: janelas livres do dia âncora entre 08h e 22h. */
+  const freeSlots = useMemo(() => {
+    const dayStart = new Date(anchor); dayStart.setHours(8, 0, 0, 0);
+    const dayEnd = new Date(anchor); dayEnd.setHours(22, 0, 0, 0);
+    const busy = (grouped.get(localDateISO(anchor)) ?? [])
+      .filter((e) => !e.all_day)
+      .map((e) => ({ s: new Date(e.starts_at), e: new Date(e.ends_at) }))
+      .sort((a, b) => a.s.getTime() - b.s.getTime());
+
+    const slots: { start: Date; end: Date; minutes: number }[] = [];
+    let cursor = dayStart;
+    for (const b of busy) {
+      if (b.s > cursor) {
+        const minutes = Math.round((Math.min(b.s.getTime(), dayEnd.getTime()) - cursor.getTime()) / 60_000);
+        if (minutes >= 30) slots.push({ start: new Date(cursor), end: new Date(Math.min(b.s.getTime(), dayEnd.getTime())), minutes });
+      }
+      if (b.e > cursor) cursor = b.e;
+    }
+    if (cursor < dayEnd) {
+      const minutes = Math.round((dayEnd.getTime() - cursor.getTime()) / 60_000);
+      if (minutes >= 30) slots.push({ start: new Date(cursor), end: new Date(dayEnd), minutes });
+    }
+    return slots.sort((a, b) => b.minutes - a.minutes).slice(0, 3);
+  }, [grouped, anchor]);
+
 
   const resync = async (e: CalendarEvent) => {
     if (!isAdmin) return toast.error(VIEWER_MESSAGE);

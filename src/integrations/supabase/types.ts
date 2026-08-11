@@ -855,7 +855,7 @@ export type Database = {
       }
       routine_occurrences: {
         Row: {
-          completed_at: string
+          completed_at: string | null
           created_at: string
           id: string
           notes: string | null
@@ -865,7 +865,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          completed_at?: string
+          completed_at?: string | null
           created_at?: string
           id?: string
           notes?: string | null
@@ -875,7 +875,7 @@ export type Database = {
           user_id: string
         }
         Update: {
-          completed_at?: string
+          completed_at?: string | null
           created_at?: string
           id?: string
           notes?: string | null
@@ -1347,7 +1347,7 @@ export type Database = {
     }
     Functions: {
       complete_routine_occurrence: {
-        Args: { p_date: string; p_routine_id: string }
+        Args: { p_date: string; p_routine_id: string; p_status?: string }
         Returns: string
       }
       complete_shopping_item: {
@@ -1449,6 +1449,7 @@ export type Database = {
         }[]
       }
       mark_overdue_recharges: { Args: never; Returns: number }
+      materialize_routine_events: { Args: { p_days?: number }; Returns: number }
       pay_credit_card_bill: { Args: { p_bill_id: string }; Returns: undefined }
       revoke_viewer_access: { Args: { p_user_id: string }; Returns: string }
       space_owner: { Args: { _user_id: string }; Returns: string }
