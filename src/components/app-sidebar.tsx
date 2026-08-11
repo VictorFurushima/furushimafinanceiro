@@ -1,15 +1,31 @@
 import { useState } from "react";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
-  LayoutDashboard, ArrowLeftRight, Target, Wallet, LogOut,
-  Repeat, BarChart3, Upload, Settings, ArrowDownToLine,
-  Inbox, CreditCard, CalendarClock, ScanLine, PiggyBank, StickyNote, ShoppingCart, Menu,
-  Sun, CalendarDays, ListTodo,
+  LayoutDashboard,
+  ArrowLeftRight,
+  Target,
+  Wallet,
+  LogOut,
+  Repeat,
+  BarChart3,
+  Upload,
+  Settings,
+  ArrowDownToLine,
+  Inbox,
+  CreditCard,
+  CalendarClock,
+  ScanLine,
+  PiggyBank,
+  StickyNote,
+  ShoppingCart,
+  Menu,
+  Sun,
+  CalendarDays,
+  ListTodo,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
@@ -46,9 +62,6 @@ const mobileItems = items.filter((i) =>
   ["/today", "/agenda", "/tasks", "/dashboard"].includes(i.to),
 );
 
-
-
-
 export function AppSidebar() {
   const path = useRouterState({ select: (r) => r.location.pathname });
   const { user } = useAuth();
@@ -65,7 +78,11 @@ export function AppSidebar() {
   return (
     <aside className="hidden lg:flex flex-col w-64 shrink-0 border-r border-sidebar-border bg-sidebar p-4">
       <Link to="/dashboard" className="flex items-center gap-3 px-2 py-3 mb-6">
-        <img src={logo} alt="Furushima Financeiro" className="h-10 w-10 rounded-lg object-cover shadow-glow" />
+        <img
+          src={logo}
+          alt="Furushima Financeiro"
+          className="h-10 w-10 rounded-lg object-cover shadow-glow"
+        />
         <div className="leading-tight">
           <span className="font-display text-lg font-bold block">Furushima</span>
           <span className="text-xs text-muted-foreground">Financeiro</span>
@@ -98,11 +115,16 @@ export function AppSidebar() {
           <p className="text-xs text-muted-foreground">Conectado como</p>
           <p className="text-sm truncate">{user?.email}</p>
           {isViewer && (
-            <Badge variant="outline" className="mt-1 text-[10px]">Modo espectador</Badge>
+            <Badge variant="outline" className="mt-1 text-[10px]">
+              Modo espectador
+            </Badge>
           )}
         </div>
 
-        <button onClick={logout} className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent transition">
+        <button
+          onClick={logout}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-sidebar-foreground hover:bg-sidebar-accent transition"
+        >
           <LogOut className="h-4 w-4" />
           Sair
         </button>
@@ -136,10 +158,14 @@ export function MobileNav() {
         {mobileItems.map((it) => {
           const active = path === it.to;
           return (
-            <Link key={it.to} to={it.to} className={cn(
-              "flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 rounded-lg text-[10px] leading-tight transition",
-              active ? "text-primary-glow" : "text-muted-foreground"
-            )}>
+            <Link
+              key={it.to}
+              to={it.to}
+              className={cn(
+                "flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 rounded-lg text-[10px] leading-tight transition",
+                active ? "text-primary-glow" : "text-muted-foreground",
+              )}
+            >
               <it.icon className="h-5 w-5" />
               <span className="truncate max-w-full">{it.short}</span>
             </Link>
@@ -163,7 +189,11 @@ export function MobileNav() {
           <SheetContent side="right" className="w-[86vw] max-w-sm p-0 flex flex-col bg-sidebar">
             <SheetHeader className="p-4 pb-3 border-b border-sidebar-border text-left">
               <SheetTitle className="flex items-center gap-3">
-                <img src={logo} alt="Furushima Financeiro" className="h-9 w-9 rounded-lg object-cover" />
+                <img
+                  src={logo}
+                  alt="Furushima Financeiro"
+                  className="h-9 w-9 rounded-lg object-cover"
+                />
                 <span className="font-display">Furushima Financeiro</span>
               </SheetTitle>
             </SheetHeader>
@@ -197,7 +227,11 @@ export function MobileNav() {
               <div className="px-2">
                 <p className="text-xs text-muted-foreground">Conectado como</p>
                 <p className="text-sm truncate">{user?.email}</p>
-                {isViewer && <Badge variant="outline" className="mt-1 text-[10px]">Modo espectador</Badge>}
+                {isViewer && (
+                  <Badge variant="outline" className="mt-1 text-[10px]">
+                    Modo espectador
+                  </Badge>
+                )}
               </div>
               <button
                 onClick={logout}
@@ -213,4 +247,3 @@ export function MobileNav() {
     </nav>
   );
 }
-

@@ -35,10 +35,12 @@ Retorne APENAS JSON válido no formato:
 export const extractTransactionsFromImage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
-    z.object({
-      imageId: z.string().uuid(),
-      storagePath: z.string().min(1).max(1024),
-    }).parse(input),
+    z
+      .object({
+        imageId: z.string().uuid(),
+        storagePath: z.string().min(1).max(1024),
+      })
+      .parse(input),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -67,7 +69,8 @@ export const extractTransactionsFromImage = createServerFn({ method: "POST" })
     const dataUrl = `data:${mime};base64,${base64}`;
 
     // Mark as processing
-    await supabase.from("uploaded_transaction_images")
+    await supabase
+      .from("uploaded_transaction_images")
       .update({ processing_status: "processing" })
       .eq("id", data.imageId);
 
@@ -89,7 +92,7 @@ export const extractTransactionsFromImage = createServerFn({ method: "POST" })
       const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${apiKey}`,
+          Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -116,7 +119,8 @@ export const extractTransactionsFromImage = createServerFn({ method: "POST" })
       const content: string = j.choices?.[0]?.message?.content ?? "{}";
       parsed = JSON.parse(content);
     } catch (e) {
-      await supabase.from("uploaded_transaction_images")
+      await supabase
+        .from("uploaded_transaction_images")
         .update({
           processing_status: "failed",
           error_message: e instanceof Error ? e.message : String(e),
@@ -139,10 +143,16 @@ export const extractTransactionsFromImage = createServerFn({ method: "POST" })
       const n = name.toLowerCase().trim();
       const exact = cats.find((c) => c.name.toLowerCase() === n);
       if (exact) return exact.id;
-      const fuzzy = cats.find((c) => n.includes(c.name.toLowerCase()) || c.name.toLowerCase().includes(n));
+      const fuzzy = cats.find(
+        (c) => n.includes(c.name.toLowerCase()) || c.name.toLowerCase().includes(n),
+      );
       if (fuzzy) return fuzzy.id;
       // fallback Outros for the matching type
-      const fb = cats.find((c) => c.name.toLowerCase() === "outros" && c.type === (type === "income" ? "income" : "expense"));
+      const fb = cats.find(
+        (c) =>
+          c.name.toLowerCase() === "outros" &&
+          c.type === (type === "income" ? "income" : "expense"),
+      );
       return fb?.id ?? null;
     };
 
@@ -159,16 +169,27 @@ export const extractTransactionsFromImage = createServerFn({ method: "POST" })
       if (!dups || dups.length === 0) return false;
       if (!desc) return true;
       const d = desc.toLowerCase();
-      return dups.some((x) => (x.description ?? "").toLowerCase().includes(d.slice(0, 12)) || d.includes((x.description ?? "").toLowerCase().slice(0, 12)));
+      return dups.some(
+        (x) =>
+          (x.description ?? "").toLowerCase().includes(d.slice(0, 12)) ||
+          d.includes((x.description ?? "").toLowerCase().slice(0, 12)),
+      );
     };
 
     type OcrRow = {
-      user_id: string; image_id: string;
-      detected_date: string | null; detected_amount: number | null;
-      detected_type: string; detected_description: string | null;
-      detected_payment_method: string | null; detected_account: string | null;
-      suggested_category: string | null; suggested_category_id: string | null;
-      confidence_level: string; review_status: string; possible_duplicate: boolean;
+      user_id: string;
+      image_id: string;
+      detected_date: string | null;
+      detected_amount: number | null;
+      detected_type: string;
+      detected_description: string | null;
+      detected_payment_method: string | null;
+      detected_account: string | null;
+      suggested_category: string | null;
+      suggested_category_id: string | null;
+      confidence_level: string;
+      review_status: string;
+      possible_duplicate: boolean;
     };
     const rows: OcrRow[] = [];
     for (const t of txs) {
@@ -198,7 +219,8 @@ export const extractTransactionsFromImage = createServerFn({ method: "POST" })
       if (insErr) throw insErr;
     }
 
-    await supabase.from("uploaded_transaction_images")
+    await supabase
+      .from("uploaded_transaction_images")
       .update({
         processing_status: "completed",
         ocr_confidence: overall,

@@ -19,7 +19,9 @@ export default defineTool({
     if (authErr) return authErr;
     let q = supabaseForUser(ctx)
       .from("balance_recharges")
-      .select("id, name, recharge_type, expected_amount, expected_date, account_id, card_id, payment_method, status, notes, is_recurring, recurring_day")
+      .select(
+        "id, name, recharge_type, expected_amount, expected_date, account_id, card_id, payment_method, status, notes, is_recurring, recurring_day",
+      )
       .order("expected_date", { ascending: true })
       .limit(limit ?? 100);
     if (status) q = q.eq("status", status);

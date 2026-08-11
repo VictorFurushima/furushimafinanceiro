@@ -43,7 +43,6 @@ function IncomePage() {
     invalidateFinance(qc, "transactions");
   };
 
-
   return (
     <div className="p-4 sm:p-6 lg:p-10 max-w-5xl mx-auto space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -51,7 +50,10 @@ function IncomePage() {
           <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold">Receitas</h1>
           <p className="text-sm text-muted-foreground mt-1">Entradas de dinheiro</p>
         </div>
-        <Button onClick={() => setOpen(true)} className="bg-success text-success-foreground hover:bg-success/90">
+        <Button
+          onClick={() => setOpen(true)}
+          className="bg-success text-success-foreground hover:bg-success/90"
+        >
           <Plus className="h-4 w-4 mr-2" /> Nova receita
         </Button>
       </header>
@@ -60,22 +62,30 @@ function IncomePage() {
         <Card className="bg-gradient-card border-border/50 shadow-card">
           <CardContent className="p-5">
             <p className="text-xs uppercase tracking-wider text-muted-foreground">Este mês</p>
-            <p className="mt-2 font-display text-3xl font-bold text-success">{formatCurrency(monthTotal)}</p>
+            <p className="mt-2 font-display text-3xl font-bold text-success">
+              {formatCurrency(monthTotal)}
+            </p>
           </CardContent>
         </Card>
         <Card className="bg-gradient-card border-border/50 shadow-card">
           <CardContent className="p-5">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">Total acumulado</p>
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">
+              Total acumulado
+            </p>
             <p className="mt-2 font-display text-3xl font-bold">{formatCurrency(totalAll)}</p>
           </CardContent>
         </Card>
       </div>
 
       <Card className="bg-gradient-card border-border/50 shadow-card">
-        <CardHeader><CardTitle className="font-display">Histórico</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="font-display">Histórico</CardTitle>
+        </CardHeader>
         <CardContent>
           {incomes.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-12 text-center">Nenhuma receita registrada.</p>
+            <p className="text-sm text-muted-foreground py-12 text-center">
+              Nenhuma receita registrada.
+            </p>
           ) : (
             <ul className="divide-y divide-border/50">
               {incomes.map((t) => (
@@ -84,13 +94,23 @@ function IncomePage() {
                     <TrendingUp className="h-5 w-5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{t.description || t.categories?.name || "Receita"}</p>
+                    <p className="text-sm font-medium truncate">
+                      {t.description || t.categories?.name || "Receita"}
+                    </p>
                     <p className="text-xs text-muted-foreground">
-                      {t.categories?.name ?? "—"} · {new Date(t.occurred_at).toLocaleDateString("pt-BR")}
+                      {t.categories?.name ?? "—"} ·{" "}
+                      {new Date(t.occurred_at).toLocaleDateString("pt-BR")}
                     </p>
                   </div>
-                  <span className="text-sm font-semibold text-success">+ {formatCurrency(Number(t.amount))}</span>
-                  <button type="button" aria-label="Excluir receita" onClick={() => remove(t.id)} className="p-2 -m-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 text-muted-foreground hover:text-destructive">
+                  <span className="text-sm font-semibold text-success">
+                    + {formatCurrency(Number(t.amount))}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label="Excluir receita"
+                    onClick={() => remove(t.id)}
+                    className="p-2 -m-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 text-muted-foreground hover:text-destructive"
+                  >
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </li>
@@ -100,19 +120,28 @@ function IncomePage() {
 
           {totalCount > PAGE_SIZE && (
             <div className="flex items-center justify-between gap-3 pt-4 mt-2 border-t border-border/50">
-              <Button variant="outline" size="sm" disabled={page === 0 || isFetching}
-                onClick={() => setPage((p) => Math.max(0, p - 1))}>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page === 0 || isFetching}
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+              >
                 Anterior
               </Button>
-              <span className="text-xs text-muted-foreground">Página {page + 1} de {pageCount}</span>
-              <Button variant="outline" size="sm" disabled={page + 1 >= pageCount || isFetching}
-                onClick={() => setPage((p) => p + 1)}>
+              <span className="text-xs text-muted-foreground">
+                Página {page + 1} de {pageCount}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={page + 1 >= pageCount || isFetching}
+                onClick={() => setPage((p) => p + 1)}
+              >
                 Próxima
               </Button>
             </div>
           )}
         </CardContent>
-
       </Card>
 
       <TransactionDialog open={open} onOpenChange={setOpen} defaultType="income" />

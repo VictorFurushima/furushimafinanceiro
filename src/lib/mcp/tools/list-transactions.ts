@@ -61,7 +61,8 @@ export default defineTool({
         offset: start,
         returned: rows.length,
         total: count ?? null,
-        has_more: count !== null && count !== undefined ? end + 1 < count : rows.length === pageSize,
+        has_more:
+          count !== null && count !== undefined ? end + 1 < count : rows.length === pageSize,
       },
     });
   },

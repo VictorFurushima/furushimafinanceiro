@@ -31,7 +31,6 @@ export const financeKeys = {
     ["finance", "statistics-extras", from, to] as const,
   dashboardSnapshot: ["finance", "dashboard-snapshot"] as const,
 
-
   // listas
   transactions: ["transactions"] as const,
   transactionsList: (filters: TransactionFilters) => ["transactions", "list", filters] as const,
@@ -76,7 +75,6 @@ export const hubKeys = {
   calendarIntegration: ["calendar_integration"] as const,
 };
 
-
 export type FinanceDomain =
   | "transactions"
   | "accounts"
@@ -98,14 +96,9 @@ export type FinanceDomain =
   | "alerts"
   | "calendarIntegration";
 
-
 /** Famílias de query afetadas por cada domínio de mutação. */
 const DOMAIN_KEYS: Record<FinanceDomain, readonly (readonly unknown[])[]> = {
-  transactions: [
-    financeKeys.transactions,
-    financeKeys.aggregates,
-    financeKeys.budgetsAll,
-  ],
+  transactions: [financeKeys.transactions, financeKeys.aggregates, financeKeys.budgetsAll],
   accounts: [financeKeys.accounts, financeKeys.aggregates],
   categories: [financeKeys.categories, financeKeys.aggregates],
   budgets: [financeKeys.budgetsAll],

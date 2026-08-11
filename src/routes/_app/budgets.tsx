@@ -8,7 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import { useBudgets, useCategories } from "@/hooks/use-finance-data";
@@ -42,20 +48,23 @@ function BudgetsPage() {
     if (!categoryId || !val || val <= 0) return toast.error("Preencha corretamente");
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) return;
-    const { error } = await supabase.from("budgets").upsert(
-      { category_id: categoryId, amount: val, month: monthStr, user_id: u.user.id },
-      { onConflict: "user_id,category_id,month" },
-    );
+    const { error } = await supabase
+      .from("budgets")
+      .upsert(
+        { category_id: categoryId, amount: val, month: monthStr, user_id: u.user.id },
+        { onConflict: "user_id,category_id,month" },
+      );
     if (error) return toast.error(error.message);
     toast.success("Orçamento salvo");
     invalidateFinance(qc, "budgets");
-    setOpen(false); setAmount(""); setCategoryId("");
+    setOpen(false);
+    setAmount("");
+    setCategoryId("");
   };
 
   const spentByCat = new Map<string, number>(
     spending.filter((s) => s.category_id).map((s) => [s.category_id as string, s.total]),
   );
-
 
   return (
     <div className="p-4 sm:p-6 lg:p-10 max-w-5xl mx-auto space-y-6">
@@ -66,13 +75,18 @@ function BudgetsPage() {
             {monthDate.toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}
           </p>
         </div>
-        <Button onClick={() => setOpen(true)} className="bg-gradient-primary text-primary-foreground shadow-glow">
+        <Button
+          onClick={() => setOpen(true)}
+          className="bg-gradient-primary text-primary-foreground shadow-glow"
+        >
           <Plus className="h-4 w-4 mr-2" /> Definir
         </Button>
       </header>
 
       <Card className="bg-gradient-card border-border/50 shadow-card">
-        <CardHeader><CardTitle className="font-display">Acompanhamento</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="font-display">Acompanhamento</CardTitle>
+        </CardHeader>
         <CardContent>
           {budgets.length === 0 ? (
             <p className="text-sm text-muted-foreground py-12 text-center">
@@ -88,14 +102,22 @@ function BudgetsPage() {
                   <li key={b.id} className="space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="flex items-center gap-2 text-sm font-medium">
-                        <span className="h-2.5 w-2.5 rounded-full" style={{ background: b.categories?.color ?? "#4f46e5" }} />
+                        <span
+                          className="h-2.5 w-2.5 rounded-full"
+                          style={{ background: b.categories?.color ?? "#4f46e5" }}
+                        />
                         {b.categories?.name}
                       </span>
-                      <span className={`text-sm ${over ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
+                      <span
+                        className={`text-sm ${over ? "text-destructive font-semibold" : "text-muted-foreground"}`}
+                      >
                         {formatCurrency(spent)} / {formatCurrency(Number(b.amount))}
                       </span>
                     </div>
-                    <Progress value={pct} className={over ? "[&>div]:bg-destructive" : "[&>div]:bg-gradient-primary"} />
+                    <Progress
+                      value={pct}
+                      className={over ? "[&>div]:bg-destructive" : "[&>div]:bg-gradient-primary"}
+                    />
                   </li>
                 );
               })}
@@ -106,24 +128,41 @@ function BudgetsPage() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="bg-card border-border/50">
-          <DialogHeader><DialogTitle className="font-display text-2xl">Novo orçamento</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl">Novo orçamento</DialogTitle>
+          </DialogHeader>
           <form onSubmit={save} className="space-y-4">
             <div className="space-y-2">
               <Label>Categoria</Label>
               <Select value={categoryId} onValueChange={setCategoryId}>
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
                 <SelectContent>
                   {expenseCats.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label>Limite (R$)</Label>
-              <Input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0,00" inputMode="decimal" required />
+              <Input
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0,00"
+                inputMode="decimal"
+                required
+              />
             </div>
-            <Button type="submit" className="w-full bg-gradient-primary text-primary-foreground shadow-glow">Salvar</Button>
+            <Button
+              type="submit"
+              className="w-full bg-gradient-primary text-primary-foreground shadow-glow"
+            >
+              Salvar
+            </Button>
           </form>
         </DialogContent>
       </Dialog>

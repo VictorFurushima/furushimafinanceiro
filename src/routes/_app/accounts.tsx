@@ -8,7 +8,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAccountBalances } from "@/hooks/use-finance-aggregates";
 import { invalidateFinance } from "@/lib/query-keys";
@@ -21,10 +27,18 @@ export const Route = createFileRoute("/_app/accounts")({
 });
 
 const typeIcons: Record<string, React.ComponentType<{ className?: string }>> = {
-  checking: Wallet, savings: PiggyBank, credit_card: CreditCard, cash: Banknote, investment: TrendingUp,
+  checking: Wallet,
+  savings: PiggyBank,
+  credit_card: CreditCard,
+  cash: Banknote,
+  investment: TrendingUp,
 };
 const typeLabels: Record<string, string> = {
-  checking: "Conta corrente", savings: "Poupança", credit_card: "Cartão de crédito", cash: "Dinheiro", investment: "Investimento",
+  checking: "Conta corrente",
+  savings: "Poupança",
+  credit_card: "Cartão de crédito",
+  cash: "Dinheiro",
+  investment: "Investimento",
 };
 
 function AccountsPage() {
@@ -43,12 +57,18 @@ function AccountsPage() {
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) return;
     const { error } = await supabase.from("accounts").insert({
-      user_id: u.user.id, name: name.trim(), type, initial_balance: parseFloat(balance.replace(",", ".")) || 0, color,
+      user_id: u.user.id,
+      name: name.trim(),
+      type,
+      initial_balance: parseFloat(balance.replace(",", ".")) || 0,
+      color,
     });
     if (error) return toast.error(error.message);
     toast.success("Conta criada");
     invalidateFinance(qc, "accounts");
-    setOpen(false); setName(""); setBalance("0");
+    setOpen(false);
+    setName("");
+    setBalance("0");
   };
 
   const remove = async (id: string) => {
@@ -62,7 +82,10 @@ function AccountsPage() {
     <div className="p-4 sm:p-6 lg:p-10 max-w-5xl mx-auto space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold">Contas</h1>
-        <Button onClick={() => setOpen(true)} className="bg-gradient-primary text-primary-foreground shadow-glow">
+        <Button
+          onClick={() => setOpen(true)}
+          className="bg-gradient-primary text-primary-foreground shadow-glow"
+        >
           <Plus className="h-4 w-4 mr-2" /> Nova
         </Button>
       </header>
@@ -73,14 +96,26 @@ function AccountsPage() {
           const total = a.balance;
 
           return (
-            <Card key={a.id} className="bg-gradient-card border-border/50 shadow-card group relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-20" style={{ background: a.color }} />
+            <Card
+              key={a.id}
+              className="bg-gradient-card border-border/50 shadow-card group relative overflow-hidden"
+            >
+              <div
+                className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-20"
+                style={{ background: a.color }}
+              />
               <CardContent className="p-6 relative">
                 <div className="flex items-start justify-between">
-                  <div className="h-12 w-12 rounded-xl flex items-center justify-center" style={{ background: `${a.color}25`, color: a.color }}>
+                  <div
+                    className="h-12 w-12 rounded-xl flex items-center justify-center"
+                    style={{ background: `${a.color}25`, color: a.color }}
+                  >
                     <Icon className="h-6 w-6" />
                   </div>
-                  <button onClick={() => remove(a.id)} className="p-2 -m-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition text-muted-foreground hover:text-destructive">
+                  <button
+                    onClick={() => remove(a.id)}
+                    className="p-2 -m-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition text-muted-foreground hover:text-destructive"
+                  >
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
@@ -95,19 +130,31 @@ function AccountsPage() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="bg-card border-border/50">
-          <DialogHeader><DialogTitle className="font-display text-2xl">Nova conta</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl">Nova conta</DialogTitle>
+          </DialogHeader>
           <form onSubmit={save} className="space-y-4">
             <div className="space-y-2">
               <Label>Nome</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Nubank" maxLength={50} required />
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ex: Nubank"
+                maxLength={50}
+                required
+              />
             </div>
             <div className="space-y-2">
               <Label>Tipo</Label>
               <Select value={type} onValueChange={setType}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {Object.entries(typeLabels).map(([k, v]) => (
-                    <SelectItem key={k} value={k}>{v}</SelectItem>
+                    <SelectItem key={k} value={k}>
+                      {v}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -115,14 +162,28 @@ function AccountsPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Saldo inicial</Label>
-                <Input value={balance} onChange={(e) => setBalance(e.target.value)} inputMode="decimal" />
+                <Input
+                  value={balance}
+                  onChange={(e) => setBalance(e.target.value)}
+                  inputMode="decimal"
+                />
               </div>
               <div className="space-y-2">
                 <Label>Cor</Label>
-                <Input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="h-10 p-1" />
+                <Input
+                  type="color"
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
+                  className="h-10 p-1"
+                />
               </div>
             </div>
-            <Button type="submit" className="w-full bg-gradient-primary text-primary-foreground shadow-glow">Criar</Button>
+            <Button
+              type="submit"
+              className="w-full bg-gradient-primary text-primary-foreground shadow-glow"
+            >
+              Criar
+            </Button>
           </form>
         </DialogContent>
       </Dialog>

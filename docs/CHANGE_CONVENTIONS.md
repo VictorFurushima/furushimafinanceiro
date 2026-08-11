@@ -53,3 +53,16 @@ Regras:
 - Sem automação de negócio disparada por `useEffect`/`localStorage` — usar
   `pg_cron`.
 - Cache sempre por `financeKeys` + `invalidateFinance`.
+
+## Convenções do Hub Pessoal
+
+- Eventos derivados (rotina, fatura) sempre gravam `source_type`/`source_id` e
+  dependem de índice único parcial para deduplicação. Nunca deduplicar no cliente.
+- Alterar rotina implica rechamar `materialize_routine_events`; não gerar eventos
+  em loop no frontend nem por `useEffect`.
+- Toda escrita externa (Google Calendar) passa por `createServerFn` com checagem
+  de admin no servidor; esconder botão no frontend não é autorização.
+- Exclusão de evento usa `deleteEventEverywhere`: remove o espelho remoto antes do
+  registro local e preserva o dado local se o remoto falhar.
+- Leituras da agenda usam sempre janela (`from`/`to`) e limites explícitos;
+  nenhuma listagem do hub carrega histórico completo.

@@ -47,6 +47,5 @@ export default defineTool({
       resgates: Number(row?.resgates ?? 0),
       total_account_balance: totalBalance,
     });
-
   },
 });

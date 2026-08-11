@@ -22,8 +22,14 @@ const schema = z.object({
 });
 
 export function CreditCardDialog({
-  open, onOpenChange, editing,
-}: { open: boolean; onOpenChange: (o: boolean) => void; editing?: CreditCard | null }) {
+  open,
+  onOpenChange,
+  editing,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  editing?: CreditCard | null;
+}) {
   const qc = useQueryClient();
   const [name, setName] = useState("");
   const [bank, setBank] = useState("");
@@ -36,24 +42,39 @@ export function CreditCardDialog({
 
   useEffect(() => {
     if (editing) {
-      setName(editing.name); setBank(editing.bank ?? "");
-      setTotal(String(editing.total_limit)); setUsed(String(editing.used_limit));
-      setClosing(editing.closing_day); setDue(editing.due_day); setColor(editing.color);
+      setName(editing.name);
+      setBank(editing.bank ?? "");
+      setTotal(String(editing.total_limit));
+      setUsed(String(editing.used_limit));
+      setClosing(editing.closing_day);
+      setDue(editing.due_day);
+      setColor(editing.color);
     } else if (open) {
-      setName(""); setBank(""); setTotal(""); setUsed("0");
-      setClosing(1); setDue(10); setColor("#22d3ee");
+      setName("");
+      setBank("");
+      setTotal("");
+      setUsed("0");
+      setClosing(1);
+      setDue(10);
+      setColor("#22d3ee");
     }
   }, [editing, open]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     const parsed = schema.safeParse({
-      name, bank: bank || null,
+      name,
+      bank: bank || null,
       total_limit: parseFloat(total.replace(",", ".")) || 0,
       used_limit: parseFloat(used.replace(",", ".")) || 0,
-      closing_day: closing, due_day: due, color,
+      closing_day: closing,
+      due_day: due,
+      color,
     });
-    if (!parsed.success) { toast.error(parsed.error.issues[0]?.message ?? "Dados inválidos"); return; }
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Dados inválidos");
+      return;
+    }
     setSaving(true);
     try {
       const { data: u } = await supabase.auth.getUser();
@@ -68,7 +89,9 @@ export function CreditCardDialog({
       onOpenChange(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao salvar");
-    } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -83,38 +106,81 @@ export function CreditCardDialog({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Nome</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Nubank" required maxLength={60} />
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Ex: Nubank"
+                required
+                maxLength={60}
+              />
             </div>
             <div className="space-y-2">
               <Label>Banco</Label>
-              <Input value={bank} onChange={(e) => setBank(e.target.value)} placeholder="Ex: Nubank" maxLength={60} />
+              <Input
+                value={bank}
+                onChange={(e) => setBank(e.target.value)}
+                placeholder="Ex: Nubank"
+                maxLength={60}
+              />
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Limite total (R$)</Label>
-              <Input value={total} onChange={(e) => setTotal(e.target.value)} inputMode="decimal" placeholder="0,00" required />
+              <Input
+                value={total}
+                onChange={(e) => setTotal(e.target.value)}
+                inputMode="decimal"
+                placeholder="0,00"
+                required
+              />
             </div>
             <div className="space-y-2">
               <Label>Limite usado (R$)</Label>
-              <Input value={used} onChange={(e) => setUsed(e.target.value)} inputMode="decimal" placeholder="0,00" />
+              <Input
+                value={used}
+                onChange={(e) => setUsed(e.target.value)}
+                inputMode="decimal"
+                placeholder="0,00"
+              />
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="space-y-2">
               <Label>Fechamento</Label>
-              <Input type="number" min={1} max={31} value={closing} onChange={(e) => setClosing(parseInt(e.target.value) || 1)} />
+              <Input
+                type="number"
+                min={1}
+                max={31}
+                value={closing}
+                onChange={(e) => setClosing(parseInt(e.target.value) || 1)}
+              />
             </div>
             <div className="space-y-2">
               <Label>Vencimento</Label>
-              <Input type="number" min={1} max={31} value={due} onChange={(e) => setDue(parseInt(e.target.value) || 1)} />
+              <Input
+                type="number"
+                min={1}
+                max={31}
+                value={due}
+                onChange={(e) => setDue(parseInt(e.target.value) || 1)}
+              />
             </div>
             <div className="space-y-2">
               <Label>Cor</Label>
-              <Input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="h-9 p-1" />
+              <Input
+                type="color"
+                value={color}
+                onChange={(e) => setColor(e.target.value)}
+                className="h-9 p-1"
+              />
             </div>
           </div>
-          <Button type="submit" disabled={saving} className="w-full bg-gradient-primary text-primary-foreground shadow-glow">
+          <Button
+            type="submit"
+            disabled={saving}
+            className="w-full bg-gradient-primary text-primary-foreground shadow-glow"
+          >
             {saving ? "Salvando..." : "Salvar"}
           </Button>
         </form>

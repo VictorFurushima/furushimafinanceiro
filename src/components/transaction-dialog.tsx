@@ -8,7 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { invalidateFinance } from "@/lib/query-keys";
@@ -29,8 +35,14 @@ const schema = z.object({
 });
 
 export function TransactionDialog({
-  open, onOpenChange, defaultType = "expense",
-}: { open: boolean; onOpenChange: (o: boolean) => void; defaultType?: "income" | "expense" }) {
+  open,
+  onOpenChange,
+  defaultType = "expense",
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  defaultType?: "income" | "expense";
+}) {
   const qc = useQueryClient();
   const { data: categories = [] } = useCategories();
   const { data: accounts = [] } = useAccounts();
@@ -46,7 +58,9 @@ export function TransactionDialog({
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { setType(defaultType); }, [defaultType, open]);
+  useEffect(() => {
+    setType(defaultType);
+  }, [defaultType, open]);
   useEffect(() => {
     if (open && accounts.length > 0 && !accountId) setAccountId(accounts[0].id);
   }, [open, accounts, accountId]);
@@ -96,7 +110,10 @@ export function TransactionDialog({
       toast.success("Transação adicionada!");
       invalidateFinance(qc, "transactions");
       onOpenChange(false);
-      setAmount(""); setDescription(""); setSubcategory(""); setNotes("");
+      setAmount("");
+      setDescription("");
+      setSubcategory("");
+      setNotes("");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao salvar");
     } finally {
@@ -113,15 +130,32 @@ export function TransactionDialog({
         <form onSubmit={submit} className="space-y-4">
           <Tabs value={type} onValueChange={(v) => setType(v as "income" | "expense")}>
             <TabsList className="grid grid-cols-2 w-full">
-              <TabsTrigger value="expense" className="data-[state=active]:bg-destructive/20 data-[state=active]:text-destructive">Despesa</TabsTrigger>
-              <TabsTrigger value="income" className="data-[state=active]:bg-success/20 data-[state=active]:text-success">Receita</TabsTrigger>
+              <TabsTrigger
+                value="expense"
+                className="data-[state=active]:bg-destructive/20 data-[state=active]:text-destructive"
+              >
+                Despesa
+              </TabsTrigger>
+              <TabsTrigger
+                value="income"
+                className="data-[state=active]:bg-success/20 data-[state=active]:text-success"
+              >
+                Receita
+              </TabsTrigger>
             </TabsList>
           </Tabs>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Valor (R$)</Label>
-              <Input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0,00" inputMode="decimal" required autoFocus />
+              <Input
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0,00"
+                inputMode="decimal"
+                required
+                autoFocus
+              />
             </div>
             <div className="space-y-2">
               <Label>Data</Label>
@@ -131,19 +165,29 @@ export function TransactionDialog({
 
           <div className="space-y-2">
             <Label>Descrição</Label>
-            <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Ex: Almoço, Salário..." maxLength={200} />
+            <Input
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Ex: Almoço, Salário..."
+              maxLength={200}
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Categoria</Label>
               <Select value={categoryId} onValueChange={setCategoryId}>
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
                 <SelectContent>
                   {filteredCats.map((c) => (
                     <SelectItem key={c.id} value={c.id}>
                       <span className="flex items-center gap-2">
-                        <span className="h-2.5 w-2.5 rounded-full" style={{ background: c.color }} />
+                        <span
+                          className="h-2.5 w-2.5 rounded-full"
+                          style={{ background: c.color }}
+                        />
                         {c.name}
                       </span>
                     </SelectItem>
@@ -153,7 +197,12 @@ export function TransactionDialog({
             </div>
             <div className="space-y-2">
               <Label>Subcategoria</Label>
-              <Input value={subcategory} onChange={(e) => setSubcategory(e.target.value)} placeholder="Opcional" maxLength={80} />
+              <Input
+                value={subcategory}
+                onChange={(e) => setSubcategory(e.target.value)}
+                placeholder="Opcional"
+                maxLength={80}
+              />
             </div>
           </div>
 
@@ -161,10 +210,14 @@ export function TransactionDialog({
             <div className="space-y-2">
               <Label>Conta</Label>
               <Select value={accountId} onValueChange={setAccountId}>
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
                 <SelectContent>
                   {accounts.map((a) => (
-                    <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -172,10 +225,14 @@ export function TransactionDialog({
             <div className="space-y-2">
               <Label>Forma de pagamento</Label>
               <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {PAYMENT_METHODS.map((p) => (
-                    <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                    <SelectItem key={p.value} value={p.value}>
+                      {p.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -184,10 +241,20 @@ export function TransactionDialog({
 
           <div className="space-y-2">
             <Label>Observações</Label>
-            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} rows={2} placeholder="Notas internas (opcional)" />
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              maxLength={500}
+              rows={2}
+              placeholder="Notas internas (opcional)"
+            />
           </div>
 
-          <Button type="submit" disabled={saving} className="w-full bg-gradient-primary text-primary-foreground shadow-glow">
+          <Button
+            type="submit"
+            disabled={saving}
+            className="w-full bg-gradient-primary text-primary-foreground shadow-glow"
+          >
             {saving ? "Salvando..." : "Adicionar"}
           </Button>
         </form>

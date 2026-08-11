@@ -39,10 +39,13 @@ const find = <T extends { value: string }>(arr: readonly T[], v?: string | null)
   arr.find((x) => x.value === v);
 
 export const priorityLabel = (v?: string | null) => find(SHOPPING_PRIORITIES, v)?.label ?? "—";
-export const priorityColor = (v?: string | null) => find(SHOPPING_PRIORITIES, v)?.color ?? "#94a3b8";
+export const priorityColor = (v?: string | null) =>
+  find(SHOPPING_PRIORITIES, v)?.color ?? "#94a3b8";
 export const priorityWeight = (v?: string | null) => find(SHOPPING_PRIORITIES, v)?.weight ?? 0;
 export const purchaseTypeLabel = (v?: string | null) => find(PURCHASE_TYPES, v)?.label ?? "—";
 export const purchaseTypeColor = (v?: string | null) => find(PURCHASE_TYPES, v)?.color ?? "#94a3b8";
 export const shoppingPaymentLabel = (v?: string | null) => find(SHOPPING_PAYMENTS, v)?.label ?? "—";
-export const shoppingStatusLabel = (v?: string | null) => find(SHOPPING_STATUS, v)?.label ?? v ?? "—";
-export const shoppingStatusColor = (v?: string | null) => find(SHOPPING_STATUS, v)?.color ?? "#94a3b8";
+export const shoppingStatusLabel = (v?: string | null) =>
+  find(SHOPPING_STATUS, v)?.label ?? v ?? "—";
+export const shoppingStatusColor = (v?: string | null) =>
+  find(SHOPPING_STATUS, v)?.color ?? "#94a3b8";

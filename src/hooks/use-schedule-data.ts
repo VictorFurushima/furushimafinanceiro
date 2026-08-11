@@ -137,7 +137,7 @@ export interface AlertRow {
   read_at: string | null;
 }
 
-/** Alertas pendentes/próximos — usa o índice parcial (user_id, trigger_at). */
+/** Alertas pendentes ordenados por disparo — casa com idx_alerts_pending. */
 export const useAlerts = (limit = 30) =>
   useQuery({
     queryKey: hubKeys.alertsUpcoming(limit),
@@ -145,10 +145,31 @@ export const useAlerts = (limit = 30) =>
       const { data, error } = await supabase
         .from("alerts")
         .select("id,title,body,source_type,source_id,trigger_at,channel,status,read_at")
+        .eq("status", "pending")
         .order("trigger_at", { ascending: true })
         .limit(limit);
       if (error) throw error;
       return (data ?? []) as AlertRow[];
+    },
+  });
+
+/**
+ * Eventos próximos para vínculo de tarefas — janela e limite fixos,
+ * evitando leitura ilimitada da agenda.
+ */
+export const useLinkableEvents = (limit = 50) =>
+  useQuery({
+    queryKey: [...hubKeys.events, "linkable", limit] as const,
+    queryFn: async (): Promise<Pick<CalendarEvent, "id" | "title" | "starts_at">[]> => {
+      const from = new Date(Date.now() - 7 * 86_400_000).toISOString();
+      const { data, error } = await supabase
+        .from("calendar_events")
+        .select("id,title,starts_at")
+        .gte("starts_at", from)
+        .order("starts_at", { ascending: true })
+        .limit(limit);
+      if (error) throw error;
+      return (data ?? []) as Pick<CalendarEvent, "id" | "title" | "starts_at">[];
     },
   });
 
