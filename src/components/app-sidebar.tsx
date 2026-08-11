@@ -4,6 +4,7 @@ import {
   LayoutDashboard, ArrowLeftRight, Target, Wallet, LogOut,
   Repeat, BarChart3, Upload, Settings, ArrowDownToLine,
   Inbox, CreditCard, CalendarClock, ScanLine, PiggyBank, StickyNote, ShoppingCart, Menu,
+  Sun, CalendarDays, ListTodo,
 } from "lucide-react";
 import { toast } from "sonner";
 
