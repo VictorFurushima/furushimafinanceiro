@@ -92,3 +92,41 @@ Ao criar tabela, relação ou filtro relevante, revisar **sempre**:
   `invalidateQueries` avulso espalhado por componentes.
 - `QueryClient`: `staleTime` 60s, `gcTime` 10min, `refetchOnWindowFocus` false,
   `refetchOnReconnect` true, `retry` 1.
+
+## Hub Pessoal (Agenda, Rotinas, Tarefas, Alertas)
+
+Tabelas: `calendar_events`, `routines`, `routine_occurrences`, `tasks`, `alerts`,
+`calendar_integrations`. Todas com RLS em padrão InitPlan
+(`(select public.space_owner((select auth.uid())))` para leitura,
+`(select public.is_admin((select auth.uid())))` para escrita).
+
+### Origem dos eventos (`calendar_events.source_type`)
+
+| source_type | Origem | Idempotência |
+| --- | --- | --- |
+| `null` | criado manualmente pelo usuário | — |
+| `routine` | gerado por `materialize_routine_events` | `idx_calendar_events_routine_slot (user_id, source_id, starts_at)` |
+| `credit_card_bill` | agendamento de pagamento de fatura (tela Cartões) | `idx_calendar_events_finance_source (user_id, source_type, source_id)` |
+
+### Materialização de rotinas
+
+`public.materialize_routine_events(p_days int)` é set-based e idempotente:
+gera eventos das rotinas ativas em janela finita (máx. 60 dias) e remove eventos
+futuros de rotinas pausadas/excluídas. É chamada ao salvar ou pausar uma rotina;
+reexecutar não duplica registros.
+
+### Status canônicos
+
+- `routine_occurrences.status`: `pendente` | `concluida`
+- `tasks.status`: `pendente` | `em_andamento` | `concluida` | `cancelada`
+- `alerts.status`: `pending` | `read` | `dismissed`
+- `calendar_events.sync_status`: `pending` | `synced` | `error`
+
+Todos protegidos por `CHECK` constraints.
+
+### Sincronização com Google Calendar
+
+Unidirecional (Postgres -> Google), executada apenas em server functions
+(`src/lib/calendar-sync.functions.ts`) com verificação explícita de
+`public.is_admin`. Falha de envio nunca apaga dado local: o evento fica com
+`sync_status='error'` e `sync_error` preenchido para retry manual.
