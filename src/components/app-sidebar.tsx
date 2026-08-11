@@ -4,6 +4,7 @@ import {
   LayoutDashboard, ArrowLeftRight, Target, Wallet, LogOut,
   Repeat, BarChart3, Upload, Settings, ArrowDownToLine,
   Inbox, CreditCard, CalendarClock, ScanLine, PiggyBank, StickyNote, ShoppingCart, Menu,
+  Sun, CalendarDays, ListTodo,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -18,6 +19,10 @@ import { cn } from "@/lib/utils";
 import logo from "@/assets/furushima-logo.jpg";
 
 const items = [
+  { to: "/today", label: "Hoje", short: "Hoje", icon: Sun },
+  { to: "/agenda", label: "Agenda", short: "Agenda", icon: CalendarDays },
+  { to: "/routines", label: "Rotinas", short: "Rotinas", icon: Repeat },
+  { to: "/tasks", label: "Tarefas", short: "Tarefas", icon: ListTodo },
   { to: "/dashboard", label: "Visão Geral", short: "Início", icon: LayoutDashboard },
   { to: "/transactions", label: "Transações", short: "Gastos", icon: ArrowLeftRight },
   { to: "/income", label: "Receitas", short: "Receitas", icon: ArrowDownToLine },
@@ -38,8 +43,9 @@ const items = [
 ] as const;
 
 const mobileItems = items.filter((i) =>
-  ["/dashboard", "/transactions", "/investments", "/recharges"].includes(i.to),
+  ["/today", "/agenda", "/tasks", "/dashboard"].includes(i.to),
 );
+
 
 
 
