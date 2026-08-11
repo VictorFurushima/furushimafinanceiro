@@ -231,7 +231,13 @@ function AgendaPage() {
         </div>
       )}
 
-      <EventDialog open={open} onOpenChange={setOpen} editing={editing} defaultStart={anchor} />
+      <EventDialog
+        open={open}
+        onOpenChange={(o) => { setOpen(o); if (!o) setSlotDialogStart(null); }}
+        editing={editing}
+        defaultStart={slotDialogStart ?? anchor}
+      />
+
     </div>
   );
 }
