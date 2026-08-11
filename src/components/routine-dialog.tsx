@@ -79,10 +79,15 @@ export function RoutineDialog({
       ? await supabase.from("routines").update(payload).eq("id", editing.id)
       : await supabase.from("routines").insert(payload);
 
+    if (error) { setSaving(false); return toast.error(error.message); }
+
+    // Materializa a janela finita de eventos da rotina no Postgres (idempotente).
+    const { error: matError } = await supabase.rpc("materialize_routine_events", { p_days: 30 });
     setSaving(false);
-    if (error) return toast.error(error.message);
-    toast.success(editing ? "Rotina atualizada" : "Rotina criada");
+    if (matError) toast.error(`Rotina salva, mas a agenda não foi atualizada: ${matError.message}`);
+    else toast.success(editing ? "Rotina atualizada" : "Rotina criada");
     invalidateFinance(qc, "routines");
+    invalidateFinance(qc, "events");
     onOpenChange(false);
   };
 

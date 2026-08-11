@@ -9,7 +9,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EventDialog } from "@/components/event-dialog";
-import { supabase } from "@/integrations/supabase/client";
 import { invalidateFinance } from "@/lib/query-keys";
 import { useRole, VIEWER_MESSAGE } from "@/hooks/use-role";
 import { useEvents, type CalendarEvent } from "@/hooks/use-schedule-data";
