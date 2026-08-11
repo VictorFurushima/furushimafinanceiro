@@ -1,14 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, CreditCard as CardIcon, FileText, Check } from "lucide-react";
+import { Plus, Pencil, Trash2, CreditCard as CardIcon, FileText, Check, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { useCreditCards, useCreditCardBills, type CreditCard } from "@/hooks/use-finance-data";
+import { useCreditCards, useCreditCardBills, type CreditCard, type CreditCardBill } from "@/hooks/use-finance-data";
+import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { invalidateFinance } from "@/lib/query-keys";
 import { formatCurrency } from "@/lib/format";
@@ -25,6 +26,7 @@ function nextDueDate(dueDay: number): Date {
 }
 
 function CardsPage() {
+  const { user } = useAuth();
   const { data: cards = [] } = useCreditCards();
   const { data: bills = [] } = useCreditCardBills();
   const qc = useQueryClient();
@@ -45,6 +47,35 @@ function CardsPage() {
     if (error) { toast.error(error.message); return; }
     toast.success("Fatura paga — limite recarregado");
     invalidateFinance(qc, "cards");
+  };
+
+  /**
+   * Integração financeira -> agenda: cria o compromisso de pagamento da fatura.
+   * O índice parcial idx_calendar_events_finance_source garante idempotência.
+   */
+  const scheduleBill = async (b: CreditCardBill) => {
+    if (!user) return;
+    const cardName = cards.find((c) => c.id === b.card_id)?.name ?? "Cartão";
+    const start = new Date(`${b.due_date}T09:00:00`);
+    const end = new Date(start.getTime() + 30 * 60_000);
+    const { error } = await supabase.from("calendar_events").insert({
+      user_id: user.id,
+      title: `Pagar fatura ${cardName} · ${formatCurrency(b.amount)}`,
+      category: "financeiro",
+      priority: "alta",
+      starts_at: start.toISOString(),
+      ends_at: end.toISOString(),
+      all_day: false,
+      source_type: "credit_card_bill",
+      source_id: b.id,
+      sync_enabled: false,
+    });
+    if (error) {
+      if (error.code === "23505") return toast.info("Esta fatura já está agendada.");
+      return toast.error(error.message);
+    }
+    toast.success("Pagamento agendado na sua agenda");
+    invalidateFinance(qc, "events");
   };
 
   const openBills = bills.filter((b) => b.status !== "paga");
@@ -141,9 +172,14 @@ function CardsPage() {
                         {cardOpenBills.map((b) => (
                           <div key={b.id} className="flex items-center justify-between text-sm">
                             <span>{String(b.month).padStart(2, "0")}/{b.year} · {formatCurrency(b.amount)}</span>
-                            <Button size="sm" variant="outline" onClick={() => payBill(b.id)}>
-                              <Check className="h-3 w-3 mr-1" /> Pagar
-                            </Button>
+                            <div className="flex gap-2 shrink-0">
+                              <Button size="sm" variant="outline" onClick={() => scheduleBill(b)}>
+                                <CalendarDays className="h-3 w-3 mr-1" /> Agendar
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={() => payBill(b.id)}>
+                                <Check className="h-3 w-3 mr-1" /> Pagar
+                              </Button>
+                            </div>
                           </div>
                         ))}
                       </div>
