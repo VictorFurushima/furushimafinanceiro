@@ -17,6 +17,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as AppAccountsRouteImport } from './routes/_app/accounts'
+import { Route as AppAgendaRouteImport } from './routes/_app/agenda'
 import { Route as AppBudgetsRouteImport } from './routes/_app/budgets'
 import { Route as AppCardsRouteImport } from './routes/_app/cards'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
@@ -28,10 +29,13 @@ import { Route as AppInvestmentsRouteImport } from './routes/_app/investments'
 import { Route as AppNotesRouteImport } from './routes/_app/notes'
 import { Route as AppRechargesRouteImport } from './routes/_app/recharges'
 import { Route as AppRecurringRouteImport } from './routes/_app/recurring'
+import { Route as AppRoutinesRouteImport } from './routes/_app/routines'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppShoppingPlannerRouteImport } from './routes/_app/shopping-planner'
 import { Route as AppStatisticsRouteImport } from './routes/_app/statistics'
+import { Route as AppTasksRouteImport } from './routes/_app/tasks'
 import { Route as AppTimelineRouteImport } from './routes/_app/timeline'
+import { Route as AppTodayRouteImport } from './routes/_app/today'
 import { Route as AppTransactionsRouteImport } from './routes/_app/transactions'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
@@ -75,6 +79,11 @@ const Char91DotwellKnownChar93OauthProtectedResourceRoute =
 const AppAccountsRoute = AppAccountsRouteImport.update({
   id: '/accounts',
   path: '/accounts',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAgendaRoute = AppAgendaRouteImport.update({
+  id: '/agenda',
+  path: '/agenda',
   getParentRoute: () => AppRoute,
 } as any)
 const AppBudgetsRoute = AppBudgetsRouteImport.update({
@@ -132,6 +141,11 @@ const AppRecurringRoute = AppRecurringRouteImport.update({
   path: '/recurring',
   getParentRoute: () => AppRoute,
 } as any)
+const AppRoutinesRoute = AppRoutinesRouteImport.update({
+  id: '/routines',
+  path: '/routines',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -147,9 +161,19 @@ const AppStatisticsRoute = AppStatisticsRouteImport.update({
   path: '/statistics',
   getParentRoute: () => AppRoute,
 } as any)
+const AppTasksRoute = AppTasksRouteImport.update({
+  id: '/tasks',
+  path: '/tasks',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppTimelineRoute = AppTimelineRouteImport.update({
   id: '/timeline',
   path: '/timeline',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTodayRoute = AppTodayRouteImport.update({
+  id: '/today',
+  path: '/today',
   getParentRoute: () => AppRoute,
 } as any)
 const AppTransactionsRoute = AppTransactionsRouteImport.update({
@@ -177,6 +201,7 @@ export interface FileRoutesByFullPath {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/accounts': typeof AppAccountsRoute
+  '/agenda': typeof AppAgendaRoute
   '/budgets': typeof AppBudgetsRoute
   '/cards': typeof AppCardsRoute
   '/dashboard': typeof AppDashboardRoute
@@ -188,10 +213,13 @@ export interface FileRoutesByFullPath {
   '/notes': typeof AppNotesRoute
   '/recharges': typeof AppRechargesRoute
   '/recurring': typeof AppRecurringRoute
+  '/routines': typeof AppRoutinesRoute
   '/settings': typeof AppSettingsRoute
   '/shopping-planner': typeof AppShoppingPlannerRoute
   '/statistics': typeof AppStatisticsRoute
+  '/tasks': typeof AppTasksRoute
   '/timeline': typeof AppTimelineRoute
+  '/today': typeof AppTodayRoute
   '/transactions': typeof AppTransactionsRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -204,6 +232,7 @@ export interface FileRoutesByTo {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/accounts': typeof AppAccountsRoute
+  '/agenda': typeof AppAgendaRoute
   '/budgets': typeof AppBudgetsRoute
   '/cards': typeof AppCardsRoute
   '/dashboard': typeof AppDashboardRoute
@@ -215,10 +244,13 @@ export interface FileRoutesByTo {
   '/notes': typeof AppNotesRoute
   '/recharges': typeof AppRechargesRoute
   '/recurring': typeof AppRecurringRoute
+  '/routines': typeof AppRoutinesRoute
   '/settings': typeof AppSettingsRoute
   '/shopping-planner': typeof AppShoppingPlannerRoute
   '/statistics': typeof AppStatisticsRoute
+  '/tasks': typeof AppTasksRoute
   '/timeline': typeof AppTimelineRoute
+  '/today': typeof AppTodayRoute
   '/transactions': typeof AppTransactionsRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -233,6 +265,7 @@ export interface FileRoutesById {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_app/accounts': typeof AppAccountsRoute
+  '/_app/agenda': typeof AppAgendaRoute
   '/_app/budgets': typeof AppBudgetsRoute
   '/_app/cards': typeof AppCardsRoute
   '/_app/dashboard': typeof AppDashboardRoute
@@ -244,10 +277,13 @@ export interface FileRoutesById {
   '/_app/notes': typeof AppNotesRoute
   '/_app/recharges': typeof AppRechargesRoute
   '/_app/recurring': typeof AppRecurringRoute
+  '/_app/routines': typeof AppRoutinesRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/shopping-planner': typeof AppShoppingPlannerRoute
   '/_app/statistics': typeof AppStatisticsRoute
+  '/_app/tasks': typeof AppTasksRoute
   '/_app/timeline': typeof AppTimelineRoute
+  '/_app/today': typeof AppTodayRoute
   '/_app/transactions': typeof AppTransactionsRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -262,6 +298,7 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/accounts'
+    | '/agenda'
     | '/budgets'
     | '/cards'
     | '/dashboard'
@@ -273,10 +310,13 @@ export interface FileRouteTypes {
     | '/notes'
     | '/recharges'
     | '/recurring'
+    | '/routines'
     | '/settings'
     | '/shopping-planner'
     | '/statistics'
+    | '/tasks'
     | '/timeline'
+    | '/today'
     | '/transactions'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -289,6 +329,7 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/accounts'
+    | '/agenda'
     | '/budgets'
     | '/cards'
     | '/dashboard'
@@ -300,10 +341,13 @@ export interface FileRouteTypes {
     | '/notes'
     | '/recharges'
     | '/recurring'
+    | '/routines'
     | '/settings'
     | '/shopping-planner'
     | '/statistics'
+    | '/tasks'
     | '/timeline'
+    | '/today'
     | '/transactions'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -317,6 +361,7 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/_app/accounts'
+    | '/_app/agenda'
     | '/_app/budgets'
     | '/_app/cards'
     | '/_app/dashboard'
@@ -328,10 +373,13 @@ export interface FileRouteTypes {
     | '/_app/notes'
     | '/_app/recharges'
     | '/_app/recurring'
+    | '/_app/routines'
     | '/_app/settings'
     | '/_app/shopping-planner'
     | '/_app/statistics'
+    | '/_app/tasks'
     | '/_app/timeline'
+    | '/_app/today'
     | '/_app/transactions'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -405,6 +453,13 @@ declare module '@tanstack/react-router' {
       path: '/accounts'
       fullPath: '/accounts'
       preLoaderRoute: typeof AppAccountsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/agenda': {
+      id: '/_app/agenda'
+      path: '/agenda'
+      fullPath: '/agenda'
+      preLoaderRoute: typeof AppAgendaRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/budgets': {
@@ -484,6 +539,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRecurringRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/routines': {
+      id: '/_app/routines'
+      path: '/routines'
+      fullPath: '/routines'
+      preLoaderRoute: typeof AppRoutinesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/settings': {
       id: '/_app/settings'
       path: '/settings'
@@ -505,11 +567,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppStatisticsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/tasks': {
+      id: '/_app/tasks'
+      path: '/tasks'
+      fullPath: '/tasks'
+      preLoaderRoute: typeof AppTasksRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/timeline': {
       id: '/_app/timeline'
       path: '/timeline'
       fullPath: '/timeline'
       preLoaderRoute: typeof AppTimelineRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/today': {
+      id: '/_app/today'
+      path: '/today'
+      fullPath: '/today'
+      preLoaderRoute: typeof AppTodayRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/transactions': {
@@ -538,6 +614,7 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppAccountsRoute: typeof AppAccountsRoute
+  AppAgendaRoute: typeof AppAgendaRoute
   AppBudgetsRoute: typeof AppBudgetsRoute
   AppCardsRoute: typeof AppCardsRoute
   AppDashboardRoute: typeof AppDashboardRoute
@@ -549,15 +626,19 @@ interface AppRouteChildren {
   AppNotesRoute: typeof AppNotesRoute
   AppRechargesRoute: typeof AppRechargesRoute
   AppRecurringRoute: typeof AppRecurringRoute
+  AppRoutinesRoute: typeof AppRoutinesRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppShoppingPlannerRoute: typeof AppShoppingPlannerRoute
   AppStatisticsRoute: typeof AppStatisticsRoute
+  AppTasksRoute: typeof AppTasksRoute
   AppTimelineRoute: typeof AppTimelineRoute
+  AppTodayRoute: typeof AppTodayRoute
   AppTransactionsRoute: typeof AppTransactionsRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppAccountsRoute: AppAccountsRoute,
+  AppAgendaRoute: AppAgendaRoute,
   AppBudgetsRoute: AppBudgetsRoute,
   AppCardsRoute: AppCardsRoute,
   AppDashboardRoute: AppDashboardRoute,
@@ -569,10 +650,13 @@ const AppRouteChildren: AppRouteChildren = {
   AppNotesRoute: AppNotesRoute,
   AppRechargesRoute: AppRechargesRoute,
   AppRecurringRoute: AppRecurringRoute,
+  AppRoutinesRoute: AppRoutinesRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppShoppingPlannerRoute: AppShoppingPlannerRoute,
   AppStatisticsRoute: AppStatisticsRoute,
+  AppTasksRoute: AppTasksRoute,
   AppTimelineRoute: AppTimelineRoute,
+  AppTodayRoute: AppTodayRoute,
   AppTransactionsRoute: AppTransactionsRoute,
 }
 
