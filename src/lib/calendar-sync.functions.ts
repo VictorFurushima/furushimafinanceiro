@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 
 /**
  * Camada server-side de sincronização Furushima -> Google Calendar.
@@ -79,7 +81,7 @@ export const getCalendarSyncStatus = createServerFn({ method: "GET" })
 
 async function ensureCalendarId(
   creds: GoogleCreds,
-  supabase: { from: (t: string) => any },
+  supabase: SupabaseClient<Database>,
   userId: string,
 ): Promise<string> {
   const { data } = await supabase
@@ -122,7 +124,7 @@ export const pushEventToGoogle = createServerFn({ method: "POST" })
   })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    await assertAdmin(supabase as never, userId);
+    await assertAdmin(supabase, userId);
 
     const creds = readCreds();
     if (!creds) return { synced: false, reason: "not_configured" as const };
@@ -139,7 +141,7 @@ export const pushEventToGoogle = createServerFn({ method: "POST" })
     if (!ev.sync_enabled) return { synced: false, reason: "disabled" as const };
 
     try {
-      const calendarId = await ensureCalendarId(creds, supabase as never, userId);
+      const calendarId = await ensureCalendarId(creds, supabase, userId);
       const body = {
         summary: ev.title,
         description: ev.description ?? undefined,
@@ -195,7 +197,7 @@ export const deleteEventEverywhere = createServerFn({ method: "POST" })
   })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    await assertAdmin(supabase as never, userId);
+    await assertAdmin(supabase, userId);
 
     const { data: ev, error } = await supabase
       .from("calendar_events")
