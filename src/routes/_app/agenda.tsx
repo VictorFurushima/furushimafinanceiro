@@ -172,8 +172,32 @@ function AgendaPage() {
         </div>
       </div>
 
+      {isAdmin && freeSlots.length > 0 && (
+        <Card className="bg-gradient-card border-border/50 shadow-card">
+          <CardContent className="p-3 sm:p-4 space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">
+              Planejamento inteligente · janelas livres em{" "}
+              {anchor.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              {freeSlots.map((s) => (
+                <Button key={s.start.toISOString()} variant="outline"
+                  className="min-h-11 flex-1 justify-between"
+                  onClick={() => { setEditing(null); setSlotDialogStart(s.start); setOpen(true); }}>
+                  <span>{fmtTime(s.start.toISOString())} — {fmtTime(s.end.toISOString())}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {Math.floor(s.minutes / 60)}h{String(s.minutes % 60).padStart(2, "0")}
+                  </span>
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {isLoading ? (
         <p className="text-sm text-muted-foreground py-12 text-center">Carregando...</p>
+
       ) : (
         <div className="space-y-3">
           {days.map((d) => {
