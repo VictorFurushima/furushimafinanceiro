@@ -17,14 +17,23 @@ import { PAYMENT_METHODS } from "@/lib/finance-constants";
 export const Route = createFileRoute("/_app/import")({ component: ImportPage });
 
 interface Row {
-  Data: string; Valor: string; Categoria?: string; Descrição?: string;
-  "Forma de Pagamento"?: string; Tipo?: string;
+  Data: string;
+  Valor: string;
+  Categoria?: string;
+  Descrição?: string;
+  "Forma de Pagamento"?: string;
+  Tipo?: string;
 }
 
 interface Parsed {
-  occurred_at: string; amount: number; type: "income" | "expense";
-  description: string | null; category_id: string | null; payment_method: string | null;
-  _row: number; _error?: string;
+  occurred_at: string;
+  amount: number;
+  type: "income" | "expense";
+  description: string | null;
+  category_id: string | null;
+  payment_method: string | null;
+  _row: number;
+  _error?: string;
 }
 
 const rowSchema = z.object({
@@ -48,22 +57,68 @@ function ImportPage() {
 
   const handleFile = (file: File) => {
     Papa.parse<Row>(file, {
-      header: true, skipEmptyLines: true,
+      header: true,
+      skipEmptyLines: true,
       complete: (res) => {
         const parsed: Parsed[] = res.data.map((r, idx) => {
           const v = rowSchema.safeParse(r);
-          if (!v.success) return { occurred_at: "", amount: 0, type: "expense", description: null, category_id: null, payment_method: null, _row: idx + 2, _error: "Data e Valor obrigatórios" };
+          if (!v.success)
+            return {
+              occurred_at: "",
+              amount: 0,
+              type: "expense",
+              description: null,
+              category_id: null,
+              payment_method: null,
+              _row: idx + 2,
+              _error: "Data e Valor obrigatórios",
+            };
           const date = parseDate(r.Data);
           const amt = parseFloat(r.Valor.replace(/[R$\s.]/g, "").replace(",", "."));
-          if (!date) return { occurred_at: "", amount: 0, type: "expense", description: null, category_id: null, payment_method: null, _row: idx + 2, _error: `Data inválida: ${r.Data}` };
-          if (!amt || isNaN(amt)) return { occurred_at: date, amount: 0, type: "expense", description: null, category_id: null, payment_method: null, _row: idx + 2, _error: `Valor inválido: ${r.Valor}` };
-          const type: "income" | "expense" = (r.Tipo ?? "").toLowerCase().includes("entrada") || (r.Tipo ?? "").toLowerCase().includes("receita") || amt > 0 && (r.Tipo ?? "").toLowerCase().includes("income") ? "income" : "expense";
-          const cat = categories.find((c) => c.name.toLowerCase() === (r.Categoria ?? "").toLowerCase().trim());
-          const pm = PAYMENT_METHODS.find((p) => p.label.toLowerCase() === (r["Forma de Pagamento"] ?? "").toLowerCase().trim() || p.value === (r["Forma de Pagamento"] ?? "").toLowerCase().trim());
+          if (!date)
+            return {
+              occurred_at: "",
+              amount: 0,
+              type: "expense",
+              description: null,
+              category_id: null,
+              payment_method: null,
+              _row: idx + 2,
+              _error: `Data inválida: ${r.Data}`,
+            };
+          if (!amt || isNaN(amt))
+            return {
+              occurred_at: date,
+              amount: 0,
+              type: "expense",
+              description: null,
+              category_id: null,
+              payment_method: null,
+              _row: idx + 2,
+              _error: `Valor inválido: ${r.Valor}`,
+            };
+          const type: "income" | "expense" =
+            (r.Tipo ?? "").toLowerCase().includes("entrada") ||
+            (r.Tipo ?? "").toLowerCase().includes("receita") ||
+            (amt > 0 && (r.Tipo ?? "").toLowerCase().includes("income"))
+              ? "income"
+              : "expense";
+          const cat = categories.find(
+            (c) => c.name.toLowerCase() === (r.Categoria ?? "").toLowerCase().trim(),
+          );
+          const pm = PAYMENT_METHODS.find(
+            (p) =>
+              p.label.toLowerCase() === (r["Forma de Pagamento"] ?? "").toLowerCase().trim() ||
+              p.value === (r["Forma de Pagamento"] ?? "").toLowerCase().trim(),
+          );
           return {
-            occurred_at: date, amount: Math.abs(amt), type,
-            description: r.Descrição || null, category_id: cat?.id ?? null,
-            payment_method: pm?.value ?? null, _row: idx + 2,
+            occurred_at: date,
+            amount: Math.abs(amt),
+            type,
+            description: r.Descrição || null,
+            category_id: cat?.id ?? null,
+            payment_method: pm?.value ?? null,
+            _row: idx + 2,
           };
         });
         setRows(parsed);
@@ -83,8 +138,12 @@ function ImportPage() {
       if (!u.user) throw new Error("Não autenticado");
       const payload = valid.map((r) => ({
         user_id: u.user!.id,
-        occurred_at: r.occurred_at, amount: r.amount, type: r.type,
-        description: r.description, category_id: r.category_id, payment_method: r.payment_method,
+        occurred_at: r.occurred_at,
+        amount: r.amount,
+        type: r.type,
+        description: r.description,
+        category_id: r.category_id,
+        payment_method: r.payment_method,
       }));
       const { error } = await supabase.from("transactions").insert(payload);
       if (error) throw error;
@@ -93,7 +152,9 @@ function ImportPage() {
       setRows([]);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro");
-    } finally { setImporting(false); }
+    } finally {
+      setImporting(false);
+    }
   };
 
   return (
@@ -101,7 +162,10 @@ function ImportPage() {
       <header>
         <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold">Importar CSV</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Colunas aceitas: <code className="text-primary">Data, Valor, Categoria, Descrição, Forma de Pagamento, Tipo</code>
+          Colunas aceitas:{" "}
+          <code className="text-primary">
+            Data, Valor, Categoria, Descrição, Forma de Pagamento, Tipo
+          </code>
         </p>
       </header>
 
@@ -111,9 +175,15 @@ function ImportPage() {
             <Upload className="h-10 w-10 text-muted-foreground" />
             <p className="text-sm font-medium">Clique para selecionar um arquivo CSV</p>
             <p className="text-xs text-muted-foreground">Datas em dd/mm/aaaa ou aaaa-mm-dd</p>
-            <input type="file" accept=".csv" className="hidden" onChange={(e) => {
-              const f = e.target.files?.[0]; if (f) handleFile(f);
-            }} />
+            <input
+              type="file"
+              accept=".csv"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleFile(f);
+              }}
+            />
           </label>
         </CardContent>
       </Card>
@@ -122,20 +192,41 @@ function ImportPage() {
         <>
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-3">
-              <span className="flex items-center gap-2 text-sm"><FileCheck className="h-4 w-4 text-success" />{valid.length} válidas</span>
-              {errors.length > 0 && <span className="flex items-center gap-2 text-sm"><AlertCircle className="h-4 w-4 text-destructive" />{errors.length} com erro</span>}
+              <span className="flex items-center gap-2 text-sm">
+                <FileCheck className="h-4 w-4 text-success" />
+                {valid.length} válidas
+              </span>
+              {errors.length > 0 && (
+                <span className="flex items-center gap-2 text-sm">
+                  <AlertCircle className="h-4 w-4 text-destructive" />
+                  {errors.length} com erro
+                </span>
+              )}
             </div>
-            <Button onClick={importAll} disabled={importing || valid.length === 0} className="bg-gradient-primary text-primary-foreground shadow-glow">
+            <Button
+              onClick={importAll}
+              disabled={importing || valid.length === 0}
+              className="bg-gradient-primary text-primary-foreground shadow-glow"
+            >
               {importing ? "Importando..." : `Importar ${valid.length} transações`}
             </Button>
           </div>
 
           <Card className="bg-gradient-card border-border/50 shadow-card">
-            <CardHeader><CardTitle className="font-display">Pré-visualização</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="font-display">Pré-visualização</CardTitle>
+            </CardHeader>
             <CardContent className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="text-xs text-muted-foreground border-b border-border/50">
-                  <tr><th className="text-left py-2">Linha</th><th className="text-left">Data</th><th className="text-left">Tipo</th><th className="text-right">Valor</th><th className="text-left">Categoria</th><th className="text-left">Status</th></tr>
+                  <tr>
+                    <th className="text-left py-2">Linha</th>
+                    <th className="text-left">Data</th>
+                    <th className="text-left">Tipo</th>
+                    <th className="text-right">Valor</th>
+                    <th className="text-left">Categoria</th>
+                    <th className="text-left">Status</th>
+                  </tr>
                 </thead>
                 <tbody>
                   {rows.slice(0, 50).map((r) => {
@@ -144,16 +235,30 @@ function ImportPage() {
                       <tr key={r._row} className="border-b border-border/30">
                         <td className="py-2 text-muted-foreground">{r._row}</td>
                         <td>{r.occurred_at}</td>
-                        <td><span className={r.type === "income" ? "text-success" : "text-destructive"}>{r.type === "income" ? "Receita" : "Despesa"}</span></td>
+                        <td>
+                          <span
+                            className={r.type === "income" ? "text-success" : "text-destructive"}
+                          >
+                            {r.type === "income" ? "Receita" : "Despesa"}
+                          </span>
+                        </td>
                         <td className="text-right">{formatCurrency(r.amount)}</td>
                         <td>{cat?.name ?? "—"}</td>
-                        <td>{r._error ? <span className="text-destructive text-xs">{r._error}</span> : <span className="text-success text-xs">OK</span>}</td>
+                        <td>
+                          {r._error ? (
+                            <span className="text-destructive text-xs">{r._error}</span>
+                          ) : (
+                            <span className="text-success text-xs">OK</span>
+                          )}
+                        </td>
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
-              {rows.length > 50 && <p className="text-xs text-muted-foreground mt-3">+ {rows.length - 50} linhas...</p>}
+              {rows.length > 50 && (
+                <p className="text-xs text-muted-foreground mt-3">+ {rows.length - 50} linhas...</p>
+              )}
             </CardContent>
           </Card>
         </>

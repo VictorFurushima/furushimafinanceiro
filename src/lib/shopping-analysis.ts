@@ -90,7 +90,9 @@ export function faixaDoScore(score: number): FaixaViabilidade {
   return "inviavel";
 }
 
-export function calcularPrecoFinal(c: Pick<CompraEntrada, "price" | "shipping" | "discount" | "interest">) {
+export function calcularPrecoFinal(
+  c: Pick<CompraEntrada, "price" | "shipping" | "discount" | "interest">,
+) {
   return Math.max(0, (c.price || 0) + (c.shipping || 0) + (c.interest || 0) - (c.discount || 0));
 }
 

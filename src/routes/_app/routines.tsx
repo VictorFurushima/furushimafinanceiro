@@ -13,14 +13,24 @@ import { supabase } from "@/integrations/supabase/client";
 import { invalidateFinance } from "@/lib/query-keys";
 import { useRole, VIEWER_MESSAGE } from "@/hooks/use-role";
 import { useRoutines, useRoutineOccurrences, type Routine } from "@/hooks/use-schedule-data";
-import { addDays, categoryLabel, fmtDuration, localDateISO, startOfWeek, WEEKDAYS } from "@/lib/schedule-constants";
+import {
+  addDays,
+  categoryLabel,
+  fmtDuration,
+  localDateISO,
+  startOfWeek,
+  WEEKDAYS,
+} from "@/lib/schedule-constants";
 
 export const Route = createFileRoute("/_app/routines")({
   component: RoutinesPage,
   head: () => ({
     meta: [
       { title: "Rotinas — Furushima" },
-      { name: "description", content: "Crie rotinas semanais com horário, duração, lembretes e objetivos." },
+      {
+        name: "description",
+        content: "Crie rotinas semanais com horário, duração, lembretes e objetivos.",
+      },
     ],
   }),
 });
@@ -65,7 +75,8 @@ function RoutinesPage() {
     if (error) return toast.error(error.message);
     // Reprocessa a janela materializada: pausar remove os eventos futuros gerados.
     const { error: matError } = await supabase.rpc("materialize_routine_events", { p_days: 30 });
-    if (matError) toast.error(`Status alterado, mas a agenda não foi atualizada: ${matError.message}`);
+    if (matError)
+      toast.error(`Status alterado, mas a agenda não foi atualizada: ${matError.message}`);
     invalidateFinance(qc, "routines");
     invalidateFinance(qc, "events");
   };
@@ -78,8 +89,13 @@ function RoutinesPage() {
           <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold mt-1">Rotinas</h1>
         </div>
         {isAdmin && (
-          <Button onClick={() => { setEditing(null); setOpen(true); }}
-            className="w-full sm:w-auto min-h-11 bg-gradient-primary text-primary-foreground shadow-glow">
+          <Button
+            onClick={() => {
+              setEditing(null);
+              setOpen(true);
+            }}
+            className="w-full sm:w-auto min-h-11 bg-gradient-primary text-primary-foreground shadow-glow"
+          >
             <Plus className="h-4 w-4 mr-2" /> Nova rotina
           </Button>
         )}
@@ -100,20 +116,37 @@ function RoutinesPage() {
             <Card key={r.id} className="bg-gradient-card border-border/50 shadow-card">
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="font-display text-base sm:text-lg leading-tight">{r.name}</CardTitle>
+                  <CardTitle className="font-display text-base sm:text-lg leading-tight">
+                    {r.name}
+                  </CardTitle>
                   {isAdmin && (
                     <div className="flex gap-1 shrink-0">
-                      <Button size="icon" variant="ghost" onClick={() => { setEditing(r); setOpen(true); }} aria-label="Editar rotina">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => {
+                          setEditing(r);
+                          setOpen(true);
+                        }}
+                        aria-label="Editar rotina"
+                      >
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button size="icon" variant="ghost" onClick={() => remove(r)} aria-label="Excluir rotina">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={() => remove(r)}
+                        aria-label="Excluir rotina"
+                      >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
                   )}
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Badge variant="outline" className="text-[10px]">{categoryLabel(r.category)}</Badge>
+                  <Badge variant="outline" className="text-[10px]">
+                    {categoryLabel(r.category)}
+                  </Badge>
                   <span className="text-xs text-muted-foreground">
                     {r.start_time.slice(0, 5)} · {fmtDuration(r.duration_minutes)}
                   </span>
@@ -122,12 +155,14 @@ function RoutinesPage() {
               <CardContent className="space-y-3">
                 <div className="flex flex-wrap gap-1">
                   {WEEKDAYS.map((d) => (
-                    <span key={d.value}
+                    <span
+                      key={d.value}
                       className={`rounded px-1.5 py-0.5 text-[10px] ${
                         r.weekdays.includes(d.value)
                           ? "bg-primary/20 text-primary-glow"
                           : "text-muted-foreground/50"
-                      }`}>
+                      }`}
+                    >
                       {d.short}
                     </span>
                   ))}
@@ -135,16 +170,28 @@ function RoutinesPage() {
                 <div className="space-y-1">
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>Progresso da semana</span>
-                    <span>{doneByRoutine.get(r.id) ?? 0}/{r.weekdays.length}</span>
+                    <span>
+                      {doneByRoutine.get(r.id) ?? 0}/{r.weekdays.length}
+                    </span>
                   </div>
                   <Progress
-                    value={r.weekdays.length ? Math.min(100, ((doneByRoutine.get(r.id) ?? 0) / r.weekdays.length) * 100) : 0}
+                    value={
+                      r.weekdays.length
+                        ? Math.min(100, ((doneByRoutine.get(r.id) ?? 0) / r.weekdays.length) * 100)
+                        : 0
+                    }
                     className="h-1.5"
                   />
                 </div>
-                {r.objective && <p className="text-xs text-muted-foreground">Objetivo: {r.objective}</p>}
+                {r.objective && (
+                  <p className="text-xs text-muted-foreground">Objetivo: {r.objective}</p>
+                )}
                 {isAdmin && (
-                  <Button variant="outline" className="min-h-11 w-full" onClick={() => toggleStatus(r)}>
+                  <Button
+                    variant="outline"
+                    className="min-h-11 w-full"
+                    onClick={() => toggleStatus(r)}
+                  >
                     {r.status === "active" ? "Pausar rotina" : "Reativar rotina"}
                   </Button>
                 )}

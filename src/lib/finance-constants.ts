@@ -8,7 +8,13 @@ export const PAYMENT_METHODS = [
 ] as const;
 
 export const INCOME_SOURCES = [
-  "Mesada", "Trabalho", "Freelance", "Venda", "Reembolso", "Investimentos", "Outros",
+  "Mesada",
+  "Trabalho",
+  "Freelance",
+  "Venda",
+  "Reembolso",
+  "Investimentos",
+  "Outros",
 ] as const;
 
 export const FREQUENCIES = [

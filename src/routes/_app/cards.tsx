@@ -1,14 +1,27 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, Pencil, Trash2, CreditCard as CardIcon, FileText, Check, CalendarDays } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  CreditCard as CardIcon,
+  FileText,
+  Check,
+  CalendarDays,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { useCreditCards, useCreditCardBills, type CreditCard, type CreditCardBill } from "@/hooks/use-finance-data";
+import {
+  useCreditCards,
+  useCreditCardBills,
+  type CreditCard,
+  type CreditCardBill,
+} from "@/hooks/use-finance-data";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/integrations/supabase/client";
 import { invalidateFinance } from "@/lib/query-keys";
@@ -37,14 +50,20 @@ function CardsPage() {
   const remove = async (id: string) => {
     if (!confirm("Excluir este cartão?")) return;
     const { error } = await supabase.from("credit_cards").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("Cartão excluído");
     invalidateFinance(qc, "cards");
   };
 
   const payBill = async (billId: string) => {
     const { error } = await supabase.rpc("pay_credit_card_bill", { p_bill_id: billId });
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("Fatura paga — limite recarregado");
     invalidateFinance(qc, "cards");
   };
@@ -85,14 +104,21 @@ function CardsPage() {
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-sm text-muted-foreground">Limites, faturas e vencimentos</p>
-          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold mt-1">Cartões de Crédito</h1>
+          <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold mt-1">
+            Cartões de Crédito
+          </h1>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setBillOpen(true)}>
             <FileText className="h-4 w-4 mr-2" /> Nova fatura
           </Button>
-          <Button onClick={() => { setEditing(null); setOpen(true); }}
-            className="bg-gradient-primary text-primary-foreground shadow-glow">
+          <Button
+            onClick={() => {
+              setEditing(null);
+              setOpen(true);
+            }}
+            className="bg-gradient-primary text-primary-foreground shadow-glow"
+          >
             <Plus className="h-4 w-4 mr-2" /> Novo cartão
           </Button>
         </div>
@@ -114,7 +140,10 @@ function CardsPage() {
             const daysToDue = Math.ceil((due.getTime() - Date.now()) / 86400000);
             const lowLimit = usedPct >= 80;
             return (
-              <Card key={c.id} className="bg-gradient-card border-border/50 shadow-card overflow-hidden">
+              <Card
+                key={c.id}
+                className="bg-gradient-card border-border/50 shadow-card overflow-hidden"
+              >
                 <div className="h-2" style={{ background: c.color }} />
                 <CardHeader className="flex flex-row items-start justify-between space-y-0">
                   <div>
@@ -125,7 +154,14 @@ function CardsPage() {
                     {c.bank && <p className="text-xs text-muted-foreground mt-1">{c.bank}</p>}
                   </div>
                   <div className="flex gap-1">
-                    <Button size="icon" variant="ghost" onClick={() => { setEditing(c); setOpen(true); }}>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => {
+                        setEditing(c);
+                        setOpen(true);
+                      }}
+                    >
                       <Pencil className="h-4 w-4" />
                     </Button>
                     <Button size="icon" variant="ghost" onClick={() => remove(c.id)}>
@@ -143,7 +179,8 @@ function CardsPage() {
                     </div>
                     <Progress value={usedPct} className="h-2" />
                     <p className="text-xs text-muted-foreground mt-2">
-                      Disponível: <span className="text-success font-medium">{formatCurrency(available)}</span>
+                      Disponível:{" "}
+                      <span className="text-success font-medium">{formatCurrency(available)}</span>
                     </p>
                   </div>
                   <div className="flex justify-between text-xs">
@@ -156,7 +193,10 @@ function CardsPage() {
                       <p className="font-medium">
                         {due.toLocaleDateString("pt-BR")}
                         {daysToDue <= 5 && (
-                          <Badge variant="outline" className="ml-2 text-[10px] border-destructive text-destructive">
+                          <Badge
+                            variant="outline"
+                            className="ml-2 text-[10px] border-destructive text-destructive"
+                          >
                             {daysToDue}d
                           </Badge>
                         )}
@@ -168,10 +208,15 @@ function CardsPage() {
                     if (cardOpenBills.length === 0) return null;
                     return (
                       <div className="border-t border-border/50 pt-3 space-y-2">
-                        <p className="text-xs font-medium text-muted-foreground">Faturas em aberto</p>
+                        <p className="text-xs font-medium text-muted-foreground">
+                          Faturas em aberto
+                        </p>
                         {cardOpenBills.map((b) => (
                           <div key={b.id} className="flex items-center justify-between text-sm">
-                            <span>{String(b.month).padStart(2, "0")}/{b.year} · {formatCurrency(b.amount)}</span>
+                            <span>
+                              {String(b.month).padStart(2, "0")}/{b.year} ·{" "}
+                              {formatCurrency(b.amount)}
+                            </span>
                             <div className="flex gap-2 shrink-0">
                               <Button size="sm" variant="outline" onClick={() => scheduleBill(b)}>
                                 <CalendarDays className="h-3 w-3 mr-1" /> Agendar

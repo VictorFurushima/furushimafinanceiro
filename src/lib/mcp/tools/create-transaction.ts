@@ -14,10 +14,18 @@ export default defineTool({
     occurred_at: z.string().optional().describe("Data YYYY-MM-DD. Padrão: hoje."),
     account_id: z.string().uuid().optional().describe("ID da conta (opcional)."),
     category_id: z.string().uuid().optional().describe("ID da categoria (opcional)."),
-    payment_method: z.string().optional().describe("pix, dinheiro, debito, credito, boleto, transferencia."),
+    payment_method: z
+      .string()
+      .optional()
+      .describe("pix, dinheiro, debito, credito, boleto, transferencia."),
     notes: z.string().max(500).optional().describe("Observações adicionais."),
   },
-  annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+  annotations: {
+    readOnlyHint: false,
+    destructiveHint: false,
+    idempotentHint: false,
+    openWorldHint: false,
+  },
   handler: async (input, ctx) => {
     const authErr = requireAuth(ctx);
     if (authErr) return authErr;

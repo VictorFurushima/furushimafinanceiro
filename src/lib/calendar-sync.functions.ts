@@ -48,7 +48,10 @@ async function gateway(creds: GoogleCreds, path: string, init: RequestInit = {})
  * Efeito colateral externo exige autorização explícita: viewer enxerga o espaço
  * do owner por RLS, então "estar logado" não é suficiente.
  */
-async function assertAdmin(supabase: { rpc: (fn: string, args: Record<string, unknown>) => any }, userId: string) {
+async function assertAdmin(
+  supabase: { rpc: (fn: string, args: Record<string, unknown>) => any },
+  userId: string,
+) {
   const { data, error } = await supabase.rpc("is_admin", { _user_id: userId });
   if (error) throw new Error(error.message);
   if (data !== true) throw new Error("Somente administradores podem sincronizar a agenda");

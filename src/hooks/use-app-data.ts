@@ -2,7 +2,6 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { financeKeys } from "@/lib/query-keys";
 
-
 export interface Investment {
   id: string;
   name: string;
@@ -152,7 +151,9 @@ export const useNotes = () =>
     queryFn: async (): Promise<Note[]> => {
       const { data, error } = await supabase
         .from("notes")
-        .select("id, title, content, note_date, link_type, link_id, created_by, created_at, updated_at")
+        .select(
+          "id, title, content, note_date, link_type, link_id, created_by, created_at, updated_at",
+        )
         .order("note_date", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Note[];

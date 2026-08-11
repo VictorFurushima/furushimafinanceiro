@@ -13,6 +13,5 @@ export default defineTool({
     const { data, error } = await supabaseForUser(ctx).rpc("get_account_balances");
     if (error) return errorResult(error.message);
     return jsonResult(data ?? []);
-
   },
 });

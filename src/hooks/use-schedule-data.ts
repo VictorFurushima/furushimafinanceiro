@@ -173,7 +173,6 @@ export const useLinkableEvents = (limit = 50) =>
     },
   });
 
-
 export interface CalendarIntegration {
   id: string;
   provider: string;

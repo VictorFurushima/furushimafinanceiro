@@ -4,7 +4,6 @@ import { financeKeys, type TransactionFilters } from "@/lib/query-keys";
 
 export type { TransactionFilters };
 
-
 export interface Transaction {
   id: string;
   amount: number;
@@ -24,39 +23,65 @@ export interface Transaction {
 }
 
 export interface Category {
-  id: string; name: string; type: "income" | "expense"; color: string; icon: string;
+  id: string;
+  name: string;
+  type: "income" | "expense";
+  color: string;
+  icon: string;
 }
 
 export interface Account {
-  id: string; name: string; type: string; initial_balance: number; color: string;
+  id: string;
+  name: string;
+  type: string;
+  initial_balance: number;
+  color: string;
 }
 
 export interface Budget {
-  id: string; category_id: string; amount: number; month: string;
+  id: string;
+  category_id: string;
+  amount: number;
+  month: string;
   categories?: { name: string; color: string } | null;
 }
 
 export interface RecurringExpense {
-  id: string; name: string; amount: number;
-  category_id: string | null; account_id: string | null;
+  id: string;
+  name: string;
+  amount: number;
+  category_id: string | null;
+  account_id: string | null;
   payment_method: string | null;
   billing_day: number;
   frequency: "weekly" | "monthly" | "yearly" | "custom";
-  start_date: string; end_date: string | null;
+  start_date: string;
+  end_date: string | null;
   status: "active" | "paused" | "cancelled";
   notes: string | null;
   categories?: { name: string; color: string } | null;
 }
 
 export interface Goal {
-  id: string; name: string; target_amount: number; current_amount: number;
-  deadline: string | null; category_id: string | null; color: string; notes: string | null;
+  id: string;
+  name: string;
+  target_amount: number;
+  current_amount: number;
+  deadline: string | null;
+  category_id: string | null;
+  color: string;
+  notes: string | null;
 }
 
-export interface CategoryLimit { id: string; category_id: string; monthly_limit: number; }
+export interface CategoryLimit {
+  id: string;
+  category_id: string;
+  monthly_limit: number;
+}
 
 export interface BalanceRecharge {
-  id: string; name: string;
+  id: string;
+  name: string;
   recharge_type: string;
   expected_amount: number;
   expected_date: string;
@@ -72,16 +97,24 @@ export interface BalanceRecharge {
 }
 
 export interface CreditCard {
-  id: string; name: string; bank: string | null;
-  total_limit: number; used_limit: number;
-  closing_day: number; due_day: number;
-  status: string; color: string;
+  id: string;
+  name: string;
+  bank: string | null;
+  total_limit: number;
+  used_limit: number;
+  closing_day: number;
+  due_day: number;
+  status: string;
+  color: string;
 }
 
 export interface CreditCardBill {
-  id: string; card_id: string;
-  month: number; year: number;
-  amount: number; due_date: string;
+  id: string;
+  card_id: string;
+  month: number;
+  year: number;
+  amount: number;
+  due_date: string;
   payment_date: string | null;
   status: "aberta" | "paga" | "atrasada";
 }
@@ -113,8 +146,10 @@ export const useTransactionsPage = (filters: TransactionFilters) =>
         .range(page * pageSize, page * pageSize + pageSize - 1);
 
       if (filters.type && filters.type !== "all") q = q.eq("type", filters.type);
-      if (filters.categoryId && filters.categoryId !== "all") q = q.eq("category_id", filters.categoryId);
-      if (filters.accountId && filters.accountId !== "all") q = q.eq("account_id", filters.accountId);
+      if (filters.categoryId && filters.categoryId !== "all")
+        q = q.eq("category_id", filters.categoryId);
+      if (filters.accountId && filters.accountId !== "all")
+        q = q.eq("account_id", filters.accountId);
       if (filters.paymentMethod && filters.paymentMethod !== "all")
         q = q.eq("payment_method", filters.paymentMethod);
       if (filters.from) q = q.gte("occurred_at", filters.from);
@@ -168,7 +203,10 @@ export const useAccounts = () =>
         .select("id, name, type, initial_balance, color")
         .order("created_at");
       if (error) throw error;
-      return (data ?? []).map((a) => ({ ...a, initial_balance: Number(a.initial_balance) })) as Account[];
+      return (data ?? []).map((a) => ({
+        ...a,
+        initial_balance: Number(a.initial_balance),
+      })) as Account[];
     },
   });
 
@@ -217,7 +255,6 @@ export const useGoals = () =>
     },
   });
 
-
 export const useCategoryLimits = () =>
   useQuery({
     queryKey: financeKeys.categoryLimits,
@@ -242,7 +279,8 @@ export const useRecharges = () =>
         .order("expected_date", { ascending: true });
       if (error) throw error;
       return ((data ?? []) as unknown as BalanceRecharge[]).map((r) => ({
-        ...r, expected_amount: Number(r.expected_amount),
+        ...r,
+        expected_amount: Number(r.expected_amount),
       }));
     },
   });
@@ -257,7 +295,9 @@ export const useCreditCards = () =>
         .order("created_at");
       if (error) throw error;
       return ((data ?? []) as unknown as CreditCard[]).map((c) => ({
-        ...c, total_limit: Number(c.total_limit), used_limit: Number(c.used_limit),
+        ...c,
+        total_limit: Number(c.total_limit),
+        used_limit: Number(c.used_limit),
       }));
     },
   });
@@ -272,8 +312,8 @@ export const useCreditCardBills = () =>
         .order("due_date", { ascending: true });
       if (error) throw error;
       return ((data ?? []) as unknown as CreditCardBill[]).map((b) => ({
-        ...b, amount: Number(b.amount),
+        ...b,
+        amount: Number(b.amount),
       }));
     },
-
   });

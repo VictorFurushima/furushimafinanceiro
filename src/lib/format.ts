@@ -1,7 +1,7 @@
 export const BRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
 export function formatCurrency(value: number | string | null | undefined): string {
-  const n = typeof value === "string" ? parseFloat(value) : value ?? 0;
+  const n = typeof value === "string" ? parseFloat(value) : (value ?? 0);
   return BRL.format(n);
 }
 

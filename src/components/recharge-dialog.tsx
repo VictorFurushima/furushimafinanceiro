@@ -9,7 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { invalidateFinance } from "@/lib/query-keys";
 import { useAccounts, useCreditCards, type BalanceRecharge } from "@/hooks/use-finance-data";
@@ -31,8 +37,14 @@ const schema = z.object({
 });
 
 export function RechargeDialog({
-  open, onOpenChange, editing,
-}: { open: boolean; onOpenChange: (o: boolean) => void; editing?: BalanceRecharge | null }) {
+  open,
+  onOpenChange,
+  editing,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  editing?: BalanceRecharge | null;
+}) {
   const qc = useQueryClient();
   const { data: accounts = [] } = useAccounts();
   const { data: cards = [] } = useCreditCards();
@@ -66,27 +78,39 @@ export function RechargeDialog({
       setIsRecurring(editing.is_recurring);
       setRecurringDay(editing.recurring_day ?? 1);
     } else if (open) {
-      setName(""); setType("fixed_income"); setAmount("");
-      setDate(toISODate(new Date())); setAccountId(""); setCardId("");
-      setPayment(""); setStatus("prevista"); setNotes("");
-      setIsRecurring(false); setRecurringDay(1);
+      setName("");
+      setType("fixed_income");
+      setAmount("");
+      setDate(toISODate(new Date()));
+      setAccountId("");
+      setCardId("");
+      setPayment("");
+      setStatus("prevista");
+      setNotes("");
+      setIsRecurring(false);
+      setRecurringDay(1);
     }
   }, [editing, open]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     const parsed = schema.safeParse({
-      name, recharge_type: type,
+      name,
+      recharge_type: type,
       expected_amount: parseFloat(amount.replace(",", ".")),
       expected_date: date,
       account_id: accountId || null,
-      card_id: cardRelated ? (cardId || null) : null,
+      card_id: cardRelated ? cardId || null : null,
       payment_method: payment || null,
-      status, notes: notes || null,
+      status,
+      notes: notes || null,
       is_recurring: isRecurring,
       recurring_day: isRecurring ? recurringDay : null,
     });
-    if (!parsed.success) { toast.error(parsed.error.issues[0]?.message ?? "Dados inválidos"); return; }
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0]?.message ?? "Dados inválidos");
+      return;
+    }
     setSaving(true);
     try {
       const { data: u } = await supabase.auth.getUser();
@@ -101,7 +125,9 @@ export function RechargeDialog({
       onOpenChange(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao salvar");
-    } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -115,22 +141,39 @@ export function RechargeDialog({
         <form onSubmit={submit} className="space-y-4">
           <div className="space-y-2">
             <Label>Nome</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)}
-              placeholder="Ex: Salário, Freelance, Reembolso..." required maxLength={100} />
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Ex: Salário, Freelance, Reembolso..."
+              required
+              maxLength={100}
+            />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Tipo</Label>
               <Select value={type} onValueChange={setType}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  {RECHARGE_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                  {RECHARGE_TYPES.map((t) => (
+                    <SelectItem key={t.value} value={t.value}>
+                      {t.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
               <Label>Valor esperado (R$)</Label>
-              <Input value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0,00" inputMode="decimal" required />
+              <Input
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0,00"
+                inputMode="decimal"
+                required
+              />
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -140,10 +183,19 @@ export function RechargeDialog({
             </div>
             <div className="space-y-2">
               <Label>Status</Label>
-              <Select value={status} onValueChange={(v) => setStatus(v as BalanceRecharge["status"])}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={status}
+                onValueChange={(v) => setStatus(v as BalanceRecharge["status"])}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  {RECHARGE_STATUS.map((s) => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                  {RECHARGE_STATUS.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>
+                      {s.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -152,9 +204,15 @@ export function RechargeDialog({
             <div className="space-y-2">
               <Label>Cartão relacionado</Label>
               <Select value={cardId} onValueChange={setCardId}>
-                <SelectTrigger><SelectValue placeholder="Selecione um cartão" /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um cartão" />
+                </SelectTrigger>
                 <SelectContent>
-                  {cards.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  {cards.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -163,18 +221,30 @@ export function RechargeDialog({
               <div className="space-y-2">
                 <Label>Conta</Label>
                 <Select value={accountId} onValueChange={setAccountId}>
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {accounts.map((a) => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
+                    {accounts.map((a) => (
+                      <SelectItem key={a.id} value={a.id}>
+                        {a.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label>Forma de recebimento</Label>
                 <Select value={payment} onValueChange={setPayment}>
-                  <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
                   <SelectContent>
-                    {PAYMENT_METHODS.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+                    {PAYMENT_METHODS.map((p) => (
+                      <SelectItem key={p.value} value={p.value}>
+                        {p.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -190,15 +260,29 @@ export function RechargeDialog({
           {isRecurring && (
             <div className="space-y-2">
               <Label>Dia do mês</Label>
-              <Input type="number" min={1} max={31} value={recurringDay}
-                onChange={(e) => setRecurringDay(parseInt(e.target.value) || 1)} />
+              <Input
+                type="number"
+                min={1}
+                max={31}
+                value={recurringDay}
+                onChange={(e) => setRecurringDay(parseInt(e.target.value) || 1)}
+              />
             </div>
           )}
           <div className="space-y-2">
             <Label>Observação</Label>
-            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={500} rows={2} />
+            <Textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              maxLength={500}
+              rows={2}
+            />
           </div>
-          <Button type="submit" disabled={saving} className="w-full bg-gradient-primary text-primary-foreground shadow-glow">
+          <Button
+            type="submit"
+            disabled={saving}
+            className="w-full bg-gradient-primary text-primary-foreground shadow-glow"
+          >
             {saving ? "Salvando..." : "Salvar"}
           </Button>
         </form>

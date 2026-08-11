@@ -5,9 +5,13 @@ import { errorResult, jsonResult, requireAuth, supabaseForUser } from "../supaba
 export default defineTool({
   name: "list_upcoming_bills",
   title: "Listar faturas próximas",
-  description: "Lista faturas de cartão de crédito, abertas ou atrasadas, ordenadas por vencimento.",
+  description:
+    "Lista faturas de cartão de crédito, abertas ou atrasadas, ordenadas por vencimento.",
   inputSchema: {
-    include_paid: z.boolean().optional().describe("Se true, inclui faturas já pagas. Padrão: false."),
+    include_paid: z
+      .boolean()
+      .optional()
+      .describe("Se true, inclui faturas já pagas. Padrão: false."),
     limit: z.number().int().min(1).max(100).optional(),
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
