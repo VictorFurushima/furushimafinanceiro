@@ -307,7 +307,7 @@ function AgendaPage() {
                   ) : (
                     list.map((e) => (
                       <div
-                        key={e.id}
+                        key={`${e.id}-${e.starts_at}`}
                         className="flex items-start gap-3 rounded-lg border border-border/40 p-3"
                       >
                         <span
@@ -322,13 +322,18 @@ function AgendaPage() {
                               : `${fmtTime(e.starts_at)} — ${fmtTime(e.ends_at)}`}
                             {` · ${categoryLabel(e.category)}`}
                           </p>
-                          {e.sync_status === "error" && (
+                          {e.virtual && (
+                            <Badge variant="outline" className="mt-1 text-[10px]">
+                              Repetição
+                            </Badge>
+                          )}
+                          {!e.virtual && e.sync_status === "error" && (
                             <Badge variant="outline" className="mt-1 text-[10px] text-destructive">
                               Erro no envio
                             </Badge>
                           )}
                         </div>
-                        {isAdmin && (
+                        {isAdmin && !e.virtual && (
                           <div className="flex gap-1 shrink-0">
                             {e.sync_enabled && (
                               <Button
