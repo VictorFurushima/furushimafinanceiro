@@ -101,7 +101,7 @@ function AgendaPage() {
     }
     return map;
 
-  }, [events]);
+  }, [occurrences]);
 
   const days = useMemo(() => {
     const out: Date[] = [];
