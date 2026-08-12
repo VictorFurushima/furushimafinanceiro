@@ -252,13 +252,38 @@ function AgendaPage() {
         </div>
       </div>
 
-      {isAdmin && freeSlots.length > 0 && (
+      {isAdmin && (
         <Card className="bg-gradient-card border-border/50 shadow-card">
           <CardContent className="p-3 sm:p-4 space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">
-              Planejamento inteligente · janelas livres em{" "}
-              {anchor.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
-            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <p className="text-xs font-medium text-muted-foreground flex-1">
+                Planejamento inteligente · janelas livres em{" "}
+                {anchor.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
+              </p>
+              <div className="flex rounded-lg border border-border/60 p-1">
+                {SLOT_MIN_OPTIONS.map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setSlotMin(m)}
+                    aria-pressed={slotMin === m}
+                    className={cn(
+                      "min-h-9 px-2 rounded-md text-[11px] transition",
+                      slotMin === m
+                        ? "bg-gradient-primary text-primary-foreground"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    {m}min
+                  </button>
+                ))}
+              </div>
+            </div>
+            {freeSlots.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                Nenhuma janela livre de {slotMin} minutos neste dia.
+              </p>
+            )}
             <div className="flex flex-col sm:flex-row gap-2">
               {freeSlots.map((s) => (
                 <Button
