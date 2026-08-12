@@ -19,6 +19,7 @@ import {
   categoryLabel,
   endOfDay,
   endOfMonth,
+  expandRecurrence,
   fmtTime,
   localDateISO,
   startOfDay,
@@ -43,12 +44,18 @@ export const Route = createFileRoute("/_app/agenda")({
 
 type ViewMode = "day" | "week" | "month";
 
+/** Ocorrência exibida: evento real do banco ou repetição virtual expandida na UI. */
+type OccurrenceEvent = CalendarEvent & { virtual: boolean };
+
+const SLOT_MIN_OPTIONS = [30, 45, 60, 90, 120] as const;
+
 function AgendaPage() {
   const { isAdmin } = useRole();
   const qc = useQueryClient();
   const push = useServerFn(pushEventToGoogle);
   const removeEverywhere = useServerFn(deleteEventEverywhere);
   const [slotDialogStart, setSlotDialogStart] = useState<Date | null>(null);
+  const [slotMin, setSlotMin] = useState<number>(30);
 
   const [view, setView] = useState<ViewMode>("week");
   const [anchor, setAnchor] = useState(() => new Date());
@@ -69,16 +76,38 @@ function AgendaPage() {
     rangeEnd.toISOString(),
   );
 
-  const grouped = useMemo(() => {
-    const map = new Map<string, CalendarEvent[]>();
+  /**
+   * Ocorrências visíveis = eventos reais + expansão local da recurrence_rule.
+   * As repetições são virtuais (não existem no banco) e por isso não recebem
+   * ações destrutivas individuais.
+   */
+  const occurrences = useMemo<OccurrenceEvent[]>(() => {
+    const out: OccurrenceEvent[] = events.map((e) => ({ ...e, virtual: false }));
     for (const e of events) {
+      if (!e.recurrence_rule) continue;
+      for (const o of expandRecurrence(
+        e.starts_at,
+        e.ends_at,
+        e.recurrence_rule,
+        rangeStart,
+        rangeEnd,
+      )) {
+        out.push({ ...e, ...o, virtual: true });
+      }
+    }
+    return out.sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+  }, [events, rangeStart, rangeEnd]);
+
+  const grouped = useMemo(() => {
+    const map = new Map<string, OccurrenceEvent[]>();
+    for (const e of occurrences) {
       const key = localDateISO(new Date(e.starts_at));
       const list = map.get(key);
       if (list) list.push(e);
       else map.set(key, [e]);
     }
     return map;
-  }, [events]);
+  }, [occurrences]);
 
   const days = useMemo(() => {
     const out: Date[] = [];
@@ -124,7 +153,7 @@ function AgendaPage() {
         const minutes = Math.round(
           (Math.min(b.s.getTime(), dayEnd.getTime()) - cursor.getTime()) / 60_000,
         );
-        if (minutes >= 30)
+        if (minutes >= slotMin)
           slots.push({
             start: new Date(cursor),
             end: new Date(Math.min(b.s.getTime(), dayEnd.getTime())),
@@ -135,10 +164,11 @@ function AgendaPage() {
     }
     if (cursor < dayEnd) {
       const minutes = Math.round((dayEnd.getTime() - cursor.getTime()) / 60_000);
-      if (minutes >= 30) slots.push({ start: new Date(cursor), end: new Date(dayEnd), minutes });
+      if (minutes >= slotMin)
+        slots.push({ start: new Date(cursor), end: new Date(dayEnd), minutes });
     }
     return slots.sort((a, b) => b.minutes - a.minutes).slice(0, 3);
-  }, [grouped, anchor]);
+  }, [grouped, anchor, slotMin]);
 
   const resync = async (e: CalendarEvent) => {
     if (!isAdmin) return toast.error(VIEWER_MESSAGE);
@@ -221,13 +251,38 @@ function AgendaPage() {
         </div>
       </div>
 
-      {isAdmin && freeSlots.length > 0 && (
+      {isAdmin && (
         <Card className="bg-gradient-card border-border/50 shadow-card">
           <CardContent className="p-3 sm:p-4 space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">
-              Planejamento inteligente · janelas livres em{" "}
-              {anchor.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
-            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <p className="text-xs font-medium text-muted-foreground flex-1">
+                Planejamento inteligente · janelas livres em{" "}
+                {anchor.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })}
+              </p>
+              <div className="flex rounded-lg border border-border/60 p-1">
+                {SLOT_MIN_OPTIONS.map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setSlotMin(m)}
+                    aria-pressed={slotMin === m}
+                    className={cn(
+                      "min-h-9 px-2 rounded-md text-[11px] transition",
+                      slotMin === m
+                        ? "bg-gradient-primary text-primary-foreground"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    {m}min
+                  </button>
+                ))}
+              </div>
+            </div>
+            {freeSlots.length === 0 && (
+              <p className="text-sm text-muted-foreground">
+                Nenhuma janela livre de {slotMin} minutos neste dia.
+              </p>
+            )}
             <div className="flex flex-col sm:flex-row gap-2">
               {freeSlots.map((s) => (
                 <Button
@@ -276,7 +331,7 @@ function AgendaPage() {
                   ) : (
                     list.map((e) => (
                       <div
-                        key={e.id}
+                        key={`${e.id}-${e.starts_at}`}
                         className="flex items-start gap-3 rounded-lg border border-border/40 p-3"
                       >
                         <span
@@ -291,13 +346,18 @@ function AgendaPage() {
                               : `${fmtTime(e.starts_at)} — ${fmtTime(e.ends_at)}`}
                             {` · ${categoryLabel(e.category)}`}
                           </p>
-                          {e.sync_status === "error" && (
+                          {e.virtual && (
+                            <Badge variant="outline" className="mt-1 text-[10px]">
+                              Repetição
+                            </Badge>
+                          )}
+                          {!e.virtual && e.sync_status === "error" && (
                             <Badge variant="outline" className="mt-1 text-[10px] text-destructive">
                               Erro no envio
                             </Badge>
                           )}
                         </div>
-                        {isAdmin && (
+                        {isAdmin && !e.virtual && (
                           <div className="flex gap-1 shrink-0">
                             {e.sync_enabled && (
                               <Button

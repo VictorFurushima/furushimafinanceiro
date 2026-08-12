@@ -130,3 +130,12 @@ Unidirecional (Postgres -> Google), executada apenas em server functions
 (`src/lib/calendar-sync.functions.ts`) com verificação explícita de
 `public.is_admin`. Falha de envio nunca apaga dado local: o evento fica com
 `sync_status='error'` e `sync_error` preenchido para retry manual.
+
+## Agenda gerada (atualização)
+
+- `idx_calendar_events_finance_source` cobre `source_type IN ('bill','credit_card_bill','recurring')`,
+  garantindo idempotência do agendamento de faturas criado em `/cards`.
+- `materialize_routine_events(p_days)` é convergente: além de inserir os slots da janela,
+  remove eventos futuros de rotina que não correspondem mais aos `weekdays`/`start_time`/status atuais.
+- Recorrência de compromissos (`recurrence_rule`) não é materializada no banco; a UI expande
+  as repetições localmente apenas dentro do intervalo visualizado.
