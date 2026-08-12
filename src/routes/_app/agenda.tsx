@@ -55,6 +55,7 @@ function AgendaPage() {
   const push = useServerFn(pushEventToGoogle);
   const removeEverywhere = useServerFn(deleteEventEverywhere);
   const [slotDialogStart, setSlotDialogStart] = useState<Date | null>(null);
+  const [slotMin, setSlotMin] = useState<number>(30);
 
   const [view, setView] = useState<ViewMode>("week");
   const [anchor, setAnchor] = useState(() => new Date());
