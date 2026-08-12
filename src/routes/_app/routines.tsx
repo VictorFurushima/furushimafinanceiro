@@ -43,21 +43,59 @@ function RoutinesPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Routine | null>(null);
 
-  // Progresso semanal: uma única leitura da semana corrente, agregada em memória
-  // apenas sobre as ocorrências já filtradas por RLS (conjunto pequeno).
+  // Progresso semanal + sequência: uma única leitura finita (últimos 90 dias),
+  // agregada em memória sobre um conjunto pequeno já filtrado por RLS.
   const week = useMemo(() => {
     const start = startOfWeek(new Date());
     return { fromISO: localDateISO(start), toISO: localDateISO(addDays(start, 6)), start };
   }, []);
-  const { data: weekOccurrences = [] } = useRoutineOccurrences(week.fromISO, week.toISO);
+  const history = useMemo(() => {
+    const today = new Date();
+    return { fromISO: localDateISO(addDays(today, -90)), toISO: localDateISO(today) };
+  }, []);
+  const { data: occurrences = [] } = useRoutineOccurrences(history.fromISO, history.toISO);
+
   const doneByRoutine = useMemo(() => {
     const map = new Map<string, number>();
-    for (const o of weekOccurrences) {
+    for (const o of occurrences) {
       if (o.status !== "concluida") continue;
+      if (o.occurrence_date < week.fromISO || o.occurrence_date > week.toISO) continue;
       map.set(o.routine_id, (map.get(o.routine_id) ?? 0) + 1);
     }
     return map;
-  }, [weekOccurrences]);
+  }, [occurrences, week]);
+
+  /**
+   * Sequência = dias previstos consecutivos concluídos, ignorando datas fora
+   * dos weekdays da rotina e o dia de hoje quando ainda não foi marcado.
+   */
+  const streakByRoutine = useMemo(() => {
+    const done = new Set<string>();
+    for (const o of occurrences) {
+      if (o.status === "concluida") done.add(`${o.routine_id}|${o.occurrence_date}`);
+    }
+    const map = new Map<string, number>();
+    for (const r of routines) {
+      if (!r.weekdays?.length) {
+        map.set(r.id, 0);
+        continue;
+      }
+      let count = 0;
+      const cursor = new Date();
+      const todayISO = localDateISO(cursor);
+      for (let i = 0; i <= 90; i++) {
+        const iso = localDateISO(cursor);
+        if (r.weekdays.includes(cursor.getDay())) {
+          if (done.has(`${r.id}|${iso}`)) count += 1;
+          else if (iso !== todayISO) break;
+        }
+        cursor.setDate(cursor.getDate() - 1);
+      }
+      map.set(r.id, count);
+    }
+    return map;
+  }, [occurrences, routines]);
+
 
   const remove = async (r: Routine) => {
     if (!isAdmin) return toast.error(VIEWER_MESSAGE);
