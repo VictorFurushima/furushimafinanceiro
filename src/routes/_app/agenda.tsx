@@ -107,7 +107,6 @@ function AgendaPage() {
       else map.set(key, [e]);
     }
     return map;
-
   }, [occurrences]);
 
   const days = useMemo(() => {

@@ -96,7 +96,6 @@ function RoutinesPage() {
     return map;
   }, [occurrences, routines]);
 
-
   const remove = async (r: Routine) => {
     if (!isAdmin) return toast.error(VIEWER_MESSAGE);
     if (!confirm(`Excluir a rotina "${r.name}"?`)) return;
