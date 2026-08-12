@@ -69,15 +69,38 @@ function AgendaPage() {
     rangeEnd.toISOString(),
   );
 
-  const grouped = useMemo(() => {
-    const map = new Map<string, CalendarEvent[]>();
+  /**
+   * Ocorrências visíveis = eventos reais + expansão local da recurrence_rule.
+   * As repetições são virtuais (não existem no banco) e por isso não recebem
+   * ações destrutivas individuais.
+   */
+  const occurrences = useMemo<OccurrenceEvent[]>(() => {
+    const out: OccurrenceEvent[] = events.map((e) => ({ ...e, virtual: false }));
     for (const e of events) {
+      if (!e.recurrence_rule) continue;
+      for (const o of expandRecurrence(
+        e.starts_at,
+        e.ends_at,
+        e.recurrence_rule,
+        rangeStart,
+        rangeEnd,
+      )) {
+        out.push({ ...e, ...o, virtual: true });
+      }
+    }
+    return out.sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+  }, [events, rangeStart, rangeEnd]);
+
+  const grouped = useMemo(() => {
+    const map = new Map<string, OccurrenceEvent[]>();
+    for (const e of occurrences) {
       const key = localDateISO(new Date(e.starts_at));
       const list = map.get(key);
       if (list) list.push(e);
       else map.set(key, [e]);
     }
     return map;
+
   }, [events]);
 
   const days = useMemo(() => {
