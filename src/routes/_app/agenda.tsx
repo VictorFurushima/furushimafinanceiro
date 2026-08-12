@@ -19,6 +19,7 @@ import {
   categoryLabel,
   endOfDay,
   endOfMonth,
+  expandRecurrence,
   fmtTime,
   localDateISO,
   startOfDay,
