@@ -126,3 +126,38 @@ export function toLocalInput(value: string | Date): string {
   const p = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 }
+
+/**
+ * Expansão local de recorrência simples (RRULE:FREQ=DAILY|WEEKLY|MONTHLY).
+ * O Postgres guarda apenas a regra; a visualização materializa as ocorrências
+ * dentro da janela consultada, sem gravar linhas extras no banco.
+ */
+export function expandRecurrence(
+  startsAt: string,
+  endsAt: string,
+  rule: string | null,
+  rangeStart: Date,
+  rangeEnd: Date,
+  maxOccurrences = 200,
+): { starts_at: string; ends_at: string }[] {
+  const first = new Date(startsAt);
+  const duration = new Date(endsAt).getTime() - first.getTime();
+  const freq = rule?.match(/FREQ=(DAILY|WEEKLY|MONTHLY)/)?.[1];
+  if (!freq) return [];
+
+  const out: { starts_at: string; ends_at: string }[] = [];
+  const cursor = new Date(first);
+  for (let i = 0; i < maxOccurrences; i++) {
+    if (freq === "DAILY") cursor.setDate(cursor.getDate() + 1);
+    else if (freq === "WEEKLY") cursor.setDate(cursor.getDate() + 7);
+    else cursor.setMonth(cursor.getMonth() + 1);
+
+    if (cursor.getTime() > rangeEnd.getTime()) break;
+    if (cursor.getTime() + duration < rangeStart.getTime()) continue;
+    out.push({
+      starts_at: cursor.toISOString(),
+      ends_at: new Date(cursor.getTime() + duration).toISOString(),
+    });
+  }
+  return out;
+}
