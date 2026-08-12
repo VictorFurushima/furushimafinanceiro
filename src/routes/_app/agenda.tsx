@@ -43,6 +43,11 @@ export const Route = createFileRoute("/_app/agenda")({
 
 type ViewMode = "day" | "week" | "month";
 
+/** Ocorrência exibida: evento real do banco ou repetição virtual expandida na UI. */
+type OccurrenceEvent = CalendarEvent & { virtual: boolean };
+
+const SLOT_MIN_OPTIONS = [30, 45, 60, 90, 120] as const;
+
 function AgendaPage() {
   const { isAdmin } = useRole();
   const qc = useQueryClient();
