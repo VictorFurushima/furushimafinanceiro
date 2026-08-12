@@ -221,6 +221,13 @@ function RoutinesPage() {
                     className="h-1.5"
                   />
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  Sequência atual:{" "}
+                  <span className="text-primary-glow font-medium">
+                    {streakByRoutine.get(r.id) ?? 0}
+                  </span>{" "}
+                  {(streakByRoutine.get(r.id) ?? 0) === 1 ? "dia previsto" : "dias previstos"}
+                </p>
                 {r.objective && (
                   <p className="text-xs text-muted-foreground">Objetivo: {r.objective}</p>
                 )}
