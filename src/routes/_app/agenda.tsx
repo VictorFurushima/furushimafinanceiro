@@ -153,7 +153,7 @@ function AgendaPage() {
         const minutes = Math.round(
           (Math.min(b.s.getTime(), dayEnd.getTime()) - cursor.getTime()) / 60_000,
         );
-        if (minutes >= 30)
+        if (minutes >= slotMin)
           slots.push({
             start: new Date(cursor),
             end: new Date(Math.min(b.s.getTime(), dayEnd.getTime())),
@@ -164,10 +164,11 @@ function AgendaPage() {
     }
     if (cursor < dayEnd) {
       const minutes = Math.round((dayEnd.getTime() - cursor.getTime()) / 60_000);
-      if (minutes >= 30) slots.push({ start: new Date(cursor), end: new Date(dayEnd), minutes });
+      if (minutes >= slotMin)
+        slots.push({ start: new Date(cursor), end: new Date(dayEnd), minutes });
     }
     return slots.sort((a, b) => b.minutes - a.minutes).slice(0, 3);
-  }, [grouped, anchor]);
+  }, [grouped, anchor, slotMin]);
 
   const resync = async (e: CalendarEvent) => {
     if (!isAdmin) return toast.error(VIEWER_MESSAGE);
