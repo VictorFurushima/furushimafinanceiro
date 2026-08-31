@@ -289,3 +289,128 @@ export const useDashboardSnapshot = () =>
       };
     },
   });
+
+/** Bundle único do dashboard: 1 roundtrip em vez de 7 RPCs/queries separadas. */
+export interface DashboardBundle {
+  overview: FinancialOverviewRow;
+  current_month: MonthlySummary;
+  previous_month: MonthlySummary;
+  spending: CategorySpending[];
+  series: MonthlySeriesPoint[];
+  recent_transactions: Transaction[];
+  snapshot: DashboardSnapshot;
+}
+
+const EMPTY_SUMMARY: MonthlySummary = {
+  receitas: 0,
+  despesas: 0,
+  aportes: 0,
+  resgates: 0,
+  saldo_liquido: 0,
+};
+
+const toSummary = (raw: unknown): MonthlySummary => {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  return {
+    receitas: num(r.receitas),
+    despesas: num(r.despesas),
+    aportes: num(r.aportes),
+    resgates: num(r.resgates),
+    saldo_liquido: num(r.saldo_liquido),
+  };
+};
+
+const toOverview = (raw: unknown): FinancialOverviewRow => {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  const out = { ...EMPTY_OVERVIEW };
+  (Object.keys(EMPTY_OVERVIEW) as (keyof FinancialOverviewRow)[]).forEach((k) => {
+    if (r[k] !== undefined && r[k] !== null) out[k] = num(r[k]);
+  });
+  return out;
+};
+
+const toSnapshot = (raw: unknown): DashboardSnapshot => {
+  const r = (raw ?? {}) as Partial<DashboardSnapshot>;
+  const nr = r.next_recharge;
+  return {
+    recharges_previsto_mes: num(r.recharges_previsto_mes),
+    recharges_confirmado_mes: num(r.recharges_confirmado_mes),
+    recharges_restante_mes: num(r.recharges_restante_mes),
+    next_recharge: nr
+      ? {
+          name: nr.name,
+          expected_amount: num(nr.expected_amount),
+          expected_date: nr.expected_date,
+          days: num(nr.days),
+        }
+      : null,
+    recharges_overdue_count: num(r.recharges_overdue_count),
+    recharges_upcoming_count: num(r.recharges_upcoming_count),
+    cards: (r.cards ?? []).map((c) => ({
+      id: c.id,
+      name: c.name,
+      total_limit: num(c.total_limit),
+      used_limit: num(c.used_limit),
+    })),
+    cards_count: num(r.cards_count),
+    cards_low_limit_count: num(r.cards_low_limit_count),
+    upcoming_bills: (r.upcoming_bills ?? []).map((b) => ({
+      id: b.id,
+      card_name: b.card_name,
+      amount: num(b.amount),
+      due_date: b.due_date,
+      days: num(b.days),
+    })),
+    upcoming_bills_count: num(r.upcoming_bills_count),
+    upcoming_subscriptions: (r.upcoming_subscriptions ?? []).map((s) => ({
+      id: s.id,
+      name: s.name,
+      amount: num(s.amount),
+      days: num(s.days),
+    })),
+  };
+};
+
+export const EMPTY_BUNDLE: DashboardBundle = {
+  overview: EMPTY_OVERVIEW,
+  current_month: EMPTY_SUMMARY,
+  previous_month: EMPTY_SUMMARY,
+  spending: [],
+  series: [],
+  recent_transactions: [],
+  snapshot: EMPTY_SNAPSHOT,
+};
+
+export const useDashboardBundle = (months = 6) =>
+  useQuery({
+    queryKey: financeKeys.dashboardBundle(months),
+    queryFn: async (): Promise<DashboardBundle> => {
+      const { data, error } = await supabase.rpc("get_dashboard_bundle", { p_months: months });
+      if (error) throw error;
+      const raw = (data ?? {}) as Record<string, unknown>;
+      return {
+        overview: toOverview(raw.overview),
+        current_month: toSummary(raw.current_month),
+        previous_month: toSummary(raw.previous_month),
+        spending: ((raw.spending ?? []) as CategorySpending[]).map((s) => ({
+          category_id: s.category_id,
+          name: s.name,
+          color: s.color,
+          icon: s.icon,
+          total: num(s.total),
+        })),
+        series: ((raw.series ?? []) as MonthlySeriesPoint[]).map((p) => ({
+          month: p.month,
+          receitas: num(p.receitas),
+          despesas: num(p.despesas),
+          aportes: num(p.aportes),
+          resgates: num(p.resgates),
+        })),
+        recent_transactions: ((raw.recent_transactions ?? []) as Transaction[]).map((t) => ({
+          ...t,
+          amount: num(t.amount),
+        })),
+        snapshot: toSnapshot(raw.snapshot),
+      };
+    },
+  });
