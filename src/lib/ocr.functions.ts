@@ -3,7 +3,9 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { APP_TIMEZONE, isValidDateOnly, todayISO } from "@/lib/date-only";
 
-const buildSystemPrompt = (today: string) => `Você é um assistente que extrai transações financeiras de prints de extratos bancários, faturas de cartão, históricos de Pix, comprovantes e carteiras digitais brasileiras.
+const buildSystemPrompt = (
+  today: string,
+) => `Você é um assistente que extrai transações financeiras de prints de extratos bancários, faturas de cartão, históricos de Pix, comprovantes e carteiras digitais brasileiras.
 
 CONTEXTO TEMPORAL (obrigatório):
 - Data local de hoje: ${today} (fuso ${APP_TIMEZONE}).
