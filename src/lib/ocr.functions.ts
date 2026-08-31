@@ -266,20 +266,71 @@ export const extractTransactionsFromImage = createServerFn({ method: "POST" })
       possible_duplicate: isDuplicate(c),
     }));
 
-    // Releitura: só descarta o conjunto anterior AGORA, com a nova leitura pronta.
+    /** Marca a imagem como falha sem destruir nenhum dado já existente. */
+    const markFailed = async (message: string) => {
+      await supabase
+        .from("uploaded_transaction_images")
+        .update({ processing_status: "failed", error_message: message.slice(0, 500) })
+        .eq("id", data.imageId);
+    };
+
+    // IDs antigos elegíveis à troca (nunca saved/ignored).
+    let previousIds: string[] = [];
     if (data.replacePrevious) {
-      const { error: delErr } = await supabase
+      const { data: prev, error: prevErr } = await supabase
         .from("ocr_detected_transactions")
-        .delete()
+        .select("id")
         .eq("image_id", data.imageId)
         .eq("user_id", userId)
         .in("review_status", ["pending", "needs_review"]);
-      if (delErr) throw delErr;
+      if (prevErr) {
+        await markFailed(prevErr.message);
+        throw prevErr;
+      }
+      previousIds = (prev ?? []).map((p) => p.id);
     }
 
+    // Releitura vazia com conjunto anterior existente = falha de releitura: preserva o anterior.
+    if (data.replacePrevious && previousIds.length > 0 && rows.length === 0) {
+      const msg =
+        "Releitura não encontrou nenhuma transação; o conjunto anterior foi preservado. Tente novamente com uma imagem mais legível.";
+      await markFailed(msg);
+      throw new Error(msg);
+    }
+
+    // 1) Insere o novo conjunto e captura os IDs criados.
+    let insertedIds: string[] = [];
     if (rows.length > 0) {
-      const { error: insErr } = await supabase.from("ocr_detected_transactions").insert(rows);
-      if (insErr) throw insErr;
+      const { data: ins, error: insErr } = await supabase
+        .from("ocr_detected_transactions")
+        .insert(rows)
+        .select("id");
+      if (insErr) {
+        await markFailed(insErr.message);
+        throw insErr;
+      }
+      insertedIds = (ins ?? []).map((r) => r.id);
+    }
+
+    // 2) Só agora remove exatamente os IDs antigos capturados.
+    if (previousIds.length > 0) {
+      const { error: delErr } = await supabase
+        .from("ocr_detected_transactions")
+        .delete()
+        .eq("user_id", userId)
+        .in("id", previousIds);
+      if (delErr) {
+        // Compensação: desfaz a inserção nova, preservando o conjunto anterior íntegro.
+        if (insertedIds.length > 0) {
+          await supabase
+            .from("ocr_detected_transactions")
+            .delete()
+            .eq("user_id", userId)
+            .in("id", insertedIds);
+        }
+        await markFailed(delErr.message);
+        throw delErr;
+      }
     }
 
     const finalConfidence = rows.some((r) => r.confidence_level === "baixa") ? "baixa" : overall;
