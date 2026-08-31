@@ -30,6 +30,8 @@ export const financeKeys = {
   statisticsExtras: (from: string, to: string) =>
     ["finance", "statistics-extras", from, to] as const,
   dashboardSnapshot: ["finance", "dashboard-snapshot"] as const,
+  /** Bundle único do dashboard (1 roundtrip). Sob o prefixo "finance" → invalidateFinance cobre. */
+  dashboardBundle: (months: number) => ["finance", "dashboard-bundle", months] as const,
 
   // listas
   transactions: ["transactions"] as const,

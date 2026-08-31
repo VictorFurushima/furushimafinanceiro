@@ -10,10 +10,12 @@ const buildSystemPrompt = (
 CONTEXTO TEMPORAL (obrigatório):
 - Data local de hoje: ${today} (fuso ${APP_TIMEZONE}).
 - "Hoje" = ${today}. "Ontem" = o dia anterior a ${today}.
-- Se o print exibir dd/mm sem ano, procure o ano no cabeçalho (período do extrato, mês de referência da fatura, título "Janeiro/2025", etc.) e use esse ano.
-- Se o print trouxer um ano explícito, use exatamente esse ano. Nunca substitua pelo ano atual.
-- Se, mesmo assim, o ano permanecer ambíguo, ou se o dia/mês forem ambíguos, marque confidence "baixa" e ainda assim devolva a melhor leitura literal. Não invente datas.
-- Nunca devolva datas de calendário impossíveis (ex.: 31/02).
+- Se o print trouxer um ano explícito no próprio item, use exatamente esse ano. Nunca substitua pelo ano atual.
+- Se o item exibir dd/mm sem ano, use o ano APENAS quando houver cabeçalho/período confiável (período do extrato, mês de referência da fatura, título "Janeiro/2025", etc.).
+- Se não houver ano no item nem cabeçalho/período confiável, "date" DEVE ser null e confidence "baixa". NUNCA assuma o ano atual.
+- Se dia, mês ou ano forem ambíguos por qualquer motivo, "date" DEVE ser null e confidence "baixa".
+- É melhor devolver date null do que uma data inventada; o usuário preenche manualmente na revisão.
+- Nunca devolva datas de calendário impossíveis (ex.: 31/02); nesse caso devolva null.
 
 Sua tarefa: identificar TODAS as transações visíveis na imagem e retornar JSON.
 
@@ -264,20 +266,71 @@ export const extractTransactionsFromImage = createServerFn({ method: "POST" })
       possible_duplicate: isDuplicate(c),
     }));
 
-    // Releitura: só descarta o conjunto anterior AGORA, com a nova leitura pronta.
+    /** Marca a imagem como falha sem destruir nenhum dado já existente. */
+    const markFailed = async (message: string) => {
+      await supabase
+        .from("uploaded_transaction_images")
+        .update({ processing_status: "failed", error_message: message.slice(0, 500) })
+        .eq("id", data.imageId);
+    };
+
+    // IDs antigos elegíveis à troca (nunca saved/ignored).
+    let previousIds: string[] = [];
     if (data.replacePrevious) {
-      const { error: delErr } = await supabase
+      const { data: prev, error: prevErr } = await supabase
         .from("ocr_detected_transactions")
-        .delete()
+        .select("id")
         .eq("image_id", data.imageId)
         .eq("user_id", userId)
         .in("review_status", ["pending", "needs_review"]);
-      if (delErr) throw delErr;
+      if (prevErr) {
+        await markFailed(prevErr.message);
+        throw prevErr;
+      }
+      previousIds = (prev ?? []).map((p) => p.id);
     }
 
+    // Releitura vazia com conjunto anterior existente = falha de releitura: preserva o anterior.
+    if (data.replacePrevious && previousIds.length > 0 && rows.length === 0) {
+      const msg =
+        "Releitura não encontrou nenhuma transação; o conjunto anterior foi preservado. Tente novamente com uma imagem mais legível.";
+      await markFailed(msg);
+      throw new Error(msg);
+    }
+
+    // 1) Insere o novo conjunto e captura os IDs criados.
+    let insertedIds: string[] = [];
     if (rows.length > 0) {
-      const { error: insErr } = await supabase.from("ocr_detected_transactions").insert(rows);
-      if (insErr) throw insErr;
+      const { data: ins, error: insErr } = await supabase
+        .from("ocr_detected_transactions")
+        .insert(rows)
+        .select("id");
+      if (insErr) {
+        await markFailed(insErr.message);
+        throw insErr;
+      }
+      insertedIds = (ins ?? []).map((r) => r.id);
+    }
+
+    // 2) Só agora remove exatamente os IDs antigos capturados.
+    if (previousIds.length > 0) {
+      const { error: delErr } = await supabase
+        .from("ocr_detected_transactions")
+        .delete()
+        .eq("user_id", userId)
+        .in("id", previousIds);
+      if (delErr) {
+        // Compensação: desfaz a inserção nova, preservando o conjunto anterior íntegro.
+        if (insertedIds.length > 0) {
+          await supabase
+            .from("ocr_detected_transactions")
+            .delete()
+            .eq("user_id", userId)
+            .in("id", insertedIds);
+        }
+        await markFailed(delErr.message);
+        throw delErr;
+      }
     }
 
     const finalConfidence = rows.some((r) => r.confidence_level === "baixa") ? "baixa" : overall;

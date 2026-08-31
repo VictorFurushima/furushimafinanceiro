@@ -36,39 +36,26 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useRecentTransactions } from "@/hooks/use-finance-data";
-import {
-  useFinancialOverview,
-  useMonthlySummary,
-  useSpendingByCategory,
-  useMonthlySeries,
-  useDashboardSnapshot,
-  EMPTY_SNAPSHOT,
-} from "@/hooks/use-finance-aggregates";
+import { useDashboardBundle, EMPTY_BUNDLE } from "@/hooks/use-finance-aggregates";
 import { formatCurrency } from "@/lib/format";
 import { TransactionDialog } from "@/components/transaction-dialog";
 import { StatCard } from "@/components/stat-card";
-import { formatDateOnlyPtBR, toLocalDateString, todayISO, parseDateOnly } from "@/lib/date-only";
-
-const iso = (d: Date) => toLocalDateString(d);
+import { formatDateOnlyPtBR, parseDateOnly } from "@/lib/date-only";
 
 export const Route = createFileRoute("/_app/dashboard")({ component: DashboardPage });
 
 function DashboardPage() {
   const now = new Date();
 
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  const prevStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const prevEnd = new Date(now.getFullYear(), now.getMonth(), 0);
-
-  const { data: overview } = useFinancialOverview();
-  const { data: month } = useMonthlySummary(iso(monthStart), iso(monthEnd));
-  const { data: prevMonth } = useMonthlySummary(iso(prevStart), iso(prevEnd));
-  const { data: spending = [] } = useSpendingByCategory(iso(monthStart), iso(monthEnd));
-  const { data: series = [] } = useMonthlySeries(6);
-  const { data: recent = [] } = useRecentTransactions(6);
-  const { data: snap = EMPTY_SNAPSHOT } = useDashboardSnapshot();
+  // 1 único roundtrip: overview + mês atual/anterior + categorias + série + recentes + snapshot.
+  const { data: bundle = EMPTY_BUNDLE } = useDashboardBundle(6);
+  const overview = bundle.overview;
+  const month = bundle.current_month;
+  const prevMonth = bundle.previous_month;
+  const spending = bundle.spending;
+  const series = bundle.series;
+  const recent = bundle.recent_transactions;
+  const snap = bundle.snapshot;
 
   const [openTx, setOpenTx] = useState(false);
 
