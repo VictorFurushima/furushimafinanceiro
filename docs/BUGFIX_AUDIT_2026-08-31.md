@@ -68,3 +68,28 @@ Correções sem redesign, preservando funcionalidades, layout, RLS e o modelo ad
 
 - Leitura real de prints pelo AI Gateway (depende de imagens do usuário).
 - Comportamento visual em aparelhos físicos; layout não foi alterado nesta auditoria.
+
+## Segunda revisão — patch de hardening (2026-08-31)
+
+### 1. Releitura OCR fail-safe (`src/lib/ocr.functions.ts`)
+Sequência exata, nesta ordem:
+1. extração + parse + validação determinística concluídos (falha aqui marca a imagem como `failed` sem tocar em dados);
+2. carrega os IDs antigos com `review_status IN ('pending','needs_review')` da imagem (`saved`/`ignored` nunca entram);
+3. se é releitura, existiam resultados antigos e a nova extração devolveu ZERO transações → erro claro, conjunto anterior preservado;
+4. INSERT do novo conjunto com `.select("id")` capturando os IDs inseridos;
+5. somente após sucesso do INSERT, DELETE restrito aos IDs antigos capturados;
+6. se o DELETE falhar → compensação apagando os IDs recém-inseridos, imagem marcada `failed`, conjunto anterior íntegro.
+Qualquer falha em AI, parse, validação, INSERT ou DELETE atualiza `uploaded_transaction_images` para `failed` com `error_message` e preserva os dados anteriores.
+
+### 2. Datas ambíguas no prompt
+Sem ano no item e sem cabeçalho/período confiável → `date = null` e `confidence = "baixa"`. Dia/mês/ano ambíguos → `date = null`. Ano explícito preservado; "Hoje"/"Ontem" resolvidos pela data local `America/Sao_Paulo`. Validação server-side segue rejeitando calendário impossível.
+
+### 3. Query OCR alinhada ao índice
+`import-prints.tsx` usa `IN ('pending','needs_review')` (mesmo predicado de `idx_ocr_pending_review`), limite de 100 prints recentes e 250 itens pendentes, com aviso discreto ao atingir o teto. Selects permanecem explícitos.
+
+### 4. Bundle do dashboard: 7 roundtrips → 1
+Nova função `public.get_dashboard_bundle(p_months integer default 6)` — `LANGUAGE sql`, `STABLE`, `SECURITY INVOKER`, `search_path = public`. Reutiliza `get_financial_overview`, `get_monthly_financial_summary`, `get_spending_by_category`, `get_monthly_series` e `get_dashboard_snapshot`; mês atual/anterior calculados no Postgres via `CURRENT_DATE`/`date_trunc`; `recent_transactions` limitada a 6 com `categories(name,color,icon)` e owner resolvido por `public.space_owner((SELECT auth.uid()))`. `EXECUTE` revogado de PUBLIC/anon.
+Frontend: `useDashboardBundle` (`financeKeys.dashboardBundle(months)`, sob o prefixo `finance` → coberto por `invalidateFinance`). `dashboard.tsx` consome apenas o bundle; os 7 hooks individuais foram removidos da tela (continuam disponíveis para as demais páginas).
+
+### 5. Limpeza
+Imports não usados de `date-only` removidos do dashboard (`toLocalDateString`, `todayISO`). Nenhum `toISOString().slice(0,10)` ou `new Date(<coluna DATE>)` restante em arquivos financeiros. Validado com `tsgo --noEmit`, ESLint nos arquivos tocados e build de produção.
