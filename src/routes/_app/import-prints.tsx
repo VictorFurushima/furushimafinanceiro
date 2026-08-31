@@ -92,7 +92,8 @@ function ImportPrintsPage() {
         .select(
           "id, file_name, storage_path, processing_status, ocr_confidence, error_message, upload_date",
         )
-        .order("upload_date", { ascending: false });
+        .order("upload_date", { ascending: false })
+        .limit(MAX_IMAGES);
       if (error) throw error;
       return data as ImageRow[];
     },
@@ -101,14 +102,15 @@ function ImportPrintsPage() {
   const { data: detected = [] } = useQuery({
     queryKey: ["ocr-detected"],
     queryFn: async (): Promise<DetectedTx[]> => {
+      // Filtro idêntico ao predicado de idx_ocr_pending_review.
       const { data, error } = await supabase
         .from("ocr_detected_transactions")
         .select(
           "id, image_id, detected_date, detected_amount, detected_type, detected_description, detected_payment_method, detected_account, suggested_category, suggested_category_id, confidence_level, review_status, possible_duplicate",
         )
-        .neq("review_status", "saved")
-        .neq("review_status", "ignored")
-        .order("created_at", { ascending: false });
+        .in("review_status", ["pending", "needs_review"])
+        .order("created_at", { ascending: false })
+        .limit(MAX_PENDING);
       if (error) throw error;
       return (data as DetectedTx[]).map((d) => ({
         ...d,
