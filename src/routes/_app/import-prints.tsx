@@ -67,6 +67,9 @@ interface ImageRow {
 const MAX_FILE_MB = 10;
 const MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024;
 const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+/** Tetos de leitura para evitar fetch ilimitado. */
+const MAX_IMAGES = 100;
+const MAX_PENDING = 250;
 
 const confColor = (c?: string | null) =>
   c === "alta"
