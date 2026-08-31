@@ -139,3 +139,14 @@ Unidirecional (Postgres -> Google), executada apenas em server functions
   remove eventos futuros de rotina que não correspondem mais aos `weekdays`/`start_time`/status atuais.
 - Recorrência de compromissos (`recurrence_rule`) não é materializada no banco; a UI expande
   as repetições localmente apenas dentro do intervalo visualizado.
+
+## Índices do fluxo OCR
+
+- `idx_ocr_pending_review (user_id, created_at DESC) WHERE review_status IN ('pending','needs_review')`:
+  atende a tela Importar por Print. Detalhes e histórico em `docs/BUGFIX_AUDIT_2026-08-31.md`.
+
+## Datas (DATE)
+
+Colunas `DATE` são tratadas como rótulo de calendário. O frontend usa exclusivamente
+`src/lib/date-only.ts` (`parseDateOnly`, `formatDateOnlyPtBR`, `toLocalDateString`, `todayISO`).
+Não usar `new Date("YYYY-MM-DD")` nem `toISOString().slice(0,10)` para esses campos.
