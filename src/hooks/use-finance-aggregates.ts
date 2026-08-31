@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { financeKeys } from "@/lib/query-keys";
+import type { Transaction } from "@/hooks/use-finance-data";
 
 const num = (v: unknown) => Number(v ?? 0);
 
