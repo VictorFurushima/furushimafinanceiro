@@ -344,6 +344,8 @@ function ImportPrintsPage() {
             </CardTitle>
             <p className="text-xs text-muted-foreground">
               Revise, edite e confirme antes de salvar no histórico.
+              {detected.length >= MAX_PENDING &&
+                ` Exibindo os ${MAX_PENDING} itens mais recentes.`}
             </p>
           </CardHeader>
           <CardContent className="space-y-3">
