@@ -72,6 +72,7 @@ import {
   investmentStatusColor,
   INVESTMENT_EVENT_LABELS,
 } from "@/lib/investment-constants";
+import { formatDateOnlyPtBR, toLocalDateString, todayISO, parseDateOnly } from "@/lib/date-only";
 
 export const Route = createFileRoute("/_app/investments")({
   component: InvestmentsPage,
@@ -122,7 +123,7 @@ function InvestmentsPage() {
     const now = Date.now();
     let total = 0;
     for (const i of ativos) {
-      const meses = Math.max(1, (now - new Date(i.applied_at).getTime()) / (30 * 86400000));
+      const meses = Math.max(1, (now - (parseDateOnly(i.applied_at) ?? new Date()).getTime()) / (30 * 86400000));
       total += (i.current_amount - i.invested_amount) / meses;
     }
     return total;
@@ -158,7 +159,7 @@ function InvestmentsPage() {
       });
     }
     events.forEach((e) => {
-      const d = new Date(e.occurred_at);
+      const d = parseDateOnly(e.occurred_at) ?? new Date();
       const m = months.find((x) => x.key === `${d.getFullYear()}-${d.getMonth()}`);
       if (!m) return;
       if (e.event_type === "aporte") m.aporte += e.amount;
@@ -190,7 +191,7 @@ function InvestmentsPage() {
   useEffect(() => {
     if (!settings?.reminder_enabled || !isAdmin) return;
     const today = new Date();
-    const key = `furushima:reminder:${today.toISOString().slice(0, 10)}`;
+    const key = `furushima:reminder:${todayISO()}`;
     if (localStorage.getItem(key)) return;
     if (today.getDate() < settings.reminder_day) return;
     setReminderVisible(true);
@@ -204,7 +205,7 @@ function InvestmentsPage() {
   }, [settings, isAdmin]);
 
   const dismissReminder = (permanent: boolean) => {
-    const key = `furushima:reminder:${new Date().toISOString().slice(0, 10)}`;
+    const key = `furushima:reminder:${todayISO()}`;
     if (permanent) localStorage.setItem(key, "1");
     setReminderVisible(false);
   };
@@ -627,7 +628,7 @@ function InvestmentsPage() {
                         {INVESTMENT_EVENT_LABELS[e.event_type] ?? e.event_type} · {inv?.name ?? "—"}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {new Date(e.occurred_at).toLocaleDateString("pt-BR")}
+                        {formatDateOnlyPtBR(e.occurred_at)}
                         {e.notes ? ` · ${e.notes}` : ""}
                       </p>
                     </div>

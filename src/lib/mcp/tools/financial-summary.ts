@@ -1,6 +1,7 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
 import { errorResult, jsonResult, requireAuth, supabaseForUser } from "../supabase-client";
+import { toLocalDateString } from "@/lib/date-only";
 
 export default defineTool({
   name: "financial_summary",
@@ -20,7 +21,7 @@ export default defineTool({
     const m = month ?? now.getUTCMonth() + 1;
     const start = `${y}-${String(m).padStart(2, "0")}-01`;
     const endDate = new Date(Date.UTC(y, m, 0));
-    const end = endDate.toISOString().slice(0, 10);
+    const end = toLocalDateString(endDate);
 
     const supa = supabaseForUser(ctx);
     const [sumRes, accRes] = await Promise.all([

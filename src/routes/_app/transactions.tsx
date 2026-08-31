@@ -20,6 +20,7 @@ import { TransactionDialog } from "@/components/transaction-dialog";
 import { formatCurrency } from "@/lib/format";
 import { PAYMENT_METHODS, paymentLabel } from "@/lib/finance-constants";
 import { supabase } from "@/integrations/supabase/client";
+import { formatDateOnlyPtBR, toLocalDateString, todayISO, parseDateOnly } from "@/lib/date-only";
 
 const PAGE_SIZE = 50;
 
@@ -130,7 +131,7 @@ function TransactionsPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `transacoes-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `transacoes-${todayISO()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     toast.success("CSV exportado");
@@ -283,7 +284,7 @@ function TransactionsPage() {
                       {t.subcategory && ` · ${t.subcategory}`}
                       {" · "}
                       {paymentLabel(t.payment_method)} ·{" "}
-                      {new Date(t.occurred_at).toLocaleDateString("pt-BR")}
+                      {formatDateOnlyPtBR(t.occurred_at)}
                     </p>
                   </div>
                   <span

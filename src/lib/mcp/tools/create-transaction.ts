@@ -1,6 +1,7 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
 import { errorResult, jsonResult, requireAuth, supabaseForUser } from "../supabase-client";
+import { todayISO } from "@/lib/date-only";
 
 export default defineTool({
   name: "create_transaction",
@@ -36,7 +37,7 @@ export default defineTool({
         type: input.type,
         amount: input.amount,
         description: input.description,
-        occurred_at: input.occurred_at ?? new Date().toISOString().slice(0, 10),
+        occurred_at: input.occurred_at ?? todayISO(),
         account_id: input.account_id ?? null,
         category_id: input.category_id ?? null,
         payment_method: input.payment_method ?? null,

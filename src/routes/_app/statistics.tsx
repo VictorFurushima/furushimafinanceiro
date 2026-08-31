@@ -30,8 +30,9 @@ import {
 } from "@/hooks/use-finance-aggregates";
 import { formatCurrency } from "@/lib/format";
 import { paymentLabel } from "@/lib/finance-constants";
+import { formatDateOnlyPtBR, toLocalDateString, todayISO, parseDateOnly } from "@/lib/date-only";
 
-const iso = (d: Date) => d.toISOString().slice(0, 10);
+const iso = (d: Date) => toLocalDateString(d);
 
 export const Route = createFileRoute("/_app/statistics")({ component: StatisticsPage });
 
@@ -53,7 +54,7 @@ function StatisticsPage() {
   const monthlyData = useMemo(
     () =>
       series.map((p) => ({
-        label: new Date(`${p.month}T00:00:00`)
+        label: (parseDateOnly(p.month) ?? new Date())
           .toLocaleDateString("pt-BR", { month: "short" })
           .replace(".", ""),
         income: p.receitas,
@@ -115,7 +116,7 @@ function StatisticsPage() {
     return series.map((p) => {
       bal += p.receitas - p.despesas;
       return {
-        date: new Date(`${p.month}T00:00:00`)
+        date: (parseDateOnly(p.month) ?? new Date())
           .toLocaleDateString("pt-BR", { month: "short", year: "2-digit" })
           .replace(".", ""),
         balance: bal,

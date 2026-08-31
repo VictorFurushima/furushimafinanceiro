@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { invalidateFinance } from "@/lib/query-keys";
 import { useNotes, type Note } from "@/hooks/use-app-data";
 import { useRole, VIEWER_MESSAGE } from "@/hooks/use-role";
+import { formatDateOnlyPtBR, toLocalDateString, todayISO, parseDateOnly } from "@/lib/date-only";
 
 export const Route = createFileRoute("/_app/notes")({
   component: NotesPage,
@@ -157,7 +158,7 @@ function NotesPage() {
                     {noteLinkLabel(n.link_type)}
                   </Badge>
                   <span className="text-xs text-muted-foreground">
-                    {new Date(n.note_date).toLocaleDateString("pt-BR")}
+                    {formatDateOnlyPtBR(n.note_date)}
                   </span>
                 </div>
               </CardHeader>

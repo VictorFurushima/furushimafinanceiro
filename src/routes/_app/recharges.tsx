@@ -28,6 +28,7 @@ import {
 } from "@/lib/finance-constants";
 import { RechargeDialog } from "@/components/recharge-dialog";
 import { StatCard } from "@/components/stat-card";
+import { formatDateOnlyPtBR, toLocalDateString, todayISO, parseDateOnly } from "@/lib/date-only";
 
 export const Route = createFileRoute("/_app/recharges")({ component: RechargesPage });
 
@@ -44,7 +45,7 @@ function RechargesPage() {
   const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
   const monthRecharges = recharges.filter((r) => {
-    const d = new Date(r.expected_date);
+    const d = parseDateOnly(r.expected_date) ?? new Date();
     return d >= monthStart && d <= monthEnd;
   });
 
@@ -61,7 +62,7 @@ function RechargesPage() {
   const next = useMemo(() => {
     return recharges
       .filter((r) => r.status === "prevista" || r.status === "confirmada")
-      .filter((r) => new Date(r.expected_date) >= new Date(now.toDateString()))
+      .filter((r) => r.expected_date >= todayISO())
       .sort((a, b) => a.expected_date.localeCompare(b.expected_date))[0];
   }, [recharges]);
 
@@ -127,7 +128,7 @@ function RechargesPage() {
           icon={Calendar}
           hint={
             next
-              ? `${formatCurrency(next.expected_amount)} · ${new Date(next.expected_date).toLocaleDateString("pt-BR")}`
+              ? `${formatCurrency(next.expected_amount)} · ${formatDateOnlyPtBR(next.expected_date)}`
               : undefined
           }
           gradient
@@ -223,7 +224,7 @@ function RechargesPage() {
                     </div>
                     <p className="text-xs text-muted-foreground">
                       {rechargeTypeLabel(r.recharge_type)} ·{" "}
-                      {new Date(r.expected_date).toLocaleDateString("pt-BR")}
+                      {formatDateOnlyPtBR(r.expected_date)}
                     </p>
                   </div>
                   <span className="text-sm font-semibold text-success">

@@ -1,13 +1,24 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { APP_TIMEZONE, isValidDateOnly, todayISO } from "@/lib/date-only";
 
-const SYSTEM_PROMPT = `Você é um assistente que extrai transações financeiras de prints de extratos bancários, faturas de cartão, históricos de Pix, comprovantes e carteiras digitais brasileiras.
+const buildSystemPrompt = (
+  today: string,
+) => `Você é um assistente que extrai transações financeiras de prints de extratos bancários, faturas de cartão, históricos de Pix, comprovantes e carteiras digitais brasileiras.
+
+CONTEXTO TEMPORAL (obrigatório):
+- Data local de hoje: ${today} (fuso ${APP_TIMEZONE}).
+- "Hoje" = ${today}. "Ontem" = o dia anterior a ${today}.
+- Se o print exibir dd/mm sem ano, procure o ano no cabeçalho (período do extrato, mês de referência da fatura, título "Janeiro/2025", etc.) e use esse ano.
+- Se o print trouxer um ano explícito, use exatamente esse ano. Nunca substitua pelo ano atual.
+- Se, mesmo assim, o ano permanecer ambíguo, ou se o dia/mês forem ambíguos, marque confidence "baixa" e ainda assim devolva a melhor leitura literal. Não invente datas.
+- Nunca devolva datas de calendário impossíveis (ex.: 31/02).
 
 Sua tarefa: identificar TODAS as transações visíveis na imagem e retornar JSON.
 
 Regras:
-- Datas no formato YYYY-MM-DD. Se o print mostrar dd/mm, assuma o ano atual.
+- Datas no formato YYYY-MM-DD.
 - Valores como número decimal positivo (sem R$, sem milhar). Ex: 1234.56
 - type: "income" para entradas/recebimentos/créditos, "expense" para saídas/pagamentos/débitos
 - payment_method: um de [pix, debito, credito, dinheiro, boleto, transferencia] ou null
@@ -32,6 +43,17 @@ Sugestões de categoria:
 Retorne APENAS JSON válido no formato:
 { "overall_confidence": "alta|media|baixa", "transactions": [ { "date": "...", "amount": 0, "type": "...", "description": "...", "payment_method": "...", "account": "...", "suggested_category": "...", "confidence": "..." } ] }`;
 
+/** Normaliza descrição para comparação de duplicidade. */
+const normalizeDesc = (s: string | null | undefined) =>
+  (s ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+
+const CONFIDENCES = new Set(["alta", "media", "baixa"]);
+
 export const extractTransactionsFromImage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>
@@ -39,6 +61,8 @@ export const extractTransactionsFromImage = createServerFn({ method: "POST" })
       .object({
         imageId: z.string().uuid(),
         storagePath: z.string().min(1).max(1024),
+        /** true quando é releitura: só apaga o conjunto anterior após sucesso. */
+        replacePrevious: z.boolean().optional(),
       })
       .parse(input),
   )
@@ -46,6 +70,8 @@ export const extractTransactionsFromImage = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
+
+    const today = todayISO();
 
     // Verify image belongs to the user
     const { data: img, error: imgErr } = await supabase
@@ -71,7 +97,7 @@ export const extractTransactionsFromImage = createServerFn({ method: "POST" })
     // Mark as processing
     await supabase
       .from("uploaded_transaction_images")
-      .update({ processing_status: "processing" })
+      .update({ processing_status: "processing", error_message: null })
       .eq("id", data.imageId);
 
     let parsed: {
@@ -98,11 +124,14 @@ export const extractTransactionsFromImage = createServerFn({ method: "POST" })
         body: JSON.stringify({
           model: "google/gemini-2.5-flash",
           messages: [
-            { role: "system", content: SYSTEM_PROMPT },
+            { role: "system", content: buildSystemPrompt(today) },
             {
               role: "user",
               content: [
-                { type: "text", text: "Extraia todas as transações visíveis deste print." },
+                {
+                  type: "text",
+                  text: `Extraia todas as transações visíveis deste print. Hoje é ${today} (${APP_TIMEZONE}).`,
+                },
                 { type: "image_url", image_url: { url: dataUrl } },
               ],
             },
@@ -130,7 +159,8 @@ export const extractTransactionsFromImage = createServerFn({ method: "POST" })
     }
 
     const txs = Array.isArray(parsed.transactions) ? parsed.transactions : [];
-    const overall = parsed.overall_confidence ?? "media";
+    const overallRaw = parsed.overall_confidence ?? "media";
+    const overall = CONFIDENCES.has(overallRaw) ? overallRaw : "media";
 
     // Load user categories for suggested_category_id matching
     const { data: cats } = await supabase
@@ -156,62 +186,93 @@ export const extractTransactionsFromImage = createServerFn({ method: "POST" })
       return fb?.id ?? null;
     };
 
-    // Duplicate detection
-    const dupOf = async (date: string | null, amount: number | null, desc: string | null) => {
-      if (!date || !amount) return false;
-      const { data: dups } = await supabase
-        .from("transactions")
-        .select("id, description")
-        .eq("user_id", userId)
-        .eq("occurred_at", date)
-        .eq("amount", amount)
-        .limit(5);
-      if (!dups || dups.length === 0) return false;
-      if (!desc) return true;
-      const d = desc.toLowerCase();
-      return dups.some(
-        (x) =>
-          (x.description ?? "").toLowerCase().includes(d.slice(0, 12)) ||
-          d.includes((x.description ?? "").toLowerCase().slice(0, 12)),
-      );
+    // --- Normalização e validação determinística de cada linha ---
+    type Candidate = {
+      date: string | null;
+      amount: number | null;
+      type: "income" | "expense";
+      description: string | null;
+      payment_method: string | null;
+      account: string | null;
+      suggested_category: string | null;
+      confidence: string;
     };
 
-    type OcrRow = {
-      user_id: string;
-      image_id: string;
-      detected_date: string | null;
-      detected_amount: number | null;
-      detected_type: string;
-      detected_description: string | null;
-      detected_payment_method: string | null;
-      detected_account: string | null;
-      suggested_category: string | null;
-      suggested_category_id: string | null;
-      confidence_level: string;
-      review_status: string;
-      possible_duplicate: boolean;
-    };
-    const rows: OcrRow[] = [];
-    for (const t of txs) {
-      const amt = typeof t.amount === "number" ? Math.abs(t.amount) : null;
-      const type = t.type === "income" ? "income" : "expense";
-      const dup = await dupOf(t.date ?? null, amt, t.description ?? null);
-      const conf = t.confidence ?? overall;
-      rows.push({
-        user_id: userId,
-        image_id: data.imageId,
-        detected_date: t.date ?? null,
-        detected_amount: amt,
-        detected_type: type,
-        detected_description: t.description ?? null,
-        detected_payment_method: t.payment_method ?? null,
-        detected_account: t.account ?? null,
+    const candidates: Candidate[] = txs.map((t) => {
+      const amt =
+        typeof t.amount === "number" && Number.isFinite(t.amount) ? Math.abs(t.amount) : null;
+      const type: "income" | "expense" = t.type === "income" ? "income" : "expense";
+      const rawDate = typeof t.date === "string" ? t.date.trim().slice(0, 10) : null;
+      const dateOk = rawDate !== null && isValidDateOnly(rawDate);
+      let confidence = CONFIDENCES.has(t.confidence ?? "") ? (t.confidence as string) : overall;
+      // Data inválida/ausente ou valor ausente → revisão manual obrigatória.
+      if (!dateOk || amt === null) confidence = "baixa";
+      return {
+        date: dateOk ? rawDate : null,
+        amount: amt,
+        type,
+        description: t.description ?? null,
+        payment_method: t.payment_method ?? null,
+        account: t.account ?? null,
         suggested_category: t.suggested_category ?? null,
-        suggested_category_id: matchCategoryId(t.suggested_category, type),
-        confidence_level: conf,
-        review_status: conf === "baixa" ? "needs_review" : "pending",
-        possible_duplicate: dup,
+        confidence,
+      };
+    });
+
+    // --- Detecção de duplicidade em LOTE (sem N+1) ---
+    const dates = [...new Set(candidates.map((c) => c.date).filter((d): d is string => !!d))];
+    let existing: { occurred_at: string; amount: number; description: string | null }[] = [];
+    if (dates.length > 0) {
+      const { data: rows } = await supabase
+        .from("transactions")
+        .select("occurred_at, amount, description")
+        .eq("user_id", userId)
+        .in("occurred_at", dates);
+      existing = (rows ?? []).map((r) => ({
+        occurred_at: r.occurred_at,
+        amount: Number(r.amount),
+        description: r.description,
+      }));
+    }
+
+    const isDuplicate = (c: Candidate) => {
+      if (!c.date || c.amount === null) return false;
+      const target = normalizeDesc(c.description);
+      return existing.some((e) => {
+        if (e.occurred_at !== c.date) return false;
+        if (Math.abs(e.amount - c.amount!) > 0.005) return false;
+        if (!target) return true;
+        const other = normalizeDesc(e.description);
+        if (!other) return true;
+        return other.includes(target.slice(0, 12)) || target.includes(other.slice(0, 12));
       });
+    };
+
+    const rows = candidates.map((c) => ({
+      user_id: userId,
+      image_id: data.imageId,
+      detected_date: c.date,
+      detected_amount: c.amount,
+      detected_type: c.type,
+      detected_description: c.description,
+      detected_payment_method: c.payment_method,
+      detected_account: c.account,
+      suggested_category: c.suggested_category,
+      suggested_category_id: matchCategoryId(c.suggested_category, c.type),
+      confidence_level: c.confidence,
+      review_status: c.confidence === "baixa" ? "needs_review" : "pending",
+      possible_duplicate: isDuplicate(c),
+    }));
+
+    // Releitura: só descarta o conjunto anterior AGORA, com a nova leitura pronta.
+    if (data.replacePrevious) {
+      const { error: delErr } = await supabase
+        .from("ocr_detected_transactions")
+        .delete()
+        .eq("image_id", data.imageId)
+        .eq("user_id", userId)
+        .in("review_status", ["pending", "needs_review"]);
+      if (delErr) throw delErr;
     }
 
     if (rows.length > 0) {
@@ -219,13 +280,16 @@ export const extractTransactionsFromImage = createServerFn({ method: "POST" })
       if (insErr) throw insErr;
     }
 
+    const finalConfidence = rows.some((r) => r.confidence_level === "baixa") ? "baixa" : overall;
+
     await supabase
       .from("uploaded_transaction_images")
       .update({
         processing_status: "completed",
-        ocr_confidence: overall,
+        ocr_confidence: finalConfidence,
+        error_message: null,
       })
       .eq("id", data.imageId);
 
-    return { count: rows.length, confidence: overall };
+    return { count: rows.length, confidence: finalConfidence };
   });
