@@ -10,10 +10,12 @@ const buildSystemPrompt = (
 CONTEXTO TEMPORAL (obrigatório):
 - Data local de hoje: ${today} (fuso ${APP_TIMEZONE}).
 - "Hoje" = ${today}. "Ontem" = o dia anterior a ${today}.
-- Se o print exibir dd/mm sem ano, procure o ano no cabeçalho (período do extrato, mês de referência da fatura, título "Janeiro/2025", etc.) e use esse ano.
-- Se o print trouxer um ano explícito, use exatamente esse ano. Nunca substitua pelo ano atual.
-- Se, mesmo assim, o ano permanecer ambíguo, ou se o dia/mês forem ambíguos, marque confidence "baixa" e ainda assim devolva a melhor leitura literal. Não invente datas.
-- Nunca devolva datas de calendário impossíveis (ex.: 31/02).
+- Se o print trouxer um ano explícito no próprio item, use exatamente esse ano. Nunca substitua pelo ano atual.
+- Se o item exibir dd/mm sem ano, use o ano APENAS quando houver cabeçalho/período confiável (período do extrato, mês de referência da fatura, título "Janeiro/2025", etc.).
+- Se não houver ano no item nem cabeçalho/período confiável, "date" DEVE ser null e confidence "baixa". NUNCA assuma o ano atual.
+- Se dia, mês ou ano forem ambíguos por qualquer motivo, "date" DEVE ser null e confidence "baixa".
+- É melhor devolver date null do que uma data inventada; o usuário preenche manualmente na revisão.
+- Nunca devolva datas de calendário impossíveis (ex.: 31/02); nesse caso devolva null.
 
 Sua tarefa: identificar TODAS as transações visíveis na imagem e retornar JSON.
 
