@@ -1371,6 +1371,7 @@ export type Database = {
           type: string
         }[]
       }
+      get_dashboard_bundle: { Args: { p_months?: number }; Returns: Json }
       get_dashboard_snapshot: { Args: never; Returns: Json }
       get_financial_overview: { Args: never; Returns: Json }
       get_monthly_financial_summary: {
