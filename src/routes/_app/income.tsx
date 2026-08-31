@@ -12,8 +12,9 @@ import { invalidateFinance } from "@/lib/query-keys";
 import { formatCurrency } from "@/lib/format";
 import { TransactionDialog } from "@/components/transaction-dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { formatDateOnlyPtBR, toLocalDateString, todayISO, parseDateOnly } from "@/lib/date-only";
 
-const iso = (d: Date) => d.toISOString().slice(0, 10);
+const iso = (d: Date) => toLocalDateString(d);
 const PAGE_SIZE = 50;
 
 export const Route = createFileRoute("/_app/income")({ component: IncomePage });
@@ -99,7 +100,7 @@ function IncomePage() {
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {t.categories?.name ?? "—"} ·{" "}
-                      {new Date(t.occurred_at).toLocaleDateString("pt-BR")}
+                      {formatDateOnlyPtBR(t.occurred_at)}
                     </p>
                   </div>
                   <span className="text-sm font-semibold text-success">

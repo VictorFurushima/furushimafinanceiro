@@ -1,3 +1,5 @@
+import { toLocalDateString } from "@/lib/date-only";
+
 export const BRL = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
 export function formatCurrency(value: number | string | null | undefined): string {
@@ -14,5 +16,5 @@ export function firstOfMonth(d = new Date()): Date {
 }
 
 export function toISODate(d: Date): string {
-  return d.toISOString().slice(0, 10);
+  return toLocalDateString(d);
 }

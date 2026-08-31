@@ -64,6 +64,10 @@ interface ImageRow {
   upload_date: string;
 }
 
+const MAX_FILE_MB = 10;
+const MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024;
+const ACCEPTED_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
 const confColor = (c?: string | null) =>
   c === "alta"
     ? "bg-success/20 text-success border-success/40"
@@ -115,41 +119,70 @@ function ImportPrintsPage() {
 
   const handleFiles = async (files: FileList) => {
     if (!user) return;
-    setUploading(true);
-    try {
-      for (const file of Array.from(files)) {
-        const ext = file.name.split(".").pop() ?? "jpg";
-        const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
-        const { error: upErr } = await supabase.storage
-          .from("transaction-prints")
-          .upload(path, file, { upsert: false, contentType: file.type });
-        if (upErr) throw upErr;
-
-        const { data: imgRow, error: insErr } = await supabase
-          .from("uploaded_transaction_images")
-          .insert({
-            user_id: user.id,
-            file_name: file.name,
-            storage_path: path,
-            processing_status: "pending",
-          })
-          .select("id")
-          .single();
-        if (insErr) throw insErr;
-
-        toast.info(`Lendo ${file.name}...`);
-        try {
-          const result = await extract({ data: { imageId: imgRow.id, storagePath: path } });
-          toast.success(`${result.count} transações identificadas em ${file.name}`);
-        } catch (e) {
-          toast.error(`Falha ao ler ${file.name}: ${e instanceof Error ? e.message : ""}`);
-        }
+    const picked = Array.from(files);
+    const accepted: File[] = [];
+    for (const f of picked) {
+      if (!ACCEPTED_TYPES.includes(f.type)) {
+        toast.error(`${f.name}: formato não suportado (use JPG, PNG ou WebP)`);
+        continue;
       }
+      if (f.size > MAX_FILE_BYTES) {
+        toast.error(`${f.name}: arquivo acima de ${MAX_FILE_MB} MB`);
+        continue;
+      }
+      accepted.push(f);
+    }
+    if (accepted.length === 0) return;
+
+    setUploading(true);
+    const processOne = async (file: File) => {
+      const ext = file.name.split(".").pop() ?? "jpg";
+      const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("transaction-prints")
+        .upload(path, file, { upsert: false, contentType: file.type });
+      if (upErr) {
+        toast.error(`Falha no upload de ${file.name}: ${upErr.message}`);
+        return;
+      }
+
+      const { data: imgRow, error: insErr } = await supabase
+        .from("uploaded_transaction_images")
+        .insert({
+          user_id: user.id,
+          file_name: file.name,
+          storage_path: path,
+          processing_status: "pending",
+        })
+        .select("id")
+        .single();
+      if (insErr || !imgRow) {
+        // Sem metadados o objeto ficaria órfão no Storage.
+        await supabase.storage.from("transaction-prints").remove([path]);
+        toast.error(`Falha ao registrar ${file.name}: ${insErr?.message ?? ""}`);
+        return;
+      }
+
+      try {
+        const result = await extract({ data: { imageId: imgRow.id, storagePath: path } });
+        toast.success(`${result.count} transações identificadas em ${file.name}`);
+      } catch (e) {
+        toast.error(`Falha ao ler ${file.name}: ${e instanceof Error ? e.message : ""}`);
+      }
+    };
+
+    try {
+      // Concorrência limitada: 2 leituras simultâneas no AI Gateway.
+      const queue = [...accepted];
+      const workers = Array.from({ length: Math.min(2, queue.length) }, async () => {
+        for (let next = queue.shift(); next; next = queue.shift()) {
+          await processOne(next);
+        }
+      });
+      await Promise.all(workers);
+    } finally {
       qc.invalidateQueries({ queryKey: ["uploaded-prints"] });
       qc.invalidateQueries({ queryKey: ["ocr-detected"] });
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro no upload");
-    } finally {
       setUploading(false);
     }
   };
@@ -181,8 +214,10 @@ function ImportPrintsPage() {
   const reprocess = async (img: ImageRow) => {
     toast.info(`Reprocessando ${img.file_name}...`);
     try {
-      await supabase.from("ocr_detected_transactions").delete().eq("image_id", img.id);
-      const result = await extract({ data: { imageId: img.id, storagePath: img.storage_path } });
+      // Só substitui o conjunto anterior no servidor após a nova leitura dar certo.
+      const result = await extract({
+        data: { imageId: img.id, storagePath: img.storage_path, replacePrevious: true },
+      });
       toast.success(`${result.count} transações identificadas`);
       qc.invalidateQueries({ queryKey: ["uploaded-prints"] });
       qc.invalidateQueries({ queryKey: ["ocr-detected"] });
@@ -220,11 +255,11 @@ function ImportPrintsPage() {
               {uploading ? "Processando..." : "Clique ou arraste prints (JPG, PNG, WebP)"}
             </p>
             <p className="text-xs text-muted-foreground text-center px-2">
-              Bancos, Pix, faturas, comprovantes — vários arquivos por vez
+              Bancos, Pix, faturas, comprovantes — vários arquivos por vez (até 10 MB cada)
             </p>
             <input
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp"
               multiple
               className="hidden"
               onChange={(e) => {
@@ -311,6 +346,7 @@ function ImportPrintsPage() {
               <DetectedRow
                 key={d.id}
                 tx={d}
+                userId={user?.id ?? null}
                 categories={categories}
                 accounts={accounts}
                 onChanged={() => {
@@ -328,16 +364,17 @@ function ImportPrintsPage() {
 
 function DetectedRow({
   tx,
+  userId,
   categories,
   accounts,
   onChanged,
 }: {
   tx: DetectedTx;
+  userId: string | null;
   categories: { id: string; name: string; type: string }[];
   accounts: { id: string; name: string }[];
   onChanged: () => void;
 }) {
-  const { user } = useAuth();
   const [date, setDate] = useState(tx.detected_date ?? "");
   const [amount, setAmount] = useState(tx.detected_amount?.toString() ?? "");
   const [type, setType] = useState<"income" | "expense">(
@@ -352,7 +389,7 @@ function DetectedRow({
   const filteredCats = categories.filter((c) => c.type === type);
 
   const save = async () => {
-    if (!user) return;
+    if (!userId) return;
     if (!date || !amount) {
       toast.error("Data e valor são obrigatórios");
       return;
@@ -367,7 +404,7 @@ function DetectedRow({
       const { data: ins, error } = await supabase
         .from("transactions")
         .insert({
-          user_id: user.id,
+          user_id: userId,
           occurred_at: date,
           amount: parseFloat(amount),
           type,

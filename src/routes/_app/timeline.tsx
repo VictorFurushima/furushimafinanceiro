@@ -12,6 +12,7 @@ import {
 } from "@/hooks/use-finance-data";
 import { formatCurrency } from "@/lib/format";
 import { rechargeTypeLabel, rechargeTypeColor, rechargeStatusLabel } from "@/lib/finance-constants";
+import { formatDateOnlyPtBR, toLocalDateString, todayISO, parseDateOnly } from "@/lib/date-only";
 
 export const Route = createFileRoute("/_app/timeline")({ component: TimelinePage });
 
@@ -40,7 +41,7 @@ function TimelinePage() {
     const list: TimelineEvent[] = [];
 
     recharges.forEach((r) => {
-      const d = new Date(r.expected_date);
+      const d = parseDateOnly(r.expected_date) ?? new Date();
       if (d < now || d > horizon) return;
       if (r.status === "cancelada" || r.status === "recebida") return;
       list.push({
@@ -57,7 +58,7 @@ function TimelinePage() {
     });
 
     bills.forEach((b) => {
-      const d = new Date(b.due_date);
+      const d = parseDateOnly(b.due_date) ?? new Date();
       if (d < now || d > horizon) return;
       if (b.status === "paga") return;
       const card = cards.find((c) => c.id === b.card_id);
@@ -98,7 +99,7 @@ function TimelinePage() {
   const grouped = useMemo(() => {
     const map = new Map<string, TimelineEvent[]>();
     events.forEach((e) => {
-      const key = e.date.toISOString().slice(0, 10);
+      const key = toLocalDateString(e.date);
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(e);
     });

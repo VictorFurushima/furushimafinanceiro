@@ -1,4 +1,5 @@
 import { priorityWeight } from "./shopping-constants";
+import { toLocalDateString } from "@/lib/date-only";
 
 export interface CompraEntrada {
   price: number;
@@ -247,7 +248,7 @@ export function analisarViabilidadeCompra(
       quantoFalta,
       valorMensal: Math.round(valorMensal * 100) / 100,
       meses,
-      dataSegura: data.toISOString().slice(0, 10),
+      dataSegura: toLocalDateString(data),
     };
   }
 

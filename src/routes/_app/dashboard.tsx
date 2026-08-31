@@ -48,8 +48,9 @@ import {
 import { formatCurrency } from "@/lib/format";
 import { TransactionDialog } from "@/components/transaction-dialog";
 import { StatCard } from "@/components/stat-card";
+import { formatDateOnlyPtBR, toLocalDateString, todayISO, parseDateOnly } from "@/lib/date-only";
 
-const iso = (d: Date) => d.toISOString().slice(0, 10);
+const iso = (d: Date) => toLocalDateString(d);
 
 export const Route = createFileRoute("/_app/dashboard")({ component: DashboardPage });
 
@@ -97,7 +98,7 @@ function DashboardPage() {
   const monthlyData = useMemo(
     () =>
       series.map((p) => ({
-        label: new Date(`${p.month}T00:00:00`)
+        label: (parseDateOnly(p.month) ?? new Date())
           .toLocaleDateString("pt-BR", { month: "short" })
           .replace(".", ""),
         income: p.receitas,
@@ -274,7 +275,7 @@ function DashboardPage() {
                       ? "Amanhã"
                       : `Em ${daysToRecharge} dias`}
                   {" · "}
-                  {new Date(nextRecharge.expected_date).toLocaleDateString("pt-BR")}
+                  {formatDateOnlyPtBR(nextRecharge.expected_date)}
                 </p>
               </div>
             ) : (
@@ -503,7 +504,7 @@ function DashboardPage() {
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {t.categories?.name ?? "Sem categoria"} ·{" "}
-                        {new Date(t.occurred_at).toLocaleDateString("pt-BR")}
+                        {formatDateOnlyPtBR(t.occurred_at)}
                       </p>
                     </div>
                     <span
