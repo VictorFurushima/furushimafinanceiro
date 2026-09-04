@@ -27,17 +27,31 @@ export const Route = createFileRoute("/_app/accounts")({
 });
 
 const typeIcons: Record<string, React.ComponentType<{ className?: string }>> = {
-  checking: Wallet,
-  savings: PiggyBank,
-  credit_card: CreditCard,
   cash: Banknote,
+  digital_bank: Wallet,
+  traditional_bank: Wallet,
+  savings: PiggyBank,
+  other: Wallet,
+  // tipos antigos preservados para contas já cadastradas
+  checking: Wallet,
+  credit_card: CreditCard,
   investment: TrendingUp,
 };
-const typeLabels: Record<string, string> = {
-  checking: "Conta corrente",
+
+/** Tipos oferecidos na criação de contas. */
+const selectableTypes: Record<string, string> = {
+  cash: "Carteira física",
+  digital_bank: "Banco digital",
+  traditional_bank: "Banco tradicional",
   savings: "Poupança",
+  other: "Outro",
+};
+
+/** Inclui rótulos legados para não quebrar contas existentes. */
+const typeLabels: Record<string, string> = {
+  ...selectableTypes,
+  checking: "Conta corrente",
   credit_card: "Cartão de crédito",
-  cash: "Dinheiro",
   investment: "Investimento",
 };
 
