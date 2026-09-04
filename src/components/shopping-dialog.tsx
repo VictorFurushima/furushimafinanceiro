@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/friendly-error";
 import {
   Dialog,
   DialogContent,
@@ -132,6 +133,15 @@ export function ShoppingDialog({
     e.preventDefault();
     if (!item.trim()) return toast.error("Informe o item");
     if (!user) return;
+    const isCredit = payment === "credito_parcelado" || payment === "credito_vista";
+    const entryAmount = payment === "credito_parcelado" ? entrada.down_payment : 0;
+    if (isCredit && !cardId) return toast.error("Selecione o cartão da compra");
+    if (entryAmount > 0 && !accountId) {
+      return toast.error("Selecione a conta usada para pagar a entrada");
+    }
+    if (entryAmount >= analise.precoFinal && isCredit) {
+      return toast.error("A entrada deve ser menor que o preço final");
+    }
     setSaving(true);
     const payload = {
       user_id: user.id,
@@ -147,10 +157,10 @@ export function ShoppingDialog({
       priority,
       purchase_type: purchaseType,
       payment_method: payment,
-      account_id: accountId || null,
-      card_id: cardId || null,
-      installments: entrada.installments,
-      down_payment: entrada.down_payment,
+      account_id: !isCredit || entryAmount > 0 ? accountId || null : null,
+      card_id: isCredit ? cardId : null,
+      installments: payment === "credito_parcelado" ? entrada.installments : 1,
+      down_payment: entryAmount,
       notes: notes || null,
       status,
       score: analise.score,
@@ -161,7 +171,7 @@ export function ShoppingDialog({
       const { error } = await supabase.from("shopping_items").update(payload).eq("id", editing.id);
       if (error) {
         setSaving(false);
-        return toast.error(error.message);
+        return toast.error(friendlyError(error));
       }
     } else {
       const { data, error } = await supabase
@@ -171,7 +181,7 @@ export function ShoppingDialog({
         .single();
       if (error) {
         setSaving(false);
-        return toast.error(error.message);
+        return toast.error(friendlyError(error));
       }
       itemId = data.id;
     }
@@ -189,9 +199,14 @@ export function ShoppingDialog({
         })
         .select("id")
         .single();
-      if (gErr) toast.error(`Item salvo, mas a meta falhou: ${gErr.message}`);
+      if (gErr) toast.error(`Item salvo, mas a meta falhou: ${friendlyError(gErr)}`);
       else {
-        await supabase.from("shopping_items").update({ goal_id: goal.id }).eq("id", itemId);
+        const { error: linkError } = await supabase
+          .from("shopping_items")
+          .update({ goal_id: goal.id })
+          .eq("id", itemId);
+        if (linkError)
+          toast.error(`Item e meta salvos, mas o vínculo falhou: ${friendlyError(linkError)}`);
         invalidateFinance(qc, "goals");
       }
     }
@@ -413,6 +428,23 @@ export function ShoppingDialog({
             ) : (
               <div className="space-y-2">
                 <Label>Conta</Label>
+                <Select value={accountId} onValueChange={setAccountId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts.map((a) => (
+                      <SelectItem key={a.id} value={a.id}>
+                        {a.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {payment === "credito_parcelado" && parseNum(downPayment) > 0 && (
+              <div className="space-y-2">
+                <Label>Conta da entrada</Label>
                 <Select value={accountId} onValueChange={setAccountId}>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione" />

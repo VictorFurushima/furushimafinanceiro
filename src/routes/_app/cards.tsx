@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, CreditCard as CardIcon, FileText, Check } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/friendly-error";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -52,7 +53,7 @@ function CardsPage() {
     if (!confirm("Excluir este cartão?")) return;
     const { error } = await supabase.from("credit_cards").delete().eq("id", id);
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyError(error));
       return;
     }
     toast.success("Cartão excluído");
@@ -73,7 +74,7 @@ function CardsPage() {
     });
     setPaying(null);
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyError(error));
       return;
     }
     toast.success("Fatura paga — limite recarregado");

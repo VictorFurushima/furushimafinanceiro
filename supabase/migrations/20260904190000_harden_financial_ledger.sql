@@ -113,6 +113,8 @@ BEGIN
       RAISE EXCEPTION 'Compra de cartao deve ser despesa real'; END IF;
     NEW.account_id := NULL;
     NEW.payment_method := 'credito';
+  ELSIF NEW.payment_method='credito' AND NEW.type='expense' AND NEW.flow='real' THEN
+    RAISE EXCEPTION 'Compra no credito exige cartao';
   ELSIF NEW.installment_count <> 1 THEN RAISE EXCEPTION 'Parcelas exigem cartao';
   END IF;
   IF NEW.flow='bill_payment' THEN
@@ -255,7 +257,12 @@ BEGIN
     VALUES(uid,b.amount,'expense','bill_payment','Pagamento de fatura '||card_name,CURRENT_DATE,p_account_id,b.id,'transferencia');
 END $$;
 
-CREATE OR REPLACE FUNCTION public.complete_shopping_item(p_item_id uuid,p_create_transaction boolean)
+DROP FUNCTION IF EXISTS public.complete_shopping_item(uuid,boolean);
+CREATE FUNCTION public.complete_shopping_item(
+  p_item_id uuid,
+  p_create_transaction boolean,
+  p_purchase_date date DEFAULT CURRENT_DATE
+)
 RETURNS uuid LANGUAGE plpgsql SECURITY INVOKER SET search_path TO 'public' AS $$
 DECLARE uid uuid:=auth.uid(); it record; tx uuid; total numeric; credit boolean;
 BEGIN
@@ -271,7 +278,7 @@ BEGIN
       RAISE EXCEPTION 'Registre a entrada separadamente e planeje somente o valor financiado no cartao';
     END IF;
     INSERT INTO public.transactions(user_id,amount,type,flow,description,occurred_at,account_id,category_id,payment_method,notes,credit_card_id,installment_count)
-      VALUES(uid,total,'expense','real',it.item,COALESCE(it.desired_date,CURRENT_DATE),
+      VALUES(uid,total,'expense','real',it.item,COALESCE(p_purchase_date,CURRENT_DATE),
         CASE WHEN credit THEN NULL ELSE it.account_id END,it.category_id,
         CASE WHEN credit THEN 'credito' WHEN it.payment_method='dinheiro' THEN 'dinheiro' ELSE 'pix' END,
         it.notes,CASE WHEN credit THEN it.card_id ELSE NULL END,
@@ -284,5 +291,7 @@ END $$;
 REVOKE ALL ON FUNCTION public.apply_card_purchase(),public.refresh_bill_totals(),public.refresh_card_limit(),
   public.validate_financial_transaction(),public.validate_bill() FROM PUBLIC,anon,authenticated;
 REVOKE ALL ON FUNCTION public.guard_card_limit() FROM PUBLIC,anon,authenticated;
-REVOKE ALL ON FUNCTION public.pay_credit_card_bill(uuid,uuid),public.card_cycle_due(date,integer,integer) FROM PUBLIC,anon;
-GRANT EXECUTE ON FUNCTION public.pay_credit_card_bill(uuid,uuid),public.card_cycle_due(date,integer,integer) TO authenticated,service_role;
+REVOKE ALL ON FUNCTION public.pay_credit_card_bill(uuid,uuid),public.card_cycle_due(date,integer,integer),
+  public.complete_shopping_item(uuid,boolean,date) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION public.pay_credit_card_bill(uuid,uuid),public.card_cycle_due(date,integer,integer),
+  public.complete_shopping_item(uuid,boolean,date) TO authenticated,service_role;

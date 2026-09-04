@@ -55,6 +55,7 @@ export interface RecurringExpense {
   amount: number;
   category_id: string | null;
   account_id: string | null;
+  credit_card_id: string | null;
   payment_method: string | null;
   billing_day: number;
   frequency: "weekly" | "monthly" | "yearly" | "custom";
@@ -235,7 +236,7 @@ export const useRecurring = () =>
         .from("recurring_expenses")
         .select(
           sel(
-            "id, name, amount, category_id, account_id, payment_method, billing_day, frequency, start_date, end_date, status, notes, categories(name,color)",
+            "id, name, amount, category_id, account_id, credit_card_id, payment_method, billing_day, frequency, start_date, end_date, status, notes, categories(name,color)",
           ),
         )
         .order("billing_day")

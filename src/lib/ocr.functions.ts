@@ -55,14 +55,53 @@ const normalizeDesc = (s: string | null | undefined) =>
     .trim();
 
 const CONFIDENCES = new Set(["alta", "media", "baixa"]);
+const PAYMENT_METHODS = new Set([
+  "pix",
+  "dinheiro",
+  "debito",
+  "credito",
+  "boleto",
+  "transferencia",
+]);
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+const MAX_DETECTED_TRANSACTIONS = 500;
+
+function detectImageMime(bytes: Uint8Array): string | null {
+  if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+    return "image/jpeg";
+  }
+  if (
+    bytes.length >= 8 &&
+    bytes[0] === 0x89 &&
+    bytes[1] === 0x50 &&
+    bytes[2] === 0x4e &&
+    bytes[3] === 0x47 &&
+    bytes[4] === 0x0d &&
+    bytes[5] === 0x0a &&
+    bytes[6] === 0x1a &&
+    bytes[7] === 0x0a
+  ) {
+    return "image/png";
+  }
+  if (
+    bytes.length >= 12 &&
+    String.fromCharCode(...bytes.slice(0, 4)) === "RIFF" &&
+    String.fromCharCode(...bytes.slice(8, 12)) === "WEBP"
+  ) {
+    return "image/webp";
+  }
+  return null;
+}
+
+const limitedText = (value: unknown, max: number) =>
+  typeof value === "string" ? value.trim().slice(0, max) || null : null;
 
 export const extractTransactionsFromImage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
+  .validator((input) =>
     z
       .object({
         imageId: z.string().uuid(),
-        storagePath: z.string().min(1).max(1024),
         /** true quando é releitura: só apaga o conjunto anterior após sucesso. */
         replacePrevious: z.boolean().optional(),
       })
@@ -88,12 +127,29 @@ export const extractTransactionsFromImage = createServerFn({ method: "POST" })
     // Download image via authenticated client (RLS)
     const { data: blob, error: dlErr } = await supabase.storage
       .from("transaction-prints")
-      .download(data.storagePath);
+      .download(img.storage_path);
     if (dlErr || !blob) throw new Error("Falha ao baixar imagem: " + (dlErr?.message ?? ""));
 
     const arrayBuf = await blob.arrayBuffer();
+    if (arrayBuf.byteLength === 0 || arrayBuf.byteLength > MAX_IMAGE_BYTES) {
+      await supabase
+        .from("uploaded_transaction_images")
+        .update({ processing_status: "failed", error_message: "Imagem vazia ou acima de 10 MB" })
+        .eq("id", data.imageId);
+      throw new Error("Imagem vazia ou acima de 10 MB");
+    }
+    const mime = detectImageMime(new Uint8Array(arrayBuf));
+    if (!mime) {
+      await supabase
+        .from("uploaded_transaction_images")
+        .update({
+          processing_status: "failed",
+          error_message: "Arquivo nao e uma imagem JPG, PNG ou WebP valida",
+        })
+        .eq("id", data.imageId);
+      throw new Error("Arquivo não é uma imagem JPG, PNG ou WebP válida");
+    }
     const base64 = Buffer.from(arrayBuf).toString("base64");
-    const mime = blob.type || "image/jpeg";
     const dataUrl = `data:${mime};base64,${base64}`;
 
     // Mark as processing
@@ -140,6 +196,7 @@ export const extractTransactionsFromImage = createServerFn({ method: "POST" })
           ],
           response_format: { type: "json_object" },
         }),
+        signal: AbortSignal.timeout(60_000),
       });
 
       if (!res.ok) {
@@ -160,7 +217,9 @@ export const extractTransactionsFromImage = createServerFn({ method: "POST" })
       throw e;
     }
 
-    const txs = Array.isArray(parsed.transactions) ? parsed.transactions : [];
+    const txs = Array.isArray(parsed.transactions)
+      ? parsed.transactions.slice(0, MAX_DETECTED_TRANSACTIONS)
+      : [];
     const overallRaw = parsed.overall_confidence ?? "media";
     const overall = CONFIDENCES.has(overallRaw) ? overallRaw : "media";
 
@@ -202,7 +261,9 @@ export const extractTransactionsFromImage = createServerFn({ method: "POST" })
 
     const candidates: Candidate[] = txs.map((t) => {
       const amt =
-        typeof t.amount === "number" && Number.isFinite(t.amount) ? Math.abs(t.amount) : null;
+        typeof t.amount === "number" && Number.isFinite(t.amount) && t.amount !== 0
+          ? Math.abs(t.amount)
+          : null;
       const type: "income" | "expense" = t.type === "income" ? "income" : "expense";
       const rawDate = typeof t.date === "string" ? t.date.trim().slice(0, 10) : null;
       const dateOk = rawDate !== null && isValidDateOnly(rawDate);
@@ -213,10 +274,10 @@ export const extractTransactionsFromImage = createServerFn({ method: "POST" })
         date: dateOk ? rawDate : null,
         amount: amt,
         type,
-        description: t.description ?? null,
-        payment_method: t.payment_method ?? null,
-        account: t.account ?? null,
-        suggested_category: t.suggested_category ?? null,
+        description: limitedText(t.description, 300),
+        payment_method: PAYMENT_METHODS.has(t.payment_method ?? "") ? t.payment_method! : null,
+        account: limitedText(t.account, 120),
+        suggested_category: limitedText(t.suggested_category, 120),
         confidence,
       };
     });

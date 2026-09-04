@@ -3,6 +3,7 @@ import { useState, useMemo } from "react";
 import { Plus, Trash2, TrendingUp, TrendingDown, Download, X, ArrowLeftRight } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/friendly-error";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -89,7 +90,7 @@ function TransactionsPage() {
     )
       return;
     const { error } = await supabase.from("transactions").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(friendlyError(error));
     toast.success("Excluída");
     invalidateFinance(qc, "transactions");
   };
@@ -112,7 +113,7 @@ function TransactionsPage() {
     if (search) q = q.ilike("description", `%${search}%`);
 
     const { data: all, error } = await q;
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(friendlyError(error));
 
     const header = [
       "Data",

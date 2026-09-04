@@ -1,6 +1,7 @@
 import { useState, useEffect, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/friendly-error";
 import { z } from "zod";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -144,7 +145,7 @@ export function TransactionDialog({
       setSubcategory("");
       setNotes("");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao salvar");
+      toast.error(friendlyError(err, "Erro ao salvar"));
     } finally {
       setSaving(false);
     }

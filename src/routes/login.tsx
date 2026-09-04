@@ -1,8 +1,9 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Wallet, TrendingUp, PieChart } from "lucide-react";
 import { z } from "zod";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/friendly-error";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,12 +16,24 @@ export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       { title: "Entrar — Furushima Financeiro" },
-      { name: "description", content: "Acesse sua conta do Furushima Financeiro para gerenciar receitas, despesas, metas e cartões." },
+      {
+        name: "description",
+        content:
+          "Acesse sua conta do Furushima Financeiro para gerenciar receitas, despesas, metas e cartões.",
+      },
       { property: "og:title", content: "Entrar — Furushima Financeiro" },
-      { property: "og:description", content: "Acesse sua conta do Furushima Financeiro para gerenciar receitas, despesas, metas e cartões." },
+      {
+        property: "og:description",
+        content:
+          "Acesse sua conta do Furushima Financeiro para gerenciar receitas, despesas, metas e cartões.",
+      },
       { property: "og:url", content: "https://furushimafinanceiro.lovable.app/login" },
       { name: "twitter:title", content: "Entrar — Furushima Financeiro" },
-      { name: "twitter:description", content: "Acesse sua conta do Furushima Financeiro para gerenciar receitas, despesas, metas e cartões." },
+      {
+        name: "twitter:description",
+        content:
+          "Acesse sua conta do Furushima Financeiro para gerenciar receitas, despesas, metas e cartões.",
+      },
       { name: "robots", content: "noindex" },
     ],
     links: [{ rel: "canonical", href: "https://furushimafinanceiro.lovable.app/login" }],
@@ -37,10 +50,15 @@ const schema = z.object({
 });
 
 function safeNext(next: string | undefined): string {
-  if (!next) return "/dashboard";
-  // Same-origin relative path only.
-  if (!next.startsWith("/") || next.startsWith("//")) return "/dashboard";
-  return next;
+  if (!next || !next.startsWith("/")) return "/dashboard";
+  try {
+    const base = new URL("https://furushima.invalid");
+    const parsed = new URL(next, base);
+    if (parsed.origin !== base.origin) return "/dashboard";
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    return "/dashboard";
+  }
 }
 
 function LoginPage() {
@@ -54,14 +72,11 @@ function LoginPage() {
 
   const target = safeNext(next);
 
-  if (!authLoading && user) {
-    // Preserve OAuth consent flow: navigate to `next` if present, else dashboard.
-    if (target !== "/dashboard" && target.startsWith("/")) {
-      window.location.assign(target);
-    } else {
-      navigate({ to: "/dashboard" });
-    }
-  }
+  useEffect(() => {
+    if (authLoading || !user) return;
+    if (target !== "/dashboard") window.location.assign(target);
+    else navigate({ to: "/dashboard", replace: true });
+  }, [authLoading, navigate, target, user]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -73,12 +88,17 @@ function LoginPage() {
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email: parsed.data.email,
           password: parsed.data.password,
           options: { emailRedirectTo: `${window.location.origin}${target}` },
         });
         if (error) throw error;
+        if (!data.session) {
+          toast.success("Conta criada! Confira seu e-mail para confirmar o acesso.");
+          setMode("login");
+          return;
+        }
         toast.success("Conta criada! Entrando...");
       } else {
         const { error } = await supabase.auth.signInWithPassword(parsed.data);
@@ -92,11 +112,19 @@ function LoginPage() {
         navigate({ to: "/dashboard" });
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao autenticar");
+      toast.error(friendlyError(err, "Erro ao autenticar"));
     } finally {
       setLoading(false);
     }
   };
+
+  if (!authLoading && user) {
+    return (
+      <main className="min-h-screen flex items-center justify-center">
+        <p className="text-sm text-muted-foreground">Abrindo seu painel...</p>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen grid lg:grid-cols-2">
@@ -107,14 +135,20 @@ function LoginPage() {
         <div className="absolute bottom-0 right-0 w-96 h-96 rounded-full bg-primary-glow/20 blur-3xl" />
 
         <Link to="/" className="relative z-10 flex items-center gap-3">
-          <img src={logo} alt="Furushima Financeiro" className="h-12 w-12 rounded-xl object-cover shadow-glow" />
+          <img
+            src={logo}
+            alt="Furushima Financeiro"
+            className="h-12 w-12 rounded-xl object-cover shadow-glow"
+          />
           <span className="font-display text-2xl font-bold">Furushima Financeiro</span>
         </Link>
 
         <div className="relative z-10 space-y-8">
           <div>
             <h1 className="font-display text-5xl font-bold leading-tight">
-              Seu dinheiro<br />na <span className="text-gradient">palma da mão.</span>
+              Seu dinheiro
+              <br />
+              na <span className="text-gradient">palma da mão.</span>
             </h1>
             <p className="mt-4 text-lg text-muted-foreground max-w-md">
               Receitas, despesas, orçamentos e estatísticas — tudo em um só lugar, rápido e bonito.
@@ -126,7 +160,10 @@ function LoginPage() {
               { icon: PieChart, label: "Gráficos por categoria" },
               { icon: Wallet, label: "Múltiplas contas" },
             ].map(({ icon: Icon, label }) => (
-              <div key={label} className="rounded-xl bg-card/40 backdrop-blur border border-border/50 p-4">
+              <div
+                key={label}
+                className="rounded-xl bg-card/40 backdrop-blur border border-border/50 p-4"
+              >
                 <Icon className="h-5 w-5 text-primary-glow mb-2" />
                 <p className="text-xs text-muted-foreground leading-tight">{label}</p>
               </div>
@@ -134,14 +171,20 @@ function LoginPage() {
           </div>
         </div>
 
-        <p className="relative z-10 text-xs text-muted-foreground">© Furushima Financeiro — controle financeiro inteligente</p>
+        <p className="relative z-10 text-xs text-muted-foreground">
+          © Furushima Financeiro — controle financeiro inteligente
+        </p>
       </div>
 
       {/* Form side */}
       <div className="flex items-center justify-center p-6 lg:p-12">
         <div className="w-full max-w-md">
           <div className="lg:hidden mb-8 flex items-center gap-3">
-            <img src={logo} alt="Furushima Financeiro" className="h-11 w-11 rounded-xl object-cover shadow-glow" />
+            <img
+              src={logo}
+              alt="Furushima Financeiro"
+              className="h-11 w-11 rounded-xl object-cover shadow-glow"
+            />
             <span className="font-display text-2xl font-bold">Furushima Financeiro</span>
           </div>
 
@@ -149,26 +192,52 @@ function LoginPage() {
             {mode === "login" ? "Entrar" : "Criar conta"}
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            {mode === "login" ? "Acesse seu painel financeiro." : "Comece a organizar suas finanças hoje."}
+            {mode === "login"
+              ? "Acesse seu painel financeiro."
+              : "Comece a organizar suas finanças hoje."}
           </p>
 
           <form onSubmit={submit} className="mt-8 space-y-5">
             <div className="space-y-2">
               <Label htmlFor="email">E-mail</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="voce@exemplo.com" autoComplete="email" required />
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="voce@exemplo.com"
+                autoComplete="email"
+                required
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
-              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" autoComplete={mode === "login" ? "current-password" : "new-password"} required />
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
+                required
+              />
             </div>
-            <Button type="submit" disabled={loading} className="w-full bg-gradient-primary text-primary-foreground shadow-glow hover:opacity-90 transition" size="lg">
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-gradient-primary text-primary-foreground shadow-glow hover:opacity-90 transition"
+              size="lg"
+            >
               {loading ? "Carregando..." : mode === "login" ? "Entrar" : "Criar conta"}
             </Button>
           </form>
 
           <p className="mt-6 text-sm text-center text-muted-foreground">
             {mode === "login" ? "Não tem uma conta?" : "Já tem uma conta?"}{" "}
-            <button onClick={() => setMode(mode === "login" ? "signup" : "login")} className="text-primary-glow hover:underline font-medium">
+            <button
+              onClick={() => setMode(mode === "login" ? "signup" : "login")}
+              className="text-primary-glow hover:underline font-medium"
+            >
               {mode === "login" ? "Criar conta" : "Entrar"}
             </button>
           </p>
