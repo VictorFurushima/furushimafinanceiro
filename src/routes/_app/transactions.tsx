@@ -92,7 +92,7 @@ function TransactionsPage() {
     let q = supabase
       .from("transactions")
       .select(
-        "occurred_at, type, amount, description, payment_method, categories(name), accounts(name)",
+        "occurred_at, type, amount, description, payment_method, categories(name), accounts!transactions_account_id_fkey(name)",
       )
       .order("occurred_at", { ascending: false })
       .limit(5000);
