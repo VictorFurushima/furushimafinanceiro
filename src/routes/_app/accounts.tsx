@@ -133,7 +133,9 @@ function AccountsPage() {
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
-                <p className="mt-4 text-sm text-muted-foreground">{typeLabels[a.type] ?? "Conta"}</p>
+                <p className="mt-4 text-sm text-muted-foreground">
+                  {typeLabels[a.type] ?? "Conta"}
+                </p>
                 <h3 className="font-display text-xl font-semibold">{a.name}</h3>
                 <p className="mt-3 font-display text-2xl font-bold">{formatCurrency(total)}</p>
               </CardContent>

@@ -36,7 +36,6 @@ export interface InvestmentEvent {
   created_at: string;
 }
 
-
 export interface ShoppingItem {
   id: string;
   item: string;
@@ -133,7 +132,6 @@ export const useInvestmentEvents = (investmentId?: string) =>
       return (data ?? []).map((e) => ({ ...e, amount: num(e.amount) })) as InvestmentEvent[];
     },
   });
-
 
 export const useShoppingItems = () =>
   useQuery({

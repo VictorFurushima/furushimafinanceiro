@@ -201,7 +201,9 @@ export function TransactionDialog({
             <Input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder={isTransfer ? "Ex: Transferência para poupança" : "Ex: Almoço, Salário..."}
+              placeholder={
+                isTransfer ? "Ex: Transferência para poupança" : "Ex: Almoço, Salário..."
+              }
               maxLength={200}
             />
           </div>

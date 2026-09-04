@@ -287,8 +287,7 @@ function TransactionsPage() {
                       {t.categories?.name ?? "Sem categoria"}
                       {t.subcategory && ` · ${t.subcategory}`}
                       {" · "}
-                      {paymentLabel(t.payment_method)} ·{" "}
-                      {formatDateOnlyPtBR(t.occurred_at)}
+                      {paymentLabel(t.payment_method)} · {formatDateOnlyPtBR(t.occurred_at)}
                     </p>
                   </div>
                   <span

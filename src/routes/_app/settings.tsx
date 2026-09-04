@@ -532,7 +532,6 @@ function SettingsPage() {
         </Card>
       )}
 
-
       <Card className="bg-gradient-card border-border/50 shadow-card">
         <CardHeader>
           <CardTitle className="font-display">Preferências gerais</CardTitle>
