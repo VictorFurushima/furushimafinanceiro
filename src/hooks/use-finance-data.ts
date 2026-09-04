@@ -7,10 +7,13 @@ export type { TransactionFilters };
 export interface Transaction {
   id: string;
   amount: number;
-  type: "income" | "expense";
+  type: "income" | "expense" | "transfer";
   description: string | null;
   occurred_at: string;
   account_id: string | null;
+  destination_account_id?: string | null;
+  credit_card_id?: string | null;
+  bill_id?: string | null;
   category_id: string | null;
   subcategory: string | null;
   payment_method: string | null;
