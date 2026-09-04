@@ -14,7 +14,14 @@ import {
   type CreditCard,
   type CreditCardBill,
 } from "@/hooks/use-finance-data";
-import { useAuth } from "@/hooks/use-auth";
+import { useAccounts } from "@/hooks/use-finance-data";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { invalidateFinance } from "@/lib/query-keys";
 import { formatCurrency } from "@/lib/format";
