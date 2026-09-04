@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
-import { Plus, Trash2, TrendingUp, TrendingDown, Download, X } from "lucide-react";
+import { Plus, Trash2, TrendingUp, TrendingDown, Download, X, ArrowLeftRight } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -92,7 +92,7 @@ function TransactionsPage() {
     let q = supabase
       .from("transactions")
       .select(
-        "occurred_at, type, amount, description, payment_method, categories(name), accounts(name)",
+        "occurred_at, type, amount, description, payment_method, categories(name), accounts!transactions_account_id_fkey(name)",
       )
       .order("occurred_at", { ascending: false })
       .limit(5000);
@@ -119,7 +119,7 @@ function TransactionsPage() {
     ];
     const csvRows = (all ?? []).map((t) => [
       t.occurred_at,
-      t.type === "income" ? "Receita" : "Despesa",
+      t.type === "transfer" ? "Transferência" : t.type === "income" ? "Receita" : "Despesa",
       String(t.amount).replace(".", ","),
       t.categories?.name ?? "",
       (t.description ?? "").replace(/"/g, '""'),
@@ -137,8 +137,10 @@ function TransactionsPage() {
     toast.success("CSV exportado");
   };
 
+  // Transferência apenas move dinheiro entre contas: não entra no total do período.
   const pageTotal = rows.reduce(
-    (s, t) => s + (t.type === "income" ? Number(t.amount) : -Number(t.amount)),
+    (s, t) =>
+      t.type === "transfer" ? s : s + (t.type === "income" ? Number(t.amount) : -Number(t.amount)),
     0,
   );
 
@@ -269,7 +271,9 @@ function TransactionsPage() {
                       color: t.categories?.color ?? "#22d3ee",
                     }}
                   >
-                    {t.type === "income" ? (
+                    {t.type === "transfer" ? (
+                      <ArrowLeftRight className="h-5 w-5" />
+                    ) : t.type === "income" ? (
                       <TrendingUp className="h-5 w-5" />
                     ) : (
                       <TrendingDown className="h-5 w-5" />
@@ -283,14 +287,14 @@ function TransactionsPage() {
                       {t.categories?.name ?? "Sem categoria"}
                       {t.subcategory && ` · ${t.subcategory}`}
                       {" · "}
-                      {paymentLabel(t.payment_method)} ·{" "}
-                      {formatDateOnlyPtBR(t.occurred_at)}
+                      {paymentLabel(t.payment_method)} · {formatDateOnlyPtBR(t.occurred_at)}
                     </p>
                   </div>
                   <span
-                    className={`text-sm font-semibold ${t.type === "income" ? "text-success" : "text-destructive"}`}
+                    className={`text-sm font-semibold ${t.type === "transfer" ? "text-muted-foreground" : t.type === "income" ? "text-success" : "text-destructive"}`}
                   >
-                    {t.type === "income" ? "+" : "−"} {formatCurrency(Number(t.amount))}
+                    {t.type === "transfer" ? "↔" : t.type === "income" ? "+" : "−"}{" "}
+                    {formatCurrency(Number(t.amount))}
                   </span>
                   <button
                     type="button"

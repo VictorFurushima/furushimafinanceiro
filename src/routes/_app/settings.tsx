@@ -1,8 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { Plus, Trash2, UserPlus, Eye, CalendarCheck } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
+import { Plus, Trash2, UserPlus, Eye } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -29,8 +27,6 @@ import { useRole, VIEWER_MESSAGE } from "@/hooks/use-role";
 import { supabase } from "@/integrations/supabase/client";
 import { invalidateFinance } from "@/lib/query-keys";
 import { formatCurrency } from "@/lib/format";
-import { getCalendarSyncStatus } from "@/lib/calendar-sync.functions";
-import { hubKeys } from "@/lib/query-keys";
 
 export const Route = createFileRoute("/_app/settings")({ component: SettingsPage });
 
@@ -536,8 +532,6 @@ function SettingsPage() {
         </Card>
       )}
 
-      <IntegrationsCard />
-
       <Card className="bg-gradient-card border-border/50 shadow-card">
         <CardHeader>
           <CardTitle className="font-display">Preferências gerais</CardTitle>
@@ -554,55 +548,5 @@ function SettingsPage() {
         </CardContent>
       </Card>
     </div>
-  );
-}
-
-/** Estado da integração unidirecional com o Google Calendar (somente leitura). */
-function IntegrationsCard() {
-  const fetchStatus = useServerFn(getCalendarSyncStatus);
-  const { data, isLoading } = useQuery({
-    queryKey: [...hubKeys.calendarIntegration, "server"] as const,
-    staleTime: 5 * 60_000,
-    queryFn: () => fetchStatus(),
-  });
-
-  const connected = data?.configured && data.status === "connected";
-
-  return (
-    <Card className="bg-gradient-card border-border/50 shadow-card">
-      <CardHeader>
-        <CardTitle className="font-display flex items-center gap-2">
-          <CalendarCheck className="h-4 w-4" /> Integrações
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3 text-sm">
-        <div className="flex items-center justify-between gap-3 p-3 rounded-lg bg-secondary/30">
-          <div className="min-w-0">
-            <p className="font-medium text-foreground">Google Calendar</p>
-            <p className="text-xs text-muted-foreground">
-              Envio unidirecional: o Furushima é a fonte de verdade e espelha os compromissos no
-              Google.
-            </p>
-          </div>
-          <span
-            className={`text-xs shrink-0 ${connected ? "text-primary-glow" : "text-muted-foreground"}`}
-          >
-            {isLoading ? "Verificando..." : connected ? "Conectado" : "Não conectado"}
-          </span>
-        </div>
-        {data?.accountEmail && (
-          <p className="text-xs text-muted-foreground">Conta: {data.accountEmail}</p>
-        )}
-        {data?.lastError && (
-          <p className="text-xs text-destructive">Último erro: {data.lastError}</p>
-        )}
-        {!isLoading && !data?.configured && (
-          <p className="text-xs text-muted-foreground">
-            Nenhuma conexão Google Calendar está vinculada ao projeto. Os compromissos continuam
-            salvos normalmente e o envio é ativado assim que a conexão existir.
-          </p>
-        )}
-      </CardContent>
-    </Card>
   );
 }

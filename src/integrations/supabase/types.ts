@@ -44,48 +44,6 @@ export type Database = {
         }
         Relationships: []
       }
-      alerts: {
-        Row: {
-          body: string | null
-          channel: string
-          created_at: string
-          id: string
-          read_at: string | null
-          source_id: string | null
-          source_type: string
-          status: string
-          title: string
-          trigger_at: string
-          user_id: string
-        }
-        Insert: {
-          body?: string | null
-          channel?: string
-          created_at?: string
-          id?: string
-          read_at?: string | null
-          source_id?: string | null
-          source_type?: string
-          status?: string
-          title: string
-          trigger_at: string
-          user_id: string
-        }
-        Update: {
-          body?: string | null
-          channel?: string
-          created_at?: string
-          id?: string
-          read_at?: string | null
-          source_id?: string | null
-          source_type?: string
-          status?: string
-          title?: string
-          trigger_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       balance_recharges: {
         Row: {
           account_id: string | null
@@ -199,114 +157,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      calendar_events: {
-        Row: {
-          all_day: boolean
-          category: string
-          created_at: string
-          description: string | null
-          ends_at: string
-          google_event_id: string | null
-          id: string
-          last_synced_at: string | null
-          location: string | null
-          priority: string
-          recurrence_rule: string | null
-          source_id: string | null
-          source_type: string | null
-          starts_at: string
-          sync_enabled: boolean
-          sync_error: string | null
-          sync_status: string
-          title: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          all_day?: boolean
-          category?: string
-          created_at?: string
-          description?: string | null
-          ends_at: string
-          google_event_id?: string | null
-          id?: string
-          last_synced_at?: string | null
-          location?: string | null
-          priority?: string
-          recurrence_rule?: string | null
-          source_id?: string | null
-          source_type?: string | null
-          starts_at: string
-          sync_enabled?: boolean
-          sync_error?: string | null
-          sync_status?: string
-          title: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          all_day?: boolean
-          category?: string
-          created_at?: string
-          description?: string | null
-          ends_at?: string
-          google_event_id?: string | null
-          id?: string
-          last_synced_at?: string | null
-          location?: string | null
-          priority?: string
-          recurrence_rule?: string | null
-          source_id?: string | null
-          source_type?: string | null
-          starts_at?: string
-          sync_enabled?: boolean
-          sync_error?: string | null
-          sync_status?: string
-          title?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      calendar_integrations: {
-        Row: {
-          account_email: string | null
-          calendar_id: string | null
-          connected_at: string | null
-          created_at: string
-          id: string
-          last_error: string | null
-          provider: string
-          status: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          account_email?: string | null
-          calendar_id?: string | null
-          connected_at?: string | null
-          created_at?: string
-          id?: string
-          last_error?: string | null
-          provider?: string
-          status?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          account_email?: string | null
-          calendar_id?: string | null
-          connected_at?: string | null
-          created_at?: string
-          id?: string
-          last_error?: string | null
-          provider?: string
-          status?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
       }
       categories: {
         Row: {
@@ -639,45 +489,6 @@ export type Database = {
         }
         Relationships: []
       }
-      notes: {
-        Row: {
-          content: string
-          created_at: string
-          created_by: string | null
-          id: string
-          link_id: string | null
-          link_type: string
-          note_date: string
-          title: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          content?: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          link_id?: string | null
-          link_type?: string
-          note_date?: string
-          title: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          content?: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          link_id?: string | null
-          link_type?: string
-          note_date?: string
-          title?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       ocr_detected_transactions: {
         Row: {
           confidence_level: string | null
@@ -853,104 +664,6 @@ export type Database = {
           },
         ]
       }
-      routine_occurrences: {
-        Row: {
-          completed_at: string | null
-          created_at: string
-          id: string
-          notes: string | null
-          occurrence_date: string
-          routine_id: string
-          status: string
-          user_id: string
-        }
-        Insert: {
-          completed_at?: string | null
-          created_at?: string
-          id?: string
-          notes?: string | null
-          occurrence_date: string
-          routine_id: string
-          status?: string
-          user_id: string
-        }
-        Update: {
-          completed_at?: string | null
-          created_at?: string
-          id?: string
-          notes?: string | null
-          occurrence_date?: string
-          routine_id?: string
-          status?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "routine_occurrences_routine_id_fkey"
-            columns: ["routine_id"]
-            isOneToOne: false
-            referencedRelation: "routines"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      routines: {
-        Row: {
-          alert_minutes: number | null
-          category: string
-          created_at: string
-          description: string | null
-          duration_minutes: number
-          generate_events: boolean
-          id: string
-          name: string
-          objective: string | null
-          reminder_minutes: number | null
-          start_time: string
-          status: string
-          timezone: string
-          updated_at: string
-          user_id: string
-          weekdays: number[]
-        }
-        Insert: {
-          alert_minutes?: number | null
-          category?: string
-          created_at?: string
-          description?: string | null
-          duration_minutes?: number
-          generate_events?: boolean
-          id?: string
-          name: string
-          objective?: string | null
-          reminder_minutes?: number | null
-          start_time?: string
-          status?: string
-          timezone?: string
-          updated_at?: string
-          user_id: string
-          weekdays?: number[]
-        }
-        Update: {
-          alert_minutes?: number | null
-          category?: string
-          created_at?: string
-          description?: string | null
-          duration_minutes?: number
-          generate_events?: boolean
-          id?: string
-          name?: string
-          objective?: string | null
-          reminder_minutes?: number | null
-          start_time?: string
-          status?: string
-          timezone?: string
-          updated_at?: string
-          user_id?: string
-          weekdays?: number[]
-        }
-        Relationships: []
-      }
       shopping_items: {
         Row: {
           account_id: string | null
@@ -1074,79 +787,16 @@ export type Database = {
           },
         ]
       }
-      tasks: {
-        Row: {
-          category: string
-          completed_at: string | null
-          created_at: string
-          description: string | null
-          due_at: string | null
-          estimated_minutes: number | null
-          event_id: string | null
-          id: string
-          priority: string
-          routine_id: string | null
-          status: string
-          title: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          category?: string
-          completed_at?: string | null
-          created_at?: string
-          description?: string | null
-          due_at?: string | null
-          estimated_minutes?: number | null
-          event_id?: string | null
-          id?: string
-          priority?: string
-          routine_id?: string | null
-          status?: string
-          title: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          category?: string
-          completed_at?: string | null
-          created_at?: string
-          description?: string | null
-          due_at?: string | null
-          estimated_minutes?: number | null
-          event_id?: string | null
-          id?: string
-          priority?: string
-          routine_id?: string | null
-          status?: string
-          title?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "tasks_event_id_fkey"
-            columns: ["event_id"]
-            isOneToOne: false
-            referencedRelation: "calendar_events"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "tasks_routine_id_fkey"
-            columns: ["routine_id"]
-            isOneToOne: false
-            referencedRelation: "routines"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       transactions: {
         Row: {
           account_id: string | null
           amount: number
+          bill_id: string | null
           category_id: string | null
           created_at: string
+          credit_card_id: string | null
           description: string | null
+          destination_account_id: string | null
           flow: string
           id: string
           notes: string | null
@@ -1160,9 +810,12 @@ export type Database = {
         Insert: {
           account_id?: string | null
           amount: number
+          bill_id?: string | null
           category_id?: string | null
           created_at?: string
+          credit_card_id?: string | null
           description?: string | null
+          destination_account_id?: string | null
           flow?: string
           id?: string
           notes?: string | null
@@ -1176,9 +829,12 @@ export type Database = {
         Update: {
           account_id?: string | null
           amount?: number
+          bill_id?: string | null
           category_id?: string | null
           created_at?: string
+          credit_card_id?: string | null
           description?: string | null
+          destination_account_id?: string | null
           flow?: string
           id?: string
           notes?: string | null
@@ -1198,10 +854,31 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "transactions_bill_id_fkey"
+            columns: ["bill_id"]
+            isOneToOne: false
+            referencedRelation: "credit_card_bills"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "transactions_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_credit_card_id_fkey"
+            columns: ["credit_card_id"]
+            isOneToOne: false
+            referencedRelation: "credit_cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_destination_account_id_fkey"
+            columns: ["destination_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
             referencedColumns: ["id"]
           },
           {
@@ -1346,10 +1023,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      complete_routine_occurrence: {
-        Args: { p_date: string; p_routine_id: string; p_status?: string }
-        Returns: string
-      }
       complete_shopping_item: {
         Args: { p_create_transaction: boolean; p_item_id: string }
         Returns: string
@@ -1450,8 +1123,10 @@ export type Database = {
         }[]
       }
       mark_overdue_recharges: { Args: never; Returns: number }
-      materialize_routine_events: { Args: { p_days?: number }; Returns: number }
-      pay_credit_card_bill: { Args: { p_bill_id: string }; Returns: undefined }
+      pay_credit_card_bill: {
+        Args: { p_account_id?: string; p_bill_id: string }
+        Returns: undefined
+      }
       revoke_viewer_access: { Args: { p_user_id: string }; Returns: string }
       space_owner: { Args: { _user_id: string }; Returns: string }
     }

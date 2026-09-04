@@ -27,17 +27,31 @@ export const Route = createFileRoute("/_app/accounts")({
 });
 
 const typeIcons: Record<string, React.ComponentType<{ className?: string }>> = {
-  checking: Wallet,
-  savings: PiggyBank,
-  credit_card: CreditCard,
   cash: Banknote,
+  digital_bank: Wallet,
+  traditional_bank: Wallet,
+  savings: PiggyBank,
+  other: Wallet,
+  // tipos antigos preservados para contas já cadastradas
+  checking: Wallet,
+  credit_card: CreditCard,
   investment: TrendingUp,
 };
-const typeLabels: Record<string, string> = {
-  checking: "Conta corrente",
+
+/** Tipos oferecidos na criação de contas. */
+const selectableTypes: Record<string, string> = {
+  cash: "Carteira física",
+  digital_bank: "Banco digital",
+  traditional_bank: "Banco tradicional",
   savings: "Poupança",
+  other: "Outro",
+};
+
+/** Inclui rótulos legados para não quebrar contas existentes. */
+const typeLabels: Record<string, string> = {
+  ...selectableTypes,
+  checking: "Conta corrente",
   credit_card: "Cartão de crédito",
-  cash: "Dinheiro",
   investment: "Investimento",
 };
 
@@ -47,7 +61,7 @@ function AccountsPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
-  const [type, setType] = useState("checking");
+  const [type, setType] = useState("digital_bank");
   const [balance, setBalance] = useState("0");
   const [color, setColor] = useState("#4f46e5");
 
@@ -119,7 +133,9 @@ function AccountsPage() {
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
-                <p className="mt-4 text-sm text-muted-foreground">{typeLabels[a.type]}</p>
+                <p className="mt-4 text-sm text-muted-foreground">
+                  {typeLabels[a.type] ?? "Conta"}
+                </p>
                 <h3 className="font-display text-xl font-semibold">{a.name}</h3>
                 <p className="mt-3 font-display text-2xl font-bold">{formatCurrency(total)}</p>
               </CardContent>
@@ -151,7 +167,7 @@ function AccountsPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(typeLabels).map(([k, v]) => (
+                  {Object.entries(selectableTypes).map(([k, v]) => (
                     <SelectItem key={k} value={k}>
                       {v}
                     </SelectItem>

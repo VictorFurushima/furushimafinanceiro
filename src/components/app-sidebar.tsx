@@ -35,16 +35,11 @@ import { cn } from "@/lib/utils";
 import logo from "@/assets/furushima-logo.jpg";
 
 const items = [
-  { to: "/today", label: "Hoje", short: "Hoje", icon: Sun },
-  { to: "/agenda", label: "Agenda", short: "Agenda", icon: CalendarDays },
-  { to: "/routines", label: "Rotinas", short: "Rotinas", icon: Repeat },
-  { to: "/tasks", label: "Tarefas", short: "Tarefas", icon: ListTodo },
   { to: "/dashboard", label: "Visão Geral", short: "Início", icon: LayoutDashboard },
   { to: "/transactions", label: "Transações", short: "Gastos", icon: ArrowLeftRight },
   { to: "/income", label: "Receitas", short: "Receitas", icon: ArrowDownToLine },
   { to: "/investments", label: "Investimentos", short: "Invest.", icon: PiggyBank },
   { to: "/shopping-planner", label: "Planejador de Compras", short: "Compras", icon: ShoppingCart },
-  { to: "/notes", label: "Anotações", short: "Notas", icon: StickyNote },
   { to: "/recharges", label: "Recargas de Saldo", short: "Recargas", icon: Inbox },
   { to: "/cards", label: "Cartões", short: "Cartões", icon: CreditCard },
   { to: "/timeline", label: "Linha do Tempo", short: "Linha", icon: CalendarClock },

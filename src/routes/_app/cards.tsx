@@ -1,15 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  Plus,
-  Pencil,
-  Trash2,
-  CreditCard as CardIcon,
-  FileText,
-  Check,
-  CalendarDays,
-} from "lucide-react";
+import { Plus, Pencil, Trash2, CreditCard as CardIcon, FileText, Check } from "lucide-react";
 import { toast } from "sonner";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,7 +14,14 @@ import {
   type CreditCard,
   type CreditCardBill,
 } from "@/hooks/use-finance-data";
-import { useAuth } from "@/hooks/use-auth";
+import { useAccounts } from "@/hooks/use-finance-data";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { invalidateFinance } from "@/lib/query-keys";
 import { formatCurrency } from "@/lib/format";
@@ -39,13 +38,14 @@ function nextDueDate(dueDay: number): Date {
 }
 
 function CardsPage() {
-  const { user } = useAuth();
   const { data: cards = [] } = useCreditCards();
   const { data: bills = [] } = useCreditCardBills();
+  const { data: accounts = [] } = useAccounts();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<CreditCard | null>(null);
   const [billOpen, setBillOpen] = useState(false);
+  const [payAccount, setPayAccount] = useState<Record<string, string>>({});
 
   const remove = async (id: string) => {
     if (!confirm("Excluir este cartão?")) return;
@@ -58,43 +58,22 @@ function CardsPage() {
     invalidateFinance(qc, "cards");
   };
 
-  const payBill = async (billId: string) => {
-    const { error } = await supabase.rpc("pay_credit_card_bill", { p_bill_id: billId });
+  /**
+   * O pagamento debita a conta escolhida e quita a fatura no banco.
+   * Sem conta informada, apenas a fatura e o limite são atualizados.
+   */
+  const payBill = async (bill: CreditCardBill) => {
+    const accountId = payAccount[bill.id] ?? accounts[0]?.id ?? null;
+    const { error } = await supabase.rpc("pay_credit_card_bill", {
+      p_bill_id: bill.id,
+      p_account_id: accountId,
+    });
     if (error) {
       toast.error(error.message);
       return;
     }
     toast.success("Fatura paga — limite recarregado");
-    invalidateFinance(qc, "cards");
-  };
-
-  /**
-   * Integração financeira -> agenda: cria o compromisso de pagamento da fatura.
-   * O índice parcial idx_calendar_events_finance_source garante idempotência.
-   */
-  const scheduleBill = async (b: CreditCardBill) => {
-    if (!user) return;
-    const cardName = cards.find((c) => c.id === b.card_id)?.name ?? "Cartão";
-    const start = new Date(`${b.due_date}T09:00:00`);
-    const end = new Date(start.getTime() + 30 * 60_000);
-    const { error } = await supabase.from("calendar_events").insert({
-      user_id: user.id,
-      title: `Pagar fatura ${cardName} · ${formatCurrency(b.amount)}`,
-      category: "financeiro",
-      priority: "alta",
-      starts_at: start.toISOString(),
-      ends_at: end.toISOString(),
-      all_day: false,
-      source_type: "credit_card_bill",
-      source_id: b.id,
-      sync_enabled: false,
-    });
-    if (error) {
-      if (error.code === "23505") return toast.info("Esta fatura já está agendada.");
-      return toast.error(error.message);
-    }
-    toast.success("Pagamento agendado na sua agenda");
-    invalidateFinance(qc, "events");
+    invalidateFinance(qc, "cards", "accounts", "transactions");
   };
 
   const openBills = bills.filter((b) => b.status !== "paga");
@@ -217,11 +196,25 @@ function CardsPage() {
                               {String(b.month).padStart(2, "0")}/{b.year} ·{" "}
                               {formatCurrency(b.amount)}
                             </span>
-                            <div className="flex gap-2 shrink-0">
-                              <Button size="sm" variant="outline" onClick={() => scheduleBill(b)}>
-                                <CalendarDays className="h-3 w-3 mr-1" /> Agendar
-                              </Button>
-                              <Button size="sm" variant="outline" onClick={() => payBill(b.id)}>
+                            <div className="flex gap-2 shrink-0 items-center">
+                              <Select
+                                value={payAccount[b.id] ?? accounts[0]?.id ?? ""}
+                                onValueChange={(v) =>
+                                  setPayAccount((prev) => ({ ...prev, [b.id]: v }))
+                                }
+                              >
+                                <SelectTrigger className="h-8 w-[140px] text-xs">
+                                  <SelectValue placeholder="Conta pagadora" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {accounts.map((a) => (
+                                    <SelectItem key={a.id} value={a.id}>
+                                      {a.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <Button size="sm" variant="outline" onClick={() => payBill(b)}>
                                 <Check className="h-3 w-3 mr-1" /> Pagar
                               </Button>
                             </div>

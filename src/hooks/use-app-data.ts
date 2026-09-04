@@ -36,18 +36,6 @@ export interface InvestmentEvent {
   created_at: string;
 }
 
-export interface Note {
-  id: string;
-  title: string;
-  content: string;
-  note_date: string;
-  link_type: string;
-  link_id: string | null;
-  created_by: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
 export interface ShoppingItem {
   id: string;
   item: string;
@@ -142,21 +130,6 @@ export const useInvestmentEvents = (investmentId?: string) =>
       const { data, error } = await q;
       if (error) throw error;
       return (data ?? []).map((e) => ({ ...e, amount: num(e.amount) })) as InvestmentEvent[];
-    },
-  });
-
-export const useNotes = () =>
-  useQuery({
-    queryKey: financeKeys.notes,
-    queryFn: async (): Promise<Note[]> => {
-      const { data, error } = await supabase
-        .from("notes")
-        .select(
-          "id, title, content, note_date, link_type, link_id, created_by, created_at, updated_at",
-        )
-        .order("note_date", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as Note[];
     },
   });
 

@@ -7,10 +7,13 @@ export type { TransactionFilters };
 export interface Transaction {
   id: string;
   amount: number;
-  type: "income" | "expense";
+  type: "income" | "expense" | "transfer";
   description: string | null;
   occurred_at: string;
   account_id: string | null;
+  destination_account_id?: string | null;
+  credit_card_id?: string | null;
+  bill_id?: string | null;
   category_id: string | null;
   subcategory: string | null;
   payment_method: string | null;
@@ -120,7 +123,7 @@ export interface CreditCardBill {
 }
 
 const TX_COLUMNS =
-  "id, amount, type, description, occurred_at, account_id, category_id, subcategory, payment_method, notes, recurring_id, flow, categories(name,color,icon), accounts(name,color)";
+  "id, amount, type, description, occurred_at, account_id, destination_account_id, credit_card_id, bill_id, category_id, subcategory, payment_method, notes, recurring_id, flow, categories(name,color,icon), accounts!transactions_account_id_fkey(name,color)";
 
 /** Evita que o supabase-js analise a string de select no nível de tipos. */
 const sel = (s: string): string => s;

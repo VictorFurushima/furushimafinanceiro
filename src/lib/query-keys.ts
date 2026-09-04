@@ -49,32 +49,9 @@ export const financeKeys = {
   creditCardBills: ["credit_card_bills"] as const,
   investments: ["investments"] as const,
   investmentEvents: (id?: string) => ["investment_events", id ?? "all"] as const,
-  notes: ["notes"] as const,
   shoppingItems: ["shopping_items"] as const,
   userSettings: ["user_settings"] as const,
   viewers: ["my_viewers"] as const,
-};
-
-export interface TaskFilters {
-  status?: string;
-  category?: string;
-  priority?: string;
-  limit?: number;
-}
-
-/** Keys do hub pessoal (agenda, rotinas, tarefas, alertas). */
-export const hubKeys = {
-  events: ["calendar_events"] as const,
-  eventsRange: (from: string, to: string) => ["calendar_events", "range", from, to] as const,
-  routines: ["routines"] as const,
-  routineOccurrences: ["routine_occurrences"] as const,
-  routineOccurrencesRange: (from: string, to: string) =>
-    ["routine_occurrences", "range", from, to] as const,
-  tasks: ["tasks"] as const,
-  tasksList: (filters: TaskFilters) => ["tasks", "list", filters] as const,
-  alerts: ["alerts"] as const,
-  alertsUpcoming: (limit: number) => ["alerts", "upcoming", limit] as const,
-  calendarIntegration: ["calendar_integration"] as const,
 };
 
 export type FinanceDomain =
@@ -88,15 +65,9 @@ export type FinanceDomain =
   | "recharges"
   | "cards"
   | "investments"
-  | "notes"
   | "shopping"
   | "settings"
-  | "viewers"
-  | "events"
-  | "routines"
-  | "tasks"
-  | "alerts"
-  | "calendarIntegration";
+  | "viewers";
 
 /** Famílias de query afetadas por cada domínio de mutação. */
 const DOMAIN_KEYS: Record<FinanceDomain, readonly (readonly unknown[])[]> = {
@@ -115,12 +86,6 @@ const DOMAIN_KEYS: Record<FinanceDomain, readonly (readonly unknown[])[]> = {
     financeKeys.transactions,
     financeKeys.aggregates,
   ],
-  notes: [financeKeys.notes],
-  events: [hubKeys.events, hubKeys.alerts],
-  routines: [hubKeys.routines, hubKeys.routineOccurrences, hubKeys.alerts],
-  tasks: [hubKeys.tasks],
-  alerts: [hubKeys.alerts],
-  calendarIntegration: [hubKeys.calendarIntegration],
 
   shopping: [financeKeys.shoppingItems, financeKeys.transactions, financeKeys.aggregates],
   settings: [financeKeys.userSettings, financeKeys.aggregates],
