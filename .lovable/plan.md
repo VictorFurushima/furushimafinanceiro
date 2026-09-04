@@ -1,81 +1,45 @@
-# Módulo: Recargas de Saldo e Previsão de Entrada
+# Validação independente do PR #3 (commit 0e1167b8)
 
-## 1. Banco de dados (migration)
+Comparado a `main` d4e5128 — 50 arquivos, 2 commits. Nenhum arquivo do projeto foi alterado, nenhuma migration foi aplicada.
 
-Criar 3 novas tabelas com RLS (`auth.uid() = user_id`):
+## Resultado dos testes em Linux
 
-**`balance_recharges`** — entradas previstas (salário, freelance, reembolso, fatura, liberação de limite, etc.)
-- `name`, `recharge_type` (enum text), `expected_amount`, `expected_date`, `account_id`, `payment_method`, `status` (prevista/confirmada/recebida/atrasada/cancelada), `notes`, `converted_to_income` (bool), `is_recurring` (bool), `recurring_day` (int), `card_id` (opcional, para fatura/limite)
+- TypeScript (`tsgo --noEmit`): sem erros.
+- Build de produção (`vite build`): sucesso em ~13 s.
+- Suíte do PR (`node tests/financial-ledger.test.mjs`, PGlite executando as três migrations reais): 19 verificações, todas passaram — parcelas/centavos, dupla quitação, estorno, ownership cruzado, RESTRICT, fatura manual, Planejador com entrada, OCR atômico, convite de espectador, série de caixa e recorrência de cartão pelo cron sem JWT.
+- ESLint: falha, mas com 1.226 erros de formatação contra 1.118 já existentes na `main` (inclusive em arquivos não tocados pelo PR). Ruído pré-existente, não é regressão do PR.
 
-**`credit_cards`**
-- `name`, `bank`, `total_limit`, `used_limit`, `closing_day`, `due_day`, `status`, `color`
-- `available_limit` calculado em runtime (`total - used`)
+## Bloqueador real (1)
 
-**`credit_card_bills`**
-- `card_id`, `month`, `year`, `amount`, `due_date`, `payment_date`, `status` (aberta/paga/atrasada)
-- unique `(card_id, month, year)`
+**`supabase/migrations/20260904190200_full_project_hardening.sql`, linhas 7–11** — o bloco `UPDATE storage.buckets SET file_size_limit … WHERE id='transaction-prints'` não pode ser aplicado por migration no Lovable Cloud: qualquer SQL de INSERT/UPDATE em `storage.buckets` é recusado pela camada de migrations. O restante do arquivo é válido (as policies em `storage.objects` são permitidas). Ao aplicar, esse trecho precisa sair da migration e o limite de 10 MB + MIME types ser configurado pela ferramenta de bucket. O bucket hoje está com `file_size_limit` nulo, então o ajuste é necessário — só não por este caminho.
 
-**Funções SQL (SECURITY DEFINER, auth.uid()):**
-- `generate_recurring_recharges()` — cria recarga prevista do mês para cada recarga recorrente, sem duplicar
-- `mark_overdue_recharges()` — muda status para "atrasada" se data passou e não foi recebida
-- `confirm_recharge_as_income(recharge_id)` — marca como recebida + cria transaction tipo income (exceto fatura/limite)
-- `pay_credit_card_bill(bill_id)` — marca fatura como paga, diminui `used_limit` do cartão
+## Verificações de pré-condição no banco atual (d4e5128)
 
-## 2. Hooks (`use-finance-data.ts`)
+Nada bloqueia a aplicação:
 
-Adicionar: `useRecharges`, `useCreditCards`, `useCreditCardBills`, `useUpcomingEvents` (recargas + faturas combinadas ordenadas por data).
+- 0 transações, 0 faturas, 0 cartões com limite usado — o `RAISE` de guarda da 20260904190000 passa.
+- Nenhum registro viola os novos CHECK (recargas, orçamentos, limites, metas, investimentos, recorrências, compras, preferências, OCR).
+- `user_roles`: nenhum usuário com mais de um papel e nenhum viewer sem `owner_id` — o índice único e o CHECK novos passam.
+- `private.list_my_viewers()` e `public.list_my_viewers()` existem, então os `DROP FUNCTION` sem `IF EXISTS` não falham.
 
-## 3. Páginas novas
+## Impacto de dados a comunicar (não bloqueia)
 
-- **`/recharges`** — lista de recargas com filtros por status/tipo, dialog para CRUD, botão "marcar como recebida"
-- **`/cards`** — substitui/complementa `/accounts` com foco em cartões: nome, banco, barra de limite usado/disponível, próxima fatura, dialog de pagamento
-- **`/timeline`** — linha do tempo cronológica dos próximos 60 dias (recargas + faturas + transações recorrentes) com cores por tipo
+**15 assinaturas ativas no crédito** serão movidas para `paused` pela 20260904190200 (linhas 59–62), porque passam a exigir cartão vinculado. Depois de aplicar, é preciso escolher o cartão de cada uma e reativar.
 
-## 4. Componentes novos
+## Itens auditados sem falha
 
-- `RechargeDialog` — formulário completo (tipo, valor, data, conta, status, recorrente)
-- `CreditCardDialog` — formulário de cartão
-- `PayBillDialog` — confirma pagamento de fatura
-- `TimelineList` — lista visual com ícones e cores
-- `NextRechargeCard` — card destacado para o dashboard
-- `CardLimitBar` — barra de progresso de limite
+- RLS/privilégios: `credit_card_bill_items` só leitura por `space_owner`; escrita apenas por trigger `SECURITY DEFINER`; `REVOKE` de PUBLIC/anon em todas as funções novas; `REVOKE CREATE ON SCHEMA public`.
+- Recorrência no cartão: `apply_card_purchase` aceita o cron sem JWT apenas quando a linha casa exatamente com uma recorrência ativa (mesmo titular, cartão, valor e nome); qualquer outro caminho exige admin titular.
+- Entrada do Planejador: a entrada vira transação em conta e só o valor financiado vai para o cartão, com `down_payment_transaction_id` registrado.
+- OCR: `save_ocr_detected_transaction` é idempotente (retorna a transação já salva) e valida titularidade de conta, categoria e cartão.
+- Convites de espectador: exigem aceite do alvo, expiram em 7 dias, um pendente por par, e sair/revogar devolve o papel de admin.
+- OAuth: `safeOAuthRedirect` bloqueia esquemas não-HTTPS (exceto localhost) e credenciais embutidas na URL.
+- Visão Geral: o diff em `dashboard.tsx` toca apenas o item da lista de últimos lançamentos (ícone, rótulo e sinal). Cards, gráficos e alertas intactos.
 
-## 5. Dashboard
+## Veredito
 
-Adicionar:
-- Card "Próxima Recarga" (nome, valor, dias restantes)
-- Card "Saldo Previsto fim do mês" (saldo real + recargas previstas/confirmadas - despesas previstas)
-- Card "Total previsto no mês" e "Total confirmado"
-- Seção "Faturas próximas" (badges com dias até vencimento)
-- Seção "Limite disponível por cartão"
-- Alertas no topo: recargas atrasadas, faturas a vencer em 5d, limite < 20%, saldo previsto negativo
+Apto para merge. Para a aplicação no banco, tratar o único bloqueador movendo o ajuste do bucket para fora da migration.
 
-## 6. Sidebar / Navegação
+## Próximo passo proposto
 
-Adicionar itens: **Recargas** (`Inbox` icon), **Cartões** (`CreditCard` icon), **Linha do Tempo** (`CalendarClock` icon). Atualizar MobileNav.
-
-## 7. Automação
-
-Em `_app.tsx`, junto da chamada de `generate_recurring_transactions`, chamar também:
-- `generate_recurring_recharges()`
-- `mark_overdue_recharges()`
-
-Uma vez por dia, controlado por `localStorage`.
-
-## 8. Tipos / constantes
-
-`finance-constants.ts`: adicionar `RECHARGE_TYPES`, `RECHARGE_STATUS`, `BILL_STATUS` com labels em PT-BR e cores.
-
-## 9. Notificações
-
-Componente `FinancialAlerts` no topo do dashboard mostrando avisos críticos (recargas atrasadas, faturas próximas, limite baixo). Usa `sonner` para toasts pontuais.
-
-## Detalhes técnicos
-
-- RLS: todas as tabelas usam policy `auth.uid() = user_id`
-- Cores semânticas via tokens existentes (`success` para receitas/recargas, `destructive` para atrasos/faturas, `primary` teal para destaque)
-- Mantém paleta Furushima (dark teal/cyan) e tipografia Outfit/Figtree
-- `converted_to_income` previne dupla contabilização
-- `available_limit` é derivado (não armazenado) para evitar inconsistência
-
-Após sua aprovação, executo a migration e implemento todos os arquivos.
+Se aprovado, eu aplico as três migrations (com o bloco de `storage.buckets` retirado da 190200), configuro o bucket `transaction-prints` com limite de 10 MB e MIME types JPEG/PNG/WebP pela ferramenta própria, e listo as 15 assinaturas no crédito que ficaram pausadas para você escolher o cartão de cada uma.
