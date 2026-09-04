@@ -134,20 +134,6 @@ export const useInvestmentEvents = (investmentId?: string) =>
     },
   });
 
-export const useNotes = () =>
-  useQuery({
-    queryKey: financeKeys.notes,
-    queryFn: async (): Promise<Note[]> => {
-      const { data, error } = await supabase
-        .from("notes")
-        .select(
-          "id, title, content, note_date, link_type, link_id, created_by, created_at, updated_at",
-        )
-        .order("note_date", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as Note[];
-    },
-  });
 
 export const useShoppingItems = () =>
   useQuery({
