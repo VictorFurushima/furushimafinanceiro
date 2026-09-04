@@ -1,7 +1,6 @@
 import { useState, useEffect, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { friendlyError } from "@/lib/friendly-error";
 import { z } from "zod";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -137,25 +136,17 @@ export function InvestmentDialog({
       if (!u.user) throw new Error("Não autenticado");
       const payload = { ...parsed.data, color: investmentTypeColor(type), user_id: u.user.id };
       if (editing) {
-        const { error } = await supabase.rpc("update_investment_details", {
-          p_investment_id: editing.id,
-          p_name: parsed.data.name,
-          p_inv_type: parsed.data.inv_type,
-          p_institution: parsed.data.institution,
-          p_invested_amount: parsed.data.invested_amount,
-          p_current_amount: parsed.data.current_amount,
-          p_initial_amount: parsed.data.initial_amount,
-          p_applied_at: parsed.data.applied_at,
-          p_maturity_date: parsed.data.maturity_date,
-          p_liquidity: parsed.data.liquidity,
-          p_risk: parsed.data.risk,
-          p_objective: parsed.data.objective,
-          p_notes: parsed.data.notes,
-          p_status: parsed.data.status,
-          p_is_emergency_reserve: parsed.data.is_emergency_reserve,
-          p_color: payload.color,
-        });
+        const { error } = await supabase.from("investments").update(payload).eq("id", editing.id);
         if (error) throw error;
+        await supabase.from("investment_events").insert({
+          user_id: u.user.id,
+          investment_id: editing.id,
+          event_type: "alteracao",
+          amount: 0,
+          previous_amount: editing.current_amount,
+          new_amount: parsed.data.current_amount,
+          notes: "Cadastro atualizado",
+        });
       } else {
         const { error } = await supabase.from("investments").insert(payload);
         if (error) throw error;
@@ -164,7 +155,7 @@ export function InvestmentDialog({
       invalidateFinance(qc, "investments");
       onOpenChange(false);
     } catch (err) {
-      toast.error(friendlyError(err, "Erro ao salvar"));
+      toast.error(err instanceof Error ? err.message : "Erro ao salvar");
     } finally {
       setSaving(false);
     }

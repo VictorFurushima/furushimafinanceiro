@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { friendlyError } from "@/lib/friendly-error";
 
 import {
   Dialog,
@@ -110,7 +109,7 @@ export function InvestmentMoveDialog({
       setNotes("");
       onOpenChange(false);
     } catch (err) {
-      toast.error(friendlyError(err, "Erro ao registrar"));
+      toast.error(err instanceof Error ? err.message : "Erro ao registrar");
     } finally {
       setSaving(false);
     }

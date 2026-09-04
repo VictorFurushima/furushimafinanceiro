@@ -1,7 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { friendlyError } from "@/lib/friendly-error";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -22,24 +21,11 @@ type OAuthApi = {
   approveAuthorization: (id: string) => Promise<OAuthResult>;
   denyAuthorization: (id: string) => Promise<OAuthResult>;
 };
-const oauth = () => (supabase.auth as unknown as { oauth: OAuthApi }).oauth;
+const oauth = () =>
+  (supabase.auth as unknown as { oauth: OAuthApi }).oauth;
 
-function safeOAuthRedirect(target: string): string {
-  const base = new URL("https://furushima.invalid");
-  if (target.startsWith("/")) {
-    const relative = new URL(target, base);
-    if (relative.origin === base.origin) {
-      return `${relative.pathname}${relative.search}${relative.hash}`;
-    }
-  }
-
-  const url = new URL(target);
-  const localHttp =
-    url.protocol === "http:" && ["localhost", "127.0.0.1", "::1"].includes(url.hostname);
-  if ((url.protocol !== "https:" && !localHttp) || url.username || url.password) {
-    throw new Error("Destino OAuth inseguro");
-  }
-  return url.toString();
+function isSafeRelativePath(p: string): boolean {
+  return p.startsWith("/") && !p.startsWith("//");
 }
 
 export const Route = createFileRoute("/.lovable/oauth/consent")({
@@ -59,9 +45,9 @@ export const Route = createFileRoute("/.lovable/oauth/consent")({
   loader: async ({ location }) => {
     const authorizationId = new URLSearchParams(location.search).get("authorization_id")!;
     const { data, error } = await oauth().getAuthorizationDetails(authorizationId);
-    if (error) throw new Error(friendlyError(error));
+    if (error) throw new Error(error.message);
     const immediate = data?.redirect_url ?? data?.redirect_to;
-    if (immediate && !data?.client) throw redirect({ href: safeOAuthRedirect(immediate) });
+    if (immediate && !data?.client) throw redirect({ href: immediate });
     return data;
   },
   component: ConsentPage,
@@ -91,9 +77,8 @@ function ConsentPage() {
       : await oauth().denyAuthorization(authorization_id);
     if (error) {
       setBusy(false);
-      const message = friendlyError(error);
-      setError(message);
-      toast.error(message);
+      setError(error.message);
+      toast.error(error.message);
       return;
     }
     const target = data?.redirect_url ?? data?.redirect_to;
@@ -103,29 +88,21 @@ function ConsentPage() {
       return;
     }
     // External redirect back to the OAuth client.
-    try {
-      window.location.assign(safeOAuthRedirect(target));
-    } catch (redirectError) {
-      const message = friendlyError(redirectError, "Destino de redirecionamento inválido.");
-      setBusy(false);
-      setError(message);
-      toast.error(message);
+    if (isSafeRelativePath(target)) {
+      window.location.assign(target);
+    } else {
+      window.location.href = target;
     }
   }
 
   const clientName = details?.client?.name ?? "Aplicativo externo";
-  const scopes =
-    details?.requested_scopes ?? (details?.scope ? details.scope.split(" ").filter(Boolean) : []);
+  const scopes = details?.requested_scopes ?? (details?.scope ? details.scope.split(" ").filter(Boolean) : []);
 
   return (
     <main className="min-h-screen flex items-center justify-center p-6">
       <div className="w-full max-w-md rounded-2xl border border-border/60 bg-card/50 backdrop-blur p-8 shadow-glow space-y-6">
         <div className="flex items-center gap-3">
-          <img
-            src={logo}
-            alt="Furushima"
-            className="h-11 w-11 rounded-xl object-cover shadow-glow"
-          />
+          <img src={logo} alt="Furushima" className="h-11 w-11 rounded-xl object-cover shadow-glow" />
           <div>
             <p className="text-xs text-muted-foreground">Furushima Financeiro</p>
             <h1 className="font-display text-xl font-bold leading-tight">
@@ -135,26 +112,20 @@ function ConsentPage() {
         </div>
 
         <p className="text-sm text-muted-foreground">
-          <strong className="text-foreground">{clientName}</strong> poderá usar o Furushima
-          Financeiro como você — ler contas, transações, recargas, cartões e registrar novas
-          transações. Suas políticas de acesso (RLS) continuam válidas.
+          <strong className="text-foreground">{clientName}</strong> poderá usar o Furushima Financeiro como você — ler contas, transações, recargas, cartões e registrar novas transações. Suas políticas de acesso (RLS) continuam válidas.
         </p>
 
         {scopes.length > 0 && (
           <div className="text-xs text-muted-foreground">
             <p className="mb-1 font-medium text-foreground">Permissões solicitadas</p>
             <ul className="list-disc pl-5 space-y-0.5">
-              {scopes.map((s: string) => (
-                <li key={s}>{s}</li>
-              ))}
+              {scopes.map((s: string) => <li key={s}>{s}</li>)}
             </ul>
           </div>
         )}
 
         {error && (
-          <p role="alert" className="text-sm text-destructive">
-            {error}
-          </p>
+          <p role="alert" className="text-sm text-destructive">{error}</p>
         )}
 
         <div className="flex gap-3">

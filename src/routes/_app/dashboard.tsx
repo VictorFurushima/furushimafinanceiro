@@ -3,7 +3,6 @@ import { useMemo, useState } from "react";
 import {
   TrendingUp,
   TrendingDown,
-  ArrowLeftRight,
   Wallet,
   ArrowUpRight,
   ArrowDownRight,
@@ -480,9 +479,7 @@ function DashboardPage() {
                         color: t.categories?.color ?? "#22d3ee",
                       }}
                     >
-                      {t.type === "transfer" ? (
-                        <ArrowLeftRight className="h-5 w-5" />
-                      ) : t.type === "income" ? (
+                      {t.type === "income" ? (
                         <TrendingUp className="h-5 w-5" />
                       ) : (
                         <TrendingDown className="h-5 w-5" />
@@ -493,19 +490,14 @@ function DashboardPage() {
                         {t.description || t.categories?.name || "Transação"}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {t.flow === "bill_payment"
-                          ? "Pagamento de fatura"
-                          : t.type === "transfer"
-                            ? "Transferência"
-                            : (t.categories?.name ?? "Sem categoria")}{" "}
-                        · {formatDateOnlyPtBR(t.occurred_at)}
+                        {t.categories?.name ?? "Sem categoria"} ·{" "}
+                        {formatDateOnlyPtBR(t.occurred_at)}
                       </p>
                     </div>
                     <span
-                      className={`text-sm font-semibold ${t.type === "transfer" ? "text-muted-foreground" : t.type === "income" ? "text-success" : "text-destructive"}`}
+                      className={`text-sm font-semibold ${t.type === "income" ? "text-success" : "text-destructive"}`}
                     >
-                      {t.type === "transfer" ? "↔" : t.type === "income" ? "+" : "−"}{" "}
-                      {formatCurrency(Number(t.amount))}
+                      {t.type === "income" ? "+" : "−"} {formatCurrency(Number(t.amount))}
                     </span>
                   </li>
                 ))}

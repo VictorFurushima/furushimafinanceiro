@@ -177,7 +177,6 @@ export interface StatisticsExtras {
     amount: number;
   }[];
   opening_balance: number;
-  cash_series: { month: string; net: number }[];
 }
 
 export const useStatisticsExtras = (from: string, to: string, top = 10) =>
@@ -199,7 +198,6 @@ export const useStatisticsExtras = (from: string, to: string, top = 10) =>
         })),
         top_expenses: (raw.top_expenses ?? []).map((t) => ({ ...t, amount: num(t.amount) })),
         opening_balance: num(raw.opening_balance),
-        cash_series: (raw.cash_series ?? []).map((p) => ({ month: p.month, net: num(p.net) })),
       };
     },
   });

@@ -3,9 +3,7 @@
 
 REVOKE CREATE ON SCHEMA public FROM PUBLIC, anon, authenticated;
 
--- O limite de 10 MB e os MIME types do bucket sao configurados pela API de
--- Storage do Lovable/Supabase. A camada de migrations do Lovable bloqueia
--- UPDATE direto em storage.buckets; as policies de objetos continuam em SQL.
+-- Limite de tamanho/MIME do bucket aplicado pela ferramenta de storage (nao por migration).
 
 DROP POLICY IF EXISTS "users delete own prints" ON storage.objects;
 DROP POLICY IF EXISTS "users read own prints" ON storage.objects;
@@ -350,6 +348,7 @@ CREATE INDEX viewer_invitations_target_pending ON public.viewer_invitations(targ
 ALTER TABLE public.viewer_invitations ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.viewer_invitations FROM PUBLIC,anon,authenticated;
 GRANT SELECT ON public.viewer_invitations TO authenticated;
+GRANT ALL ON public.viewer_invitations TO service_role;
 CREATE POLICY viewer_invitations_participant_read ON public.viewer_invitations FOR SELECT TO authenticated
   USING (owner_id=auth.uid() OR target_user_id=auth.uid());
 

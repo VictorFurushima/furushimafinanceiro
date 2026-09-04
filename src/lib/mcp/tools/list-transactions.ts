@@ -6,12 +6,9 @@ export default defineTool({
   name: "list_transactions",
   title: "Listar transações",
   description:
-    "Lista transações do usuário com paginação real no servidor. Pode filtrar por tipo (income/expense/transfer), intervalo de datas (YYYY-MM-DD), limite por página e página/offset. Retorna as mais recentes primeiro.",
+    "Lista transações do usuário com paginação real no servidor. Pode filtrar por tipo (income/expense), intervalo de datas (YYYY-MM-DD), limite por página e página/offset. Retorna as mais recentes primeiro.",
   inputSchema: {
-    type: z
-      .enum(["income", "expense", "transfer"])
-      .optional()
-      .describe("Filtra por tipo de transação."),
+    type: z.enum(["income", "expense"]).optional().describe("Filtra por tipo de transação."),
     from_date: z.string().optional().describe("Data inicial YYYY-MM-DD (inclusive)."),
     to_date: z.string().optional().describe("Data final YYYY-MM-DD (inclusive)."),
     limit: z
@@ -41,7 +38,7 @@ export default defineTool({
     let q = supabaseForUser(ctx)
       .from("transactions")
       .select(
-        "id, type, amount, description, occurred_at, payment_method, category_id, account_id, credit_card_id, destination_account_id, bill_id, installment_count, flow, subcategory, notes",
+        "id, type, amount, description, occurred_at, payment_method, category_id, account_id, subcategory, notes",
         { count: "exact" },
       )
       .order("occurred_at", { ascending: false })

@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Plus, Pencil, Trash2, Target } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { friendlyError } from "@/lib/friendly-error";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,7 +25,7 @@ function GoalsPage() {
   const remove = async (id: string) => {
     if (!confirm("Excluir esta meta?")) return;
     const { error } = await supabase.from("goals").delete().eq("id", id);
-    if (error) return toast.error(friendlyError(error));
+    if (error) return toast.error(error.message);
     toast.success("Removida");
     invalidateFinance(qc, "goals");
   };
@@ -37,7 +36,7 @@ function GoalsPage() {
       .from("goals")
       .update({ current_amount: newAmount })
       .eq("id", g.id);
-    if (error) return toast.error(friendlyError(error));
+    if (error) return toast.error(error.message);
     invalidateFinance(qc, "goals");
   };
 

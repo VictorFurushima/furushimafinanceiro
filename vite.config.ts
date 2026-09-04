@@ -14,8 +14,6 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
-    // mcp-js 0.24 compares normalized Vite roots with native Windows paths and aborts.
-    // The generated MCP routes remain available; Linux builds keep the generator enabled.
-    plugins: process.platform === "win32" ? [] : [mcpPlugin()],
+    plugins: [mcpPlugin()],
   },
 });

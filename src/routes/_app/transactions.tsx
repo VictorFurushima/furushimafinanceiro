@@ -3,7 +3,6 @@ import { useState, useMemo } from "react";
 import { Plus, Trash2, TrendingUp, TrendingDown, Download, X, ArrowLeftRight } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { friendlyError } from "@/lib/friendly-error";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,7 +33,7 @@ function TransactionsPage() {
 
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
-  const [fType, setFType] = useState<"all" | "income" | "expense" | "transfer">("all");
+  const [fType, setFType] = useState<"all" | "income" | "expense">("all");
   const [fCat, setFCat] = useState<string>("all");
   const [fPay, setFPay] = useState<string>("all");
   const [fFrom, setFFrom] = useState("");
@@ -83,14 +82,8 @@ function TransactionsPage() {
   };
 
   const remove = async (id: string) => {
-    if (
-      !confirm(
-        "Excluir este lançamento? Pagamentos excluídos reabrem a fatura e devolvem o valor à conta.",
-      )
-    )
-      return;
     const { error } = await supabase.from("transactions").delete().eq("id", id);
-    if (error) return toast.error(friendlyError(error));
+    if (error) return toast.error(error.message);
     toast.success("Excluída");
     invalidateFinance(qc, "transactions");
   };
@@ -99,7 +92,7 @@ function TransactionsPage() {
     let q = supabase
       .from("transactions")
       .select(
-        "occurred_at, type, flow, amount, description, payment_method, categories(name), accounts!transactions_account_id_fkey(name)",
+        "occurred_at, type, amount, description, payment_method, categories(name), accounts!transactions_account_id_fkey(name)",
       )
       .order("occurred_at", { ascending: false })
       .limit(5000);
@@ -113,7 +106,7 @@ function TransactionsPage() {
     if (search) q = q.ilike("description", `%${search}%`);
 
     const { data: all, error } = await q;
-    if (error) return toast.error(friendlyError(error));
+    if (error) return toast.error(error.message);
 
     const header = [
       "Data",
@@ -126,13 +119,7 @@ function TransactionsPage() {
     ];
     const csvRows = (all ?? []).map((t) => [
       t.occurred_at,
-      t.flow === "bill_payment"
-        ? "Pagamento de fatura"
-        : t.type === "transfer"
-          ? "Transferência"
-          : t.type === "income"
-            ? "Receita"
-            : "Despesa",
+      t.type === "transfer" ? "Transferência" : t.type === "income" ? "Receita" : "Despesa",
       String(t.amount).replace(".", ","),
       t.categories?.name ?? "",
       (t.description ?? "").replace(/"/g, '""'),
@@ -153,9 +140,7 @@ function TransactionsPage() {
   // Transferência apenas move dinheiro entre contas: não entra no total do período.
   const pageTotal = rows.reduce(
     (s, t) =>
-      t.type === "transfer" || (t.flow && t.flow !== "real")
-        ? s
-        : s + (t.type === "income" ? Number(t.amount) : -Number(t.amount)),
+      t.type === "transfer" ? s : s + (t.type === "income" ? Number(t.amount) : -Number(t.amount)),
     0,
   );
 
@@ -165,7 +150,7 @@ function TransactionsPage() {
         <div>
           <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold">Transações</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {totalCount} no filtro · Resultado de receitas e despesas desta página:{" "}
+            {totalCount} no filtro · Saldo desta página:{" "}
             <span className={pageTotal >= 0 ? "text-success" : "text-destructive"}>
               {formatCurrency(pageTotal)}
             </span>
@@ -204,7 +189,6 @@ function TransactionsPage() {
                 <SelectItem value="all">Todos os tipos</SelectItem>
                 <SelectItem value="income">Receitas</SelectItem>
                 <SelectItem value="expense">Despesas</SelectItem>
-                <SelectItem value="transfer">Transferências</SelectItem>
               </SelectContent>
             </Select>
             <Select value={fCat} onValueChange={onFilterChange(setFCat)}>
@@ -300,11 +284,7 @@ function TransactionsPage() {
                       {t.description || t.categories?.name || "Transação"}
                     </p>
                     <p className="text-xs text-muted-foreground truncate">
-                      {t.flow === "bill_payment"
-                        ? "Pagamento de fatura"
-                        : t.type === "transfer"
-                          ? "Transferência"
-                          : (t.categories?.name ?? "Sem categoria")}
+                      {t.categories?.name ?? "Sem categoria"}
                       {t.subcategory && ` · ${t.subcategory}`}
                       {" · "}
                       {paymentLabel(t.payment_method)} · {formatDateOnlyPtBR(t.occurred_at)}

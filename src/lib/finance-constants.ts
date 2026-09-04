@@ -21,6 +21,7 @@ export const FREQUENCIES = [
   { value: "monthly", label: "Mensal" },
   { value: "weekly", label: "Semanal" },
   { value: "yearly", label: "Anual" },
+  { value: "custom", label: "Personalizada" },
 ] as const;
 
 export const RECURRING_STATUS = [

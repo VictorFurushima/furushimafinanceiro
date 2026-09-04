@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { friendlyError } from "@/lib/friendly-error";
 import { Plus } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -55,7 +54,7 @@ function BudgetsPage() {
         { category_id: categoryId, amount: val, month: monthStr, user_id: u.user.id },
         { onConflict: "user_id,category_id,month" },
       );
-    if (error) return toast.error(friendlyError(error));
+    if (error) return toast.error(error.message);
     toast.success("Orçamento salvo");
     invalidateFinance(qc, "budgets");
     setOpen(false);

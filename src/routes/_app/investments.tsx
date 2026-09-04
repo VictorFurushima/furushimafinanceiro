@@ -18,7 +18,6 @@ import {
   BellRing,
 } from "lucide-react";
 import { toast } from "sonner";
-import { friendlyError } from "@/lib/friendly-error";
 import {
   PieChart,
   Pie,
@@ -124,10 +123,7 @@ function InvestmentsPage() {
     const now = Date.now();
     let total = 0;
     for (const i of ativos) {
-      const meses = Math.max(
-        1,
-        (now - (parseDateOnly(i.applied_at) ?? new Date()).getTime()) / (30 * 86400000),
-      );
+      const meses = Math.max(1, (now - (parseDateOnly(i.applied_at) ?? new Date()).getTime()) / (30 * 86400000));
       total += (i.current_amount - i.invested_amount) / meses;
     }
     return total;
@@ -218,7 +214,7 @@ function InvestmentsPage() {
     if (!isAdmin) return toast.error(VIEWER_MESSAGE);
     if (!confirm(`Excluir "${inv.name}"? O histórico também será removido.`)) return;
     const { error } = await supabase.from("investments").delete().eq("id", inv.id);
-    if (error) return toast.error(friendlyError(error));
+    if (error) return toast.error(error.message);
     toast.success("Investimento excluído");
     invalidateFinance(qc, "investments");
   };

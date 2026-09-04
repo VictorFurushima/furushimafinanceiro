@@ -3,7 +3,6 @@ import { useState, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Check, Pencil, Trash2, Repeat, Calendar, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { friendlyError } from "@/lib/friendly-error";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -85,7 +84,7 @@ function RechargesPage() {
       invalidateFinance(qc, "recharges");
       invalidateFinance(qc, "transactions");
     } catch (err) {
-      toast.error(friendlyError(err, "Erro"));
+      toast.error(err instanceof Error ? err.message : "Erro");
     }
   };
 
@@ -93,7 +92,7 @@ function RechargesPage() {
     if (!confirm("Excluir esta recarga?")) return;
     const { error } = await supabase.from("balance_recharges").delete().eq("id", id);
     if (error) {
-      toast.error(friendlyError(error));
+      toast.error(error.message);
       return;
     }
     toast.success("Recarga excluída");
@@ -224,7 +223,8 @@ function RechargesPage() {
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {rechargeTypeLabel(r.recharge_type)} · {formatDateOnlyPtBR(r.expected_date)}
+                      {rechargeTypeLabel(r.recharge_type)} ·{" "}
+                      {formatDateOnlyPtBR(r.expected_date)}
                     </p>
                   </div>
                   <span className="text-sm font-semibold text-success">

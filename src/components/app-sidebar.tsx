@@ -16,8 +16,12 @@ import {
   CalendarClock,
   ScanLine,
   PiggyBank,
+  StickyNote,
   ShoppingCart,
   Menu,
+  Sun,
+  CalendarDays,
+  ListTodo,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -50,7 +54,7 @@ const items = [
 ] as const;
 
 const mobileItems = items.filter((i) =>
-  ["/dashboard", "/transactions", "/accounts", "/cards"].includes(i.to),
+  ["/today", "/agenda", "/tasks", "/dashboard"].includes(i.to),
 );
 
 export function AppSidebar() {

@@ -1,9 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { AlertTriangle, Plus, Pencil, Trash2, Pause, Play, Repeat } from "lucide-react";
+import { Plus, Pencil, Trash2, Pause, Play, Repeat } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { friendlyError } from "@/lib/friendly-error";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,7 +24,6 @@ function RecurringPage() {
 
   const today = new Date();
   const active = items.filter((i) => i.status === "active");
-  const missingCard = items.filter((i) => i.payment_method === "credito" && !i.credit_card_id);
   const monthlyTotal = active
     .filter((i) => i.frequency === "monthly")
     .reduce((s, i) => s + Number(i.amount), 0);
@@ -44,23 +42,18 @@ function RecurringPage() {
   const remove = async (id: string) => {
     if (!confirm("Excluir esta assinatura?")) return;
     const { error } = await supabase.from("recurring_expenses").delete().eq("id", id);
-    if (error) return toast.error(friendlyError(error));
+    if (error) return toast.error(error.message);
     toast.success("Removida");
     invalidateFinance(qc, "recurring");
   };
 
   const toggleStatus = async (it: RecurringExpense) => {
     const newStatus = it.status === "active" ? "paused" : "active";
-    if (newStatus === "active" && it.payment_method === "credito" && !it.credit_card_id) {
-      toast.error("Selecione um cartão antes de ativar esta assinatura");
-      edit(it);
-      return;
-    }
     const { error } = await supabase
       .from("recurring_expenses")
       .update({ status: newStatus })
       .eq("id", it.id);
-    if (error) return toast.error(friendlyError(error));
+    if (error) return toast.error(error.message);
     toast.success(newStatus === "active" ? "Ativada" : "Pausada");
     invalidateFinance(qc, "recurring");
   };
@@ -90,25 +83,6 @@ function RecurringPage() {
           <Plus className="h-4 w-4 mr-2" /> Nova
         </Button>
       </header>
-
-      {missingCard.length > 0 && (
-        <Card className="border-warning/40 bg-warning/10">
-          <CardContent className="flex items-start gap-3 p-4">
-            <AlertTriangle className="h-5 w-5 shrink-0 text-warning" />
-            <div>
-              <p className="text-sm font-medium">
-                {missingCard.length}{" "}
-                {missingCard.length === 1 ? "assinatura precisa" : "assinaturas precisam"} de um
-                cartão
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Elas foram pausadas para evitar cobranças fora da fatura. Edite cada uma e selecione
-                o cartão correto.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {upcoming.length > 0 && (
         <Card className="bg-gradient-card border-border/50 shadow-card">
@@ -188,11 +162,6 @@ function RecurringPage() {
                             ? "Pausada"
                             : "Cancelada"}
                       </Badge>
-                      {i.payment_method === "credito" && !i.credit_card_id && (
-                        <Badge variant="outline" className="border-warning/40 text-warning">
-                          Selecione o cartão
-                        </Badge>
-                      )}
                     </div>
                     <p className="text-xs text-muted-foreground">
                       {i.categories?.name ?? "—"} ·{" "}

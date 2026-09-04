@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { friendlyError } from "@/lib/friendly-error";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -37,7 +36,7 @@ export function BillDialog({
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!cardId || !dueDate || !(Number(amount.replace(",", ".")) > 0)) {
+    if (!cardId || !amount || !dueDate) {
       toast.error("Preencha todos os campos");
       return;
     }
@@ -45,15 +44,18 @@ export function BillDialog({
     try {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) throw new Error("Não autenticado");
-      const { error } = await supabase.from("credit_card_bills").insert({
-        user_id: u.user.id,
-        card_id: cardId,
-        month,
-        year,
-        manual_amount: Number(amount.replace(",", ".")),
-        due_date: dueDate,
-        status: "aberta",
-      });
+      const { error } = await supabase.from("credit_card_bills").upsert(
+        {
+          user_id: u.user.id,
+          card_id: cardId,
+          month,
+          year,
+          amount: parseFloat(amount.replace(",", ".")),
+          due_date: dueDate,
+          status: "aberta",
+        },
+        { onConflict: "card_id,month,year" },
+      );
       if (error) throw error;
       toast.success("Fatura registrada");
       invalidateFinance(qc, "cards");
@@ -62,7 +64,7 @@ export function BillDialog({
       setAmount("");
       setDueDate("");
     } catch (err) {
-      toast.error(friendlyError(err, "Erro ao salvar"));
+      toast.error(err instanceof Error ? err.message : "Erro ao salvar");
     } finally {
       setSaving(false);
     }
@@ -75,10 +77,6 @@ export function BillDialog({
           <DialogTitle className="font-display text-2xl">Nova fatura</DialogTitle>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Use somente para saldo anterior. Compras registradas já geram suas faturas
-            automaticamente.
-          </p>
           <div className="space-y-2">
             <Label>Cartão</Label>
             <Select value={cardId} onValueChange={setCardId}>
@@ -118,7 +116,7 @@ export function BillDialog({
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label>Saldo anterior não registrado em compras (R$)</Label>
+              <Label>Valor (R$)</Label>
               <Input
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}

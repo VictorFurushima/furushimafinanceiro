@@ -1,9 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { Plus, Trash2, UserPlus, Eye, Check, X, LogOut } from "lucide-react";
+import { Plus, Trash2, UserPlus, Eye } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { friendlyError } from "@/lib/friendly-error";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,7 +21,6 @@ import {
   useUserSettings,
   useViewers,
   useInvestments,
-  useViewerInvitations,
   DEFAULT_SETTINGS,
 } from "@/hooks/use-app-data";
 import { useRole, VIEWER_MESSAGE } from "@/hooks/use-role";
@@ -38,7 +36,6 @@ function SettingsPage() {
   const { isAdmin, userId } = useRole();
   const { data: settingsRow } = useUserSettings();
   const { data: viewers = [] } = useViewers(isAdmin);
-  const { data: viewerInvitations = [] } = useViewerInvitations(!!userId);
   const { data: investments = [] } = useInvestments();
   const qc = useQueryClient();
 
@@ -73,7 +70,7 @@ function SettingsPage() {
       color: newCatColor,
       icon: "circle",
     });
-    if (error) return toast.error(friendlyError(error));
+    if (error) return toast.error(error.message);
     toast.success("Categoria criada");
     invalidateFinance(qc, "categories");
     setNewCat("");
@@ -83,7 +80,7 @@ function SettingsPage() {
     if (!guard()) return;
     if (!confirm("Excluir esta categoria?")) return;
     const { error } = await supabase.from("categories").delete().eq("id", id);
-    if (error) return toast.error(friendlyError(error));
+    if (error) return toast.error(error.message);
     invalidateFinance(qc, "categories");
   };
 
@@ -100,7 +97,7 @@ function SettingsPage() {
       },
       { onConflict: "user_id,category_id" },
     );
-    if (error) return toast.error(friendlyError(error));
+    if (error) return toast.error(error.message);
     toast.success("Limite definido");
     invalidateFinance(qc, "categoryLimits");
     setLimitAmount("");
@@ -109,7 +106,7 @@ function SettingsPage() {
   const delLimit = async (id: string) => {
     if (!guard()) return;
     const { error } = await supabase.from("category_limits").delete().eq("id", id);
-    if (error) return toast.error(friendlyError(error));
+    if (error) return toast.error(error.message);
     invalidateFinance(qc, "categoryLimits");
   };
 
@@ -119,7 +116,7 @@ function SettingsPage() {
     const { error } = await supabase
       .from("user_settings")
       .upsert({ ...prefs, user_id: userId }, { onConflict: "user_id" });
-    if (error) return toast.error(friendlyError(error));
+    if (error) return toast.error(error.message);
     toast.success("Preferências salvas");
     invalidateFinance(qc, "settings");
   };
@@ -130,98 +127,30 @@ function SettingsPage() {
     const email = viewerEmail.trim();
     if (!email) return toast.error("Informe o e-mail");
     const { data, error } = await supabase.rpc("grant_viewer_access", { p_email: email });
-    if (error) return toast.error(friendlyError(error));
+    if (error) return toast.error(error.message);
     if (data === "not_found") return toast.error("Nenhuma conta encontrada com esse e-mail");
     if (data === "self") return toast.error("Você não pode se tornar espectador");
     if (data === "forbidden") return toast.error(VIEWER_MESSAGE);
-    if (data === "already_viewer") return toast.error("Essa conta já é espectadora");
-    toast.success("Convite enviado; a outra conta precisa aceitar");
+    toast.success("Acesso de visualização concedido");
     setViewerEmail("");
     invalidateFinance(qc, "viewers");
   };
 
   const revokeViewer = async (uid: string) => {
     if (!guard()) return;
-    const { data, error } = await supabase.rpc("revoke_viewer_access", { p_user_id: uid });
-    if (error) return toast.error(friendlyError(error));
-    if (data === "not_found") return toast.error("Acesso ou convite não encontrado");
+    const { error } = await supabase.rpc("revoke_viewer_access", { p_user_id: uid });
+    if (error) return toast.error(error.message);
     toast.success("Acesso revogado");
     invalidateFinance(qc, "viewers");
-  };
-
-  const respondToViewerInvitation = async (id: string, accept: boolean) => {
-    const { data, error } = accept
-      ? await supabase.rpc("accept_viewer_access", { p_invitation_id: id })
-      : await supabase.rpc("decline_viewer_access", { p_invitation_id: id });
-    if (error) return toast.error(friendlyError(error));
-    if (data !== "ok") return toast.error("Esse convite não está mais disponível");
-    if (accept) {
-      toast.success("Acesso de espectador ativado");
-      qc.clear();
-      window.location.assign("/dashboard");
-      return;
-    }
-    toast.success("Convite recusado");
-    qc.invalidateQueries({ queryKey: ["viewer-invitations"] });
-  };
-
-  const leaveViewerAccess = async () => {
-    if (!confirm("Sair do acesso compartilhado e voltar ao seu espaço próprio?")) return;
-    const { data, error } = await supabase.rpc("leave_viewer_access");
-    if (error) return toast.error(friendlyError(error));
-    if (data !== "ok") return toast.error("Acesso compartilhado não encontrado");
-    qc.clear();
-    window.location.assign("/dashboard");
   };
 
   return (
     <div className="p-4 sm:p-4 sm:p-6 lg:p-10 max-w-5xl mx-auto space-y-6">
       <h1 className="font-display text-3xl sm:text-4xl font-bold">Configurações</h1>
       {!isAdmin && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg bg-secondary/30 p-3">
-          <p className="text-sm text-muted-foreground">{VIEWER_MESSAGE}</p>
-          <Button type="button" variant="outline" size="sm" onClick={leaveViewerAccess}>
-            <LogOut className="h-4 w-4 mr-2" /> Sair do acesso compartilhado
-          </Button>
-        </div>
-      )}
-
-      {viewerInvitations.length > 0 && (
-        <Card className="bg-gradient-card border-primary/30 shadow-card">
-          <CardHeader>
-            <CardTitle className="font-display">Convites de visualização</CardTitle>
-            <p className="text-xs text-muted-foreground">
-              Ao aceitar, esta conta passa a visualizar o espaço indicado até você sair dele.
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {viewerInvitations.map((invitation) => (
-              <div
-                key={invitation.id}
-                className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg bg-secondary/30 p-3"
-              >
-                <span className="text-sm">Convite de {invitation.owner_email}</span>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={() => respondToViewerInvitation(invitation.id, true)}
-                  >
-                    <Check className="h-4 w-4 mr-1" /> Aceitar
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={() => respondToViewerInvitation(invitation.id, false)}
-                  >
-                    <X className="h-4 w-4 mr-1" /> Recusar
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+        <p className="text-sm text-muted-foreground rounded-lg bg-secondary/30 p-3">
+          {VIEWER_MESSAGE}
+        </p>
       )}
 
       <Card className="bg-gradient-card border-border/50 shadow-card">
@@ -586,9 +515,6 @@ function SettingsPage() {
                 >
                   <span className="flex items-center gap-2 text-sm">
                     <Eye className="h-4 w-4 text-muted-foreground" /> {v.email}
-                    {v.status === "pending" && (
-                      <span className="text-xs text-muted-foreground">(convite pendente)</span>
-                    )}
                   </span>
                   <Button
                     variant="ghost"

@@ -1,7 +1,6 @@
 import { useState, type FormEvent, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { friendlyError } from "@/lib/friendly-error";
 import { z } from "zod";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -17,12 +16,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { invalidateFinance } from "@/lib/query-keys";
-import {
-  useCategories,
-  useAccounts,
-  useCreditCards,
-  type RecurringExpense,
-} from "@/hooks/use-finance-data";
+import { useCategories, useAccounts, type RecurringExpense } from "@/hooks/use-finance-data";
 import { PAYMENT_METHODS, FREQUENCIES, RECURRING_STATUS } from "@/lib/finance-constants";
 import { toISODate } from "@/lib/format";
 
@@ -31,10 +25,9 @@ const schema = z.object({
   amount: z.number().positive(),
   category_id: z.string().uuid().nullable(),
   account_id: z.string().uuid().nullable(),
-  credit_card_id: z.string().uuid().nullable(),
   payment_method: z.string(),
   billing_day: z.number().int().min(1).max(31),
-  frequency: z.enum(["monthly", "weekly", "yearly"]),
+  frequency: z.enum(["monthly", "weekly", "yearly", "custom"]),
   start_date: z.string(),
   end_date: z.string().optional().nullable(),
   status: z.enum(["active", "paused", "cancelled"]),
@@ -52,17 +45,15 @@ export function RecurringDialog({
   const qc = useQueryClient();
   const { data: categories = [] } = useCategories();
   const { data: accounts = [] } = useAccounts();
-  const { data: cards = [] } = useCreditCards();
   const expenseCats = categories.filter((c) => c.type === "expense");
 
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [accountId, setAccountId] = useState("");
-  const [cardId, setCardId] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("credito");
   const [billingDay, setBillingDay] = useState(1);
-  const [frequency, setFrequency] = useState<"monthly" | "weekly" | "yearly">("monthly");
+  const [frequency, setFrequency] = useState<"monthly" | "weekly" | "yearly" | "custom">("monthly");
   const [startDate, setStartDate] = useState(toISODate(new Date()));
   const [endDate, setEndDate] = useState("");
   const [status, setStatus] = useState<"active" | "paused" | "cancelled">("active");
@@ -74,10 +65,9 @@ export function RecurringDialog({
       setAmount(String(editing.amount));
       setCategoryId(editing.category_id ?? "");
       setAccountId(editing.account_id ?? "");
-      setCardId(editing.credit_card_id ?? "");
       setPaymentMethod(editing.payment_method ?? "credito");
       setBillingDay(editing.billing_day);
-      setFrequency(editing.frequency === "custom" ? "monthly" : editing.frequency);
+      setFrequency(editing.frequency);
       setStartDate(editing.start_date);
       setEndDate(editing.end_date ?? "");
       setStatus(editing.status);
@@ -86,7 +76,6 @@ export function RecurringDialog({
       setAmount("");
       setCategoryId("");
       setAccountId("");
-      setCardId("");
       setPaymentMethod("credito");
       setBillingDay(1);
       setFrequency("monthly");
@@ -102,8 +91,7 @@ export function RecurringDialog({
       name,
       amount: parseFloat(amount.replace(",", ".")),
       category_id: categoryId || null,
-      account_id: paymentMethod === "credito" ? null : accountId || null,
-      credit_card_id: paymentMethod === "credito" ? cardId || null : null,
+      account_id: accountId || null,
       payment_method: paymentMethod,
       billing_day: billingDay,
       frequency,
@@ -113,10 +101,6 @@ export function RecurringDialog({
     });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "Dados inválidos");
-      return;
-    }
-    if (paymentMethod === "credito" && !cardId) {
-      toast.error("Selecione o cartão da cobrança");
       return;
     }
     setSaving(true);
@@ -132,7 +116,7 @@ export function RecurringDialog({
       invalidateFinance(qc, "recurring");
       onOpenChange(false);
     } catch (err) {
-      toast.error(friendlyError(err, "Erro ao salvar"));
+      toast.error(err instanceof Error ? err.message : "Erro ao salvar");
     } finally {
       setSaving(false);
     }
@@ -197,18 +181,15 @@ export function RecurringDialog({
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>{paymentMethod === "credito" ? "Cartão" : "Conta"}</Label>
-              <Select
-                value={paymentMethod === "credito" ? cardId : accountId}
-                onValueChange={paymentMethod === "credito" ? setCardId : setAccountId}
-              >
+              <Label>Conta</Label>
+              <Select value={accountId} onValueChange={setAccountId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(paymentMethod === "credito" ? cards : accounts).map((item) => (
-                    <SelectItem key={item.id} value={item.id}>
-                      {item.name}
+                  {accounts.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -218,14 +199,7 @@ export function RecurringDialog({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Forma de pagamento</Label>
-              <Select
-                value={paymentMethod}
-                onValueChange={(value) => {
-                  setPaymentMethod(value);
-                  if (value === "credito") setAccountId("");
-                  else setCardId("");
-                }}
-              >
+              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

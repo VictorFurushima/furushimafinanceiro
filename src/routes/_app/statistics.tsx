@@ -114,7 +114,7 @@ function StatisticsPage() {
   const balanceEvo = useMemo(() => {
     let bal = extras?.opening_balance ?? 0;
     return series.map((p) => {
-      bal += extras?.cash_series.find((c) => c.month === p.month)?.net ?? 0;
+      bal += p.receitas - p.despesas;
       return {
         date: (parseDateOnly(p.month) ?? new Date())
           .toLocaleDateString("pt-BR", { month: "short", year: "2-digit" })

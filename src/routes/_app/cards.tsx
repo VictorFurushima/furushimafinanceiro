@@ -3,7 +3,6 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Pencil, Trash2, CreditCard as CardIcon, FileText, Check } from "lucide-react";
 import { toast } from "sonner";
-import { friendlyError } from "@/lib/friendly-error";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -46,14 +45,13 @@ function CardsPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<CreditCard | null>(null);
   const [billOpen, setBillOpen] = useState(false);
-  const [paying, setPaying] = useState<string | null>(null);
   const [payAccount, setPayAccount] = useState<Record<string, string>>({});
 
   const remove = async (id: string) => {
     if (!confirm("Excluir este cartão?")) return;
     const { error } = await supabase.from("credit_cards").delete().eq("id", id);
     if (error) {
-      toast.error(friendlyError(error));
+      toast.error(error.message);
       return;
     }
     toast.success("Cartão excluído");
@@ -62,19 +60,16 @@ function CardsPage() {
 
   /**
    * O pagamento debita a conta escolhida e quita a fatura no banco.
-   * Conta pagadora obrigatória; repetição do pagamento é idempotente no banco.
+   * Sem conta informada, apenas a fatura e o limite são atualizados.
    */
   const payBill = async (bill: CreditCardBill) => {
     const accountId = payAccount[bill.id] ?? accounts[0]?.id ?? null;
-    if (!accountId) return toast.error("Cadastre e selecione uma conta pagadora");
-    setPaying(bill.id);
     const { error } = await supabase.rpc("pay_credit_card_bill", {
       p_bill_id: bill.id,
       p_account_id: accountId,
     });
-    setPaying(null);
     if (error) {
-      toast.error(friendlyError(error));
+      toast.error(error.message);
       return;
     }
     toast.success("Fatura paga — limite recarregado");
@@ -196,10 +191,7 @@ function CardsPage() {
                           Faturas em aberto
                         </p>
                         {cardOpenBills.map((b) => (
-                          <div
-                            key={b.id}
-                            className="flex flex-wrap gap-2 items-center justify-between text-sm"
-                          >
+                          <div key={b.id} className="flex items-center justify-between text-sm">
                             <span>
                               {String(b.month).padStart(2, "0")}/{b.year} ·{" "}
                               {formatCurrency(b.amount)}
@@ -222,12 +214,7 @@ function CardsPage() {
                                   ))}
                                 </SelectContent>
                               </Select>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                disabled={paying !== null || accounts.length === 0 || b.amount <= 0}
-                                onClick={() => payBill(b)}
-                              >
+                              <Button size="sm" variant="outline" onClick={() => payBill(b)}>
                                 <Check className="h-3 w-3 mr-1" /> Pagar
                               </Button>
                             </div>

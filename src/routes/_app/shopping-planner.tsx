@@ -14,7 +14,6 @@ import {
   Target,
 } from "lucide-react";
 import { toast } from "sonner";
-import { friendlyError } from "@/lib/friendly-error";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,6 +32,7 @@ import { invalidateFinance } from "@/lib/query-keys";
 import { useShoppingItems, type ShoppingItem } from "@/hooks/use-app-data";
 import { useFinancialContext } from "@/hooks/use-financial-context";
 import { useRole, VIEWER_MESSAGE } from "@/hooks/use-role";
+import { useAuth } from "@/hooks/use-auth";
 import { formatCurrency, toISODate } from "@/lib/format";
 import {
   analisarViabilidadeCompra,
@@ -68,6 +68,7 @@ function ShoppingPlannerPage() {
   const { data: items = [], isLoading } = useShoppingItems();
   const ctx = useFinancialContext();
   const { isAdmin } = useRole();
+  const { user } = useAuth();
   const qc = useQueryClient();
 
   const [open, setOpen] = useState(false);
@@ -119,19 +120,36 @@ function ShoppingPlannerPage() {
     if (!isAdmin) return toast.error(VIEWER_MESSAGE);
     if (!confirm(`Excluir "${i.item}" do planejador?`)) return;
     const { error } = await supabase.from("shopping_items").delete().eq("id", i.id);
-    if (error) return toast.error(friendlyError(error));
+    if (error) return toast.error(error.message);
     toast.success("Item removido");
     invalidateFinance(qc, "shopping");
   };
 
-  const marcarComprado = async (i: ShoppingItem) => {
+  const marcarComprado = async (i: ShoppingItem, precoFinal: number) => {
     if (!isAdmin) return toast.error(VIEWER_MESSAGE);
-    const { error } = await supabase.rpc("complete_shopping_item", {
-      p_item_id: i.id,
-      p_create_transaction: true,
-      p_purchase_date: toISODate(new Date()),
-    });
-    if (error) return toast.error(friendlyError(error));
+    if (!user) return;
+    const { data: tx, error: txErr } = await supabase
+      .from("transactions")
+      .insert({
+        user_id: user.id,
+        amount: precoFinal,
+        type: "expense",
+        flow: "real",
+        description: i.item,
+        occurred_at: toISODate(new Date()),
+        account_id: i.account_id,
+        category_id: i.category_id,
+        payment_method: i.payment_method,
+        notes: i.store ? `Compra em ${i.store}` : null,
+      })
+      .select("id")
+      .single();
+    if (txErr) return toast.error(txErr.message);
+    const { error } = await supabase
+      .from("shopping_items")
+      .update({ status: "comprado", transaction_id: tx.id })
+      .eq("id", i.id);
+    if (error) return toast.error(error.message);
     toast.success("Compra registrada nas transações");
     invalidateFinance(qc, "shopping");
     invalidateFinance(qc, "transactions");
@@ -143,7 +161,7 @@ function ShoppingPlannerPage() {
       .from("shopping_items")
       .update({ status: "adiado" })
       .eq("id", i.id);
-    if (error) return toast.error(friendlyError(error));
+    if (error) return toast.error(error.message);
     toast.success("Compra adiada");
     invalidateFinance(qc, "shopping");
   };
@@ -345,7 +363,7 @@ function ShoppingPlannerPage() {
                     </Button>
                     {isAdmin && i.status !== "comprado" && (
                       <>
-                        <Button size="sm" onClick={() => marcarComprado(i)}>
+                        <Button size="sm" onClick={() => marcarComprado(i, analise.precoFinal)}>
                           <CheckCircle2 className="h-4 w-4 mr-1" /> Marcar como comprado
                         </Button>
                         <Button size="sm" variant="outline" onClick={() => adiar(i)}>
