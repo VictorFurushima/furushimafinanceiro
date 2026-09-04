@@ -3,11 +3,9 @@
 
 REVOKE CREATE ON SCHEMA public FROM PUBLIC, anon, authenticated;
 
--- Limites aplicados no servidor, inclusive para uploads fora da interface web.
-UPDATE storage.buckets
-SET file_size_limit = 10485760,
-    allowed_mime_types = ARRAY['image/jpeg','image/png','image/webp']
-WHERE id = 'transaction-prints';
+-- O limite de 10 MB e os MIME types do bucket sao configurados pela API de
+-- Storage do Lovable/Supabase. A camada de migrations do Lovable bloqueia
+-- UPDATE direto em storage.buckets; as policies de objetos continuam em SQL.
 
 DROP POLICY IF EXISTS "users delete own prints" ON storage.objects;
 DROP POLICY IF EXISTS "users read own prints" ON storage.objects;

@@ -67,7 +67,7 @@ As 15 despesas recorrentes não possuem cartão porque a coluna ainda não exist
 
 ### Segurança e robustez
 
-- Uploads aceitam somente JPEG, PNG ou WebP, com limite de 10 MB no bucket privado e políticas restritas a `authenticated` e à pasta do próprio usuário.
+- Uploads aceitam somente JPEG, PNG ou WebP, com limite de 10 MB no bucket privado configurado pela API de Storage; as políticas SQL restringem o acesso a `authenticated` e à pasta do próprio usuário.
 - O schema `public` não permite criação de objetos por `PUBLIC`, `anon` ou `authenticated`.
 - Funções internas e financeiras perderam execução pública ou anônima; somente as funções necessárias permanecem disponíveis ao usuário autenticado.
 - Respostas HTTP recebem `X-Content-Type-Options`, `Referrer-Policy` e `Permissions-Policy`.
@@ -101,7 +101,9 @@ Adiciona:
 - tabela `viewer_invitations`, dois índices, RLS e policy de leitura;
 - funções de convidar, aceitar, recusar, revogar, listar e sair do acesso compartilhado;
 - índice único `user_roles_one_role_per_user` e validação da relação admin/viewer;
-- limites de Storage e redução de privilégios de schema e funções.
+- políticas de Storage e redução de privilégios de schema e funções.
+
+O limite de 10 MB e os MIME types do bucket `transaction-prints` são aplicados pela API de Storage do Lovable/Supabase. O ajuste não fica na migration porque o executor de migrations do Lovable bloqueia alterações diretas em `storage.buckets`. As políticas sobre `storage.objects` permanecem versionadas nesta migration.
 
 ## Arquivos de aplicação afetados
 
