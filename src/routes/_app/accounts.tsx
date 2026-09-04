@@ -61,7 +61,7 @@ function AccountsPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
-  const [type, setType] = useState("checking");
+  const [type, setType] = useState("digital_bank");
   const [balance, setBalance] = useState("0");
   const [color, setColor] = useState("#4f46e5");
 
@@ -133,7 +133,7 @@ function AccountsPage() {
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
-                <p className="mt-4 text-sm text-muted-foreground">{typeLabels[a.type]}</p>
+                <p className="mt-4 text-sm text-muted-foreground">{typeLabels[a.type] ?? "Conta"}</p>
                 <h3 className="font-display text-xl font-semibold">{a.name}</h3>
                 <p className="mt-3 font-display text-2xl font-bold">{formatCurrency(total)}</p>
               </CardContent>
@@ -165,7 +165,7 @@ function AccountsPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(typeLabels).map(([k, v]) => (
+                  {Object.entries(selectableTypes).map(([k, v]) => (
                     <SelectItem key={k} value={k}>
                       {v}
                     </SelectItem>
