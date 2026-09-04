@@ -650,6 +650,7 @@ export type Database = {
           billing_day: number
           category_id: string | null
           created_at: string
+          credit_card_id: string | null
           end_date: string | null
           frequency: string
           id: string
@@ -666,6 +667,7 @@ export type Database = {
           billing_day?: number
           category_id?: string | null
           created_at?: string
+          credit_card_id?: string | null
           end_date?: string | null
           frequency?: string
           id?: string
@@ -682,6 +684,7 @@ export type Database = {
           billing_day?: number
           category_id?: string | null
           created_at?: string
+          credit_card_id?: string | null
           end_date?: string | null
           frequency?: string
           id?: string
@@ -707,6 +710,13 @@ export type Database = {
             referencedRelation: "categories"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "recurring_expenses_credit_card_id_fkey"
+            columns: ["credit_card_id"]
+            isOneToOne: false
+            referencedRelation: "credit_cards"
+            referencedColumns: ["id"]
+          },
         ]
       }
       shopping_items: {
@@ -718,6 +728,7 @@ export type Database = {
           desired_date: string | null
           discount: number
           down_payment: number
+          down_payment_transaction_id: string | null
           goal_id: string | null
           id: string
           image_url: string | null
@@ -746,6 +757,7 @@ export type Database = {
           desired_date?: string | null
           discount?: number
           down_payment?: number
+          down_payment_transaction_id?: string | null
           goal_id?: string | null
           id?: string
           image_url?: string | null
@@ -774,6 +786,7 @@ export type Database = {
           desired_date?: string | null
           discount?: number
           down_payment?: number
+          down_payment_transaction_id?: string | null
           goal_id?: string | null
           id?: string
           image_url?: string | null
@@ -814,6 +827,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_items_down_payment_transaction_id_fkey"
+            columns: ["down_payment_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
             referencedColumns: ["id"]
           },
           {
@@ -1066,11 +1086,45 @@ export type Database = {
           },
         ]
       }
+      viewer_invitations: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          owner_id: string
+          responded_at: string | null
+          status: string
+          target_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          owner_id: string
+          responded_at?: string | null
+          status?: string
+          target_user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          owner_id?: string
+          responded_at?: string | null
+          status?: string
+          target_user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      accept_viewer_access: {
+        Args: { p_invitation_id: string }
+        Returns: string
+      }
       card_cycle_due: {
         Args: { p_closing: number; p_date: string; p_due: number }
         Returns: string
@@ -1085,6 +1139,10 @@ export type Database = {
       }
       confirm_recharge_as_income: {
         Args: { p_recharge_id: string }
+        Returns: string
+      }
+      decline_viewer_access: {
+        Args: { p_invitation_id: string }
         Returns: string
       }
       generate_recurring_recharges: { Args: never; Returns: number }
@@ -1170,11 +1228,22 @@ export type Database = {
         Returns: undefined
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      leave_viewer_access: { Args: never; Returns: string }
+      list_my_viewer_invitations: {
+        Args: never
+        Returns: {
+          created_at: string
+          expires_at: string
+          id: string
+          owner_email: string
+        }[]
+      }
       list_my_viewers: {
         Args: never
         Returns: {
           created_at: string
           email: string
+          status: string
           user_id: string
         }[]
       }
@@ -1184,7 +1253,42 @@ export type Database = {
         Returns: undefined
       }
       revoke_viewer_access: { Args: { p_user_id: string }; Returns: string }
+      save_ocr_detected_transaction: {
+        Args: {
+          p_account_id: string
+          p_amount: number
+          p_category_id: string
+          p_credit_card_id?: string
+          p_description: string
+          p_detected_id: string
+          p_occurred_at: string
+          p_payment_method: string
+          p_type: string
+        }
+        Returns: string
+      }
       space_owner: { Args: { _user_id: string }; Returns: string }
+      update_investment_details: {
+        Args: {
+          p_applied_at: string
+          p_color: string
+          p_current_amount: number
+          p_initial_amount: number
+          p_institution: string
+          p_inv_type: string
+          p_invested_amount: number
+          p_investment_id: string
+          p_is_emergency_reserve: boolean
+          p_liquidity: string
+          p_maturity_date: string
+          p_name: string
+          p_notes: string
+          p_objective: string
+          p_risk: string
+          p_status: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "viewer"
