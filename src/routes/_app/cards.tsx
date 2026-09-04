@@ -38,13 +38,14 @@ function nextDueDate(dueDay: number): Date {
 }
 
 function CardsPage() {
-  const { user } = useAuth();
   const { data: cards = [] } = useCreditCards();
   const { data: bills = [] } = useCreditCardBills();
+  const { data: accounts = [] } = useAccounts();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<CreditCard | null>(null);
   const [billOpen, setBillOpen] = useState(false);
+  const [payAccount, setPayAccount] = useState<Record<string, string>>({});
 
   const remove = async (id: string) => {
     if (!confirm("Excluir este cartão?")) return;
