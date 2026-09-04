@@ -54,6 +54,7 @@ export interface ShoppingItem {
   card_id: string | null;
   installments: number;
   down_payment: number;
+  down_payment_transaction_id: string | null;
   notes: string | null;
   image_url: string | null;
   status: string;
@@ -140,7 +141,7 @@ export const useShoppingItems = () =>
       const { data, error } = await supabase
         .from("shopping_items")
         .select(
-          "id, item, category_id, store, link, price, shipping, discount, interest, desired_date, priority, purchase_type, payment_method, account_id, card_id, installments, down_payment, notes, image_url, status, score, transaction_id, goal_id, created_at",
+          "id, item, category_id, store, link, price, shipping, discount, interest, desired_date, priority, purchase_type, payment_method, account_id, card_id, installments, down_payment, down_payment_transaction_id, notes, image_url, status, score, transaction_id, goal_id, created_at",
         )
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -182,9 +183,29 @@ export const useViewers = (enabled: boolean) =>
     queryKey: financeKeys.viewers,
     enabled,
 
-    queryFn: async (): Promise<{ user_id: string; email: string; created_at: string }[]> => {
+    queryFn: async (): Promise<
+      { user_id: string; email: string; created_at: string; status: "accepted" | "pending" }[]
+    > => {
       const { data, error } = await supabase.rpc("list_my_viewers");
       if (error) throw error;
-      return (data ?? []) as { user_id: string; email: string; created_at: string }[];
+      return (data ?? []) as {
+        user_id: string;
+        email: string;
+        created_at: string;
+        status: "accepted" | "pending";
+      }[];
+    },
+  });
+
+export const useViewerInvitations = (enabled: boolean) =>
+  useQuery({
+    queryKey: ["viewer-invitations"],
+    enabled,
+    queryFn: async (): Promise<
+      { id: string; owner_email: string; created_at: string; expires_at: string }[]
+    > => {
+      const { data, error } = await supabase.rpc("list_my_viewer_invitations");
+      if (error) throw error;
+      return data ?? [];
     },
   });
