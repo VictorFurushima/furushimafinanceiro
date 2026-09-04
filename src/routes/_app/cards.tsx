@@ -50,43 +50,22 @@ function CardsPage() {
     invalidateFinance(qc, "cards");
   };
 
-  const payBill = async (billId: string) => {
-    const { error } = await supabase.rpc("pay_credit_card_bill", { p_bill_id: billId });
+  /**
+   * O pagamento debita a conta escolhida e quita a fatura no banco.
+   * Sem conta informada, apenas a fatura e o limite são atualizados.
+   */
+  const payBill = async (bill: CreditCardBill) => {
+    const accountId = payAccount[bill.id] ?? accounts[0]?.id ?? null;
+    const { error } = await supabase.rpc("pay_credit_card_bill", {
+      p_bill_id: bill.id,
+      p_account_id: accountId,
+    });
     if (error) {
       toast.error(error.message);
       return;
     }
     toast.success("Fatura paga — limite recarregado");
-    invalidateFinance(qc, "cards");
-  };
-
-  /**
-   * Integração financeira -> agenda: cria o compromisso de pagamento da fatura.
-   * O índice parcial idx_calendar_events_finance_source garante idempotência.
-   */
-  const scheduleBill = async (b: CreditCardBill) => {
-    if (!user) return;
-    const cardName = cards.find((c) => c.id === b.card_id)?.name ?? "Cartão";
-    const start = new Date(`${b.due_date}T09:00:00`);
-    const end = new Date(start.getTime() + 30 * 60_000);
-    const { error } = await supabase.from("calendar_events").insert({
-      user_id: user.id,
-      title: `Pagar fatura ${cardName} · ${formatCurrency(b.amount)}`,
-      category: "financeiro",
-      priority: "alta",
-      starts_at: start.toISOString(),
-      ends_at: end.toISOString(),
-      all_day: false,
-      source_type: "credit_card_bill",
-      source_id: b.id,
-      sync_enabled: false,
-    });
-    if (error) {
-      if (error.code === "23505") return toast.info("Esta fatura já está agendada.");
-      return toast.error(error.message);
-    }
-    toast.success("Pagamento agendado na sua agenda");
-    invalidateFinance(qc, "events");
+    invalidateFinance(qc, "cards", "accounts", "transactions");
   };
 
   const openBills = bills.filter((b) => b.status !== "paga");
