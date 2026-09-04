@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
-import { Plus, Trash2, TrendingUp, TrendingDown, Download, X } from "lucide-react";
+import { Plus, Trash2, TrendingUp, TrendingDown, Download, X, ArrowLeftRight } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
