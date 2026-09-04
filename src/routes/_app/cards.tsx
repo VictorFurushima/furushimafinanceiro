@@ -45,6 +45,7 @@ function CardsPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<CreditCard | null>(null);
   const [billOpen, setBillOpen] = useState(false);
+  const [paying, setPaying] = useState<string | null>(null);
   const [payAccount, setPayAccount] = useState<Record<string, string>>({});
 
   const remove = async (id: string) => {
@@ -60,14 +61,17 @@ function CardsPage() {
 
   /**
    * O pagamento debita a conta escolhida e quita a fatura no banco.
-   * Sem conta informada, apenas a fatura e o limite são atualizados.
+   * Conta pagadora obrigatória; repetição do pagamento é idempotente no banco.
    */
   const payBill = async (bill: CreditCardBill) => {
     const accountId = payAccount[bill.id] ?? accounts[0]?.id ?? null;
+    if (!accountId) return toast.error("Cadastre e selecione uma conta pagadora");
+    setPaying(bill.id);
     const { error } = await supabase.rpc("pay_credit_card_bill", {
       p_bill_id: bill.id,
       p_account_id: accountId,
     });
+    setPaying(null);
     if (error) {
       toast.error(error.message);
       return;
@@ -191,7 +195,10 @@ function CardsPage() {
                           Faturas em aberto
                         </p>
                         {cardOpenBills.map((b) => (
-                          <div key={b.id} className="flex items-center justify-between text-sm">
+                          <div
+                            key={b.id}
+                            className="flex flex-wrap gap-2 items-center justify-between text-sm"
+                          >
                             <span>
                               {String(b.month).padStart(2, "0")}/{b.year} ·{" "}
                               {formatCurrency(b.amount)}
@@ -214,7 +221,12 @@ function CardsPage() {
                                   ))}
                                 </SelectContent>
                               </Select>
-                              <Button size="sm" variant="outline" onClick={() => payBill(b)}>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={paying !== null || accounts.length === 0 || b.amount <= 0}
+                                onClick={() => payBill(b)}
+                              >
                                 <Check className="h-3 w-3 mr-1" /> Pagar
                               </Button>
                             </div>

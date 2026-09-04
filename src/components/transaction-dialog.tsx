@@ -69,6 +69,7 @@ export function TransactionDialog({
   const [accountId, setAccountId] = useState<string>("");
   const [destinationId, setDestinationId] = useState<string>("");
   const [cardId, setCardId] = useState<string>("");
+  const [installments, setInstallments] = useState(1);
   const [date, setDate] = useState(toISODate(new Date()));
   const [subcategory, setSubcategory] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<string>("pix");
@@ -102,7 +103,7 @@ export function TransactionDialog({
       amount: parseFloat(amount.replace(",", ".")),
       description: description || undefined,
       category_id: isTransfer ? null : categoryId || null,
-      account_id: accountId || null,
+      account_id: isCardPurchase ? null : accountId || null,
       destination_account_id: isTransfer ? destinationId || null : null,
       credit_card_id: isCardPurchase ? cardId || null : null,
       occurred_at: date,
@@ -127,6 +128,7 @@ export function TransactionDialog({
         account_id: parsed.data.account_id,
         destination_account_id: parsed.data.destination_account_id,
         credit_card_id: parsed.data.credit_card_id,
+        installment_count: isCardPurchase ? installments : 1,
         occurred_at: parsed.data.occurred_at,
         subcategory: parsed.data.subcategory ?? null,
         payment_method: parsed.data.payment_method ?? null,
@@ -246,7 +248,11 @@ export function TransactionDialog({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>{isTransfer ? "Conta de origem" : "Conta"}</Label>
-              <Select value={accountId} onValueChange={setAccountId}>
+              <Select
+                value={isCardPurchase ? "" : accountId}
+                onValueChange={setAccountId}
+                disabled={isCardPurchase}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
@@ -299,6 +305,15 @@ export function TransactionDialog({
 
           {isCardPurchase && (
             <div className="space-y-2">
+              <Label>Parcelas</Label>
+              <Input
+                type="number"
+                min={1}
+                max={120}
+                value={installments}
+                onChange={(e) => setInstallments(Number(e.target.value))}
+                required
+              />
               <Label>Cartão da compra</Label>
               <Select value={cardId} onValueChange={setCardId}>
                 <SelectTrigger>
@@ -313,7 +328,8 @@ export function TransactionDialog({
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
-                A compra consome o limite e entra na fatura do mês — o saldo da conta não muda.
+                A compra consome o limite e entra nas faturas conforme o fechamento. O saldo da
+                conta não muda.
               </p>
             </div>
           )}

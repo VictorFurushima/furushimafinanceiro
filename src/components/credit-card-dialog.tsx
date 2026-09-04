@@ -79,7 +79,8 @@ export function CreditCardDialog({
     try {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) throw new Error("Não autenticado");
-      const payload = { ...parsed.data, user_id: u.user.id };
+      const { used_limit: _usedLimit, ...cardData } = parsed.data;
+      const payload = { ...cardData, user_id: u.user.id };
       const { error } = editing
         ? await supabase.from("credit_cards").update(payload).eq("id", editing.id)
         : await supabase.from("credit_cards").insert(payload);
@@ -136,9 +137,10 @@ export function CreditCardDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label>Limite usado (R$)</Label>
+              <Label>Limite usado nas faturas (R$)</Label>
               <Input
                 value={used}
+                disabled
                 onChange={(e) => setUsed(e.target.value)}
                 inputMode="decimal"
                 placeholder="0,00"

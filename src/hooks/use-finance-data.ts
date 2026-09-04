@@ -19,7 +19,7 @@ export interface Transaction {
   payment_method: string | null;
   notes: string | null;
   recurring_id: string | null;
-  /** real | transfer | contribution | redemption */
+  /** real | bill_payment | contribution | redemption */
   flow?: string | null;
   categories?: { name: string; color: string; icon: string } | null;
   accounts?: { name: string; color: string } | null;
