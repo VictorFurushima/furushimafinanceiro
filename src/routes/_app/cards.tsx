@@ -188,11 +188,25 @@ function CardsPage() {
                               {String(b.month).padStart(2, "0")}/{b.year} ·{" "}
                               {formatCurrency(b.amount)}
                             </span>
-                            <div className="flex gap-2 shrink-0">
-                              <Button size="sm" variant="outline" onClick={() => scheduleBill(b)}>
-                                <CalendarDays className="h-3 w-3 mr-1" /> Agendar
-                              </Button>
-                              <Button size="sm" variant="outline" onClick={() => payBill(b.id)}>
+                            <div className="flex gap-2 shrink-0 items-center">
+                              <Select
+                                value={payAccount[b.id] ?? accounts[0]?.id ?? ""}
+                                onValueChange={(v) =>
+                                  setPayAccount((prev) => ({ ...prev, [b.id]: v }))
+                                }
+                              >
+                                <SelectTrigger className="h-8 w-[140px] text-xs">
+                                  <SelectValue placeholder="Conta pagadora" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {accounts.map((a) => (
+                                    <SelectItem key={a.id} value={a.id}>
+                                      {a.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <Button size="sm" variant="outline" onClick={() => payBill(b)}>
                                 <Check className="h-3 w-3 mr-1" /> Pagar
                               </Button>
                             </div>
