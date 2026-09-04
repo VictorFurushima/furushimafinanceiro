@@ -220,6 +220,48 @@ export type Database = {
           },
         ]
       }
+      credit_card_bill_items: {
+        Row: {
+          amount: number
+          bill_id: string
+          id: string
+          installment_number: number
+          transaction_id: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          bill_id: string
+          id?: string
+          installment_number: number
+          transaction_id: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          bill_id?: string
+          id?: string
+          installment_number?: number
+          transaction_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_card_bill_items_bill_id_fkey"
+            columns: ["bill_id"]
+            isOneToOne: false
+            referencedRelation: "credit_card_bills"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "credit_card_bill_items_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       credit_card_bills: {
         Row: {
           amount: number
@@ -227,6 +269,7 @@ export type Database = {
           created_at: string
           due_date: string
           id: string
+          manual_amount: number
           month: number
           payment_date: string | null
           status: string
@@ -239,6 +282,7 @@ export type Database = {
           created_at?: string
           due_date: string
           id?: string
+          manual_amount?: number
           month: number
           payment_date?: string | null
           status?: string
@@ -251,6 +295,7 @@ export type Database = {
           created_at?: string
           due_date?: string
           id?: string
+          manual_amount?: number
           month?: number
           payment_date?: string | null
           status?: string
@@ -799,6 +844,7 @@ export type Database = {
           destination_account_id: string | null
           flow: string
           id: string
+          installment_count: number
           notes: string | null
           occurred_at: string
           payment_method: string | null
@@ -818,6 +864,7 @@ export type Database = {
           destination_account_id?: string | null
           flow?: string
           id?: string
+          installment_count?: number
           notes?: string | null
           occurred_at?: string
           payment_method?: string | null
@@ -837,6 +884,7 @@ export type Database = {
           destination_account_id?: string | null
           flow?: string
           id?: string
+          installment_count?: number
           notes?: string | null
           occurred_at?: string
           payment_method?: string | null
@@ -1023,8 +1071,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      card_cycle_due: {
+        Args: { p_closing: number; p_date: string; p_due: number }
+        Returns: string
+      }
       complete_shopping_item: {
-        Args: { p_create_transaction: boolean; p_item_id: string }
+        Args: {
+          p_create_transaction: boolean
+          p_item_id: string
+          p_purchase_date?: string
+        }
         Returns: string
       }
       confirm_recharge_as_income: {
