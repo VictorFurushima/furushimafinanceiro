@@ -1,15 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  Plus,
-  Pencil,
-  Trash2,
-  CreditCard as CardIcon,
-  FileText,
-  Check,
-  CalendarDays,
-} from "lucide-react";
+import { Plus, Pencil, Trash2, CreditCard as CardIcon, FileText, Check } from "lucide-react";
 import { toast } from "sonner";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
