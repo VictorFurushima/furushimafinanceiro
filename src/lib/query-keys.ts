@@ -49,7 +49,6 @@ export const financeKeys = {
   creditCardBills: ["credit_card_bills"] as const,
   investments: ["investments"] as const,
   investmentEvents: (id?: string) => ["investment_events", id ?? "all"] as const,
-  notes: ["notes"] as const,
   shoppingItems: ["shopping_items"] as const,
   userSettings: ["user_settings"] as const,
   viewers: ["my_viewers"] as const,
