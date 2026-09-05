@@ -1,6 +1,7 @@
 import { useState, type FormEvent, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/friendly-error";
 import { z } from "zod";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -79,7 +80,8 @@ export function CreditCardDialog({
     try {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) throw new Error("Não autenticado");
-      const payload = { ...parsed.data, user_id: u.user.id };
+      const { used_limit: _usedLimit, ...cardData } = parsed.data;
+      const payload = { ...cardData, user_id: u.user.id };
       const { error } = editing
         ? await supabase.from("credit_cards").update(payload).eq("id", editing.id)
         : await supabase.from("credit_cards").insert(payload);
@@ -88,7 +90,7 @@ export function CreditCardDialog({
       invalidateFinance(qc, "cards");
       onOpenChange(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao salvar");
+      toast.error(friendlyError(err, "Erro ao salvar"));
     } finally {
       setSaving(false);
     }
@@ -136,9 +138,10 @@ export function CreditCardDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label>Limite usado (R$)</Label>
+              <Label>Limite usado nas faturas (R$)</Label>
               <Input
                 value={used}
+                disabled
                 onChange={(e) => setUsed(e.target.value)}
                 inputMode="decimal"
                 placeholder="0,00"

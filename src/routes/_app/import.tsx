@@ -4,15 +4,17 @@ import Papa from "papaparse";
 import { Upload, FileCheck, AlertCircle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/friendly-error";
 import { z } from "zod";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useCategories } from "@/hooks/use-finance-data";
+import { useCategories, useCreditCards } from "@/hooks/use-finance-data";
 import { supabase } from "@/integrations/supabase/client";
 import { invalidateFinance } from "@/lib/query-keys";
 import { formatCurrency } from "@/lib/format";
 import { PAYMENT_METHODS } from "@/lib/finance-constants";
+import { isValidDateOnly } from "@/lib/date-only";
 
 export const Route = createFileRoute("/_app/import")({ component: ImportPage });
 
@@ -23,6 +25,7 @@ interface Row {
   Descrição?: string;
   "Forma de Pagamento"?: string;
   Tipo?: string;
+  Cartão?: string;
 }
 
 interface Parsed {
@@ -32,6 +35,7 @@ interface Parsed {
   description: string | null;
   category_id: string | null;
   payment_method: string | null;
+  credit_card_id: string | null;
   _row: number;
   _error?: string;
 }
@@ -43,23 +47,54 @@ const rowSchema = z.object({
 
 function parseDate(s: string): string | null {
   // dd/mm/yyyy or yyyy-mm-dd
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return isValidDateOnly(s) ? s : null;
   const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (m) return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+  if (m) {
+    const candidate = `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+    return isValidDateOnly(candidate) ? candidate : null;
+  }
   return null;
 }
 
+function parseMoney(raw: string): number {
+  let value = raw.trim().replace(/R\$/gi, "").replace(/\s/g, "");
+  if (value.includes(",") && value.includes(".")) {
+    value =
+      value.lastIndexOf(",") > value.lastIndexOf(".")
+        ? value.replace(/\./g, "").replace(",", ".")
+        : value.replace(/,/g, "");
+  } else if (value.includes(",")) {
+    value = value.replace(/\./g, "").replace(",", ".");
+  } else if (/^-?\d{1,3}(\.\d{3})+$/.test(value)) {
+    value = value.replace(/\./g, "");
+  }
+  return Number(value);
+}
+
+const MAX_CSV_BYTES = 5 * 1024 * 1024;
+const MAX_CSV_ROWS = 5000;
+
 function ImportPage() {
   const { data: categories = [] } = useCategories();
+  const { data: cards = [] } = useCreditCards();
   const [rows, setRows] = useState<Parsed[]>([]);
   const [importing, setImporting] = useState(false);
   const qc = useQueryClient();
 
   const handleFile = (file: File) => {
+    if (file.size > MAX_CSV_BYTES) {
+      toast.error("O CSV deve ter no máximo 5 MB");
+      return;
+    }
     Papa.parse<Row>(file, {
       header: true,
       skipEmptyLines: true,
       complete: (res) => {
+        if (res.data.length > MAX_CSV_ROWS) {
+          toast.error(`O CSV deve ter no máximo ${MAX_CSV_ROWS} linhas`);
+          setRows([]);
+          return;
+        }
         const parsed: Parsed[] = res.data.map((r, idx) => {
           const v = rowSchema.safeParse(r);
           if (!v.success)
@@ -70,11 +105,12 @@ function ImportPage() {
               description: null,
               category_id: null,
               payment_method: null,
+              credit_card_id: null,
               _row: idx + 2,
               _error: "Data e Valor obrigatórios",
             };
           const date = parseDate(r.Data);
-          const amt = parseFloat(r.Valor.replace(/[R$\s.]/g, "").replace(",", "."));
+          const amt = parseMoney(r.Valor);
           if (!date)
             return {
               occurred_at: "",
@@ -83,6 +119,7 @@ function ImportPage() {
               description: null,
               category_id: null,
               payment_method: null,
+              credit_card_id: null,
               _row: idx + 2,
               _error: `Data inválida: ${r.Data}`,
             };
@@ -94,6 +131,7 @@ function ImportPage() {
               description: null,
               category_id: null,
               payment_method: null,
+              credit_card_id: null,
               _row: idx + 2,
               _error: `Valor inválido: ${r.Valor}`,
             };
@@ -111,6 +149,22 @@ function ImportPage() {
               p.label.toLowerCase() === (r["Forma de Pagamento"] ?? "").toLowerCase().trim() ||
               p.value === (r["Forma de Pagamento"] ?? "").toLowerCase().trim(),
           );
+          const card = cards.find(
+            (c) => c.name.toLowerCase() === (r.Cartão ?? "").toLowerCase().trim(),
+          );
+          if (pm?.value === "credito" && !card) {
+            return {
+              occurred_at: date,
+              amount: Math.abs(amt),
+              type,
+              description: r.Descrição || null,
+              category_id: cat?.id ?? null,
+              payment_method: pm.value,
+              credit_card_id: null,
+              _row: idx + 2,
+              _error: "Compras no crédito exigem a coluna Cartão com um cartão cadastrado",
+            };
+          }
           return {
             occurred_at: date,
             amount: Math.abs(amt),
@@ -118,6 +172,7 @@ function ImportPage() {
             description: r.Descrição || null,
             category_id: cat?.id ?? null,
             payment_method: pm?.value ?? null,
+            credit_card_id: pm?.value === "credito" ? (card?.id ?? null) : null,
             _row: idx + 2,
           };
         });
@@ -144,6 +199,7 @@ function ImportPage() {
         description: r.description,
         category_id: r.category_id,
         payment_method: r.payment_method,
+        credit_card_id: r.credit_card_id,
       }));
       const { error } = await supabase.from("transactions").insert(payload);
       if (error) throw error;
@@ -151,7 +207,7 @@ function ImportPage() {
       invalidateFinance(qc, "transactions");
       setRows([]);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro");
+      toast.error(friendlyError(err, "Erro"));
     } finally {
       setImporting(false);
     }
@@ -164,7 +220,7 @@ function ImportPage() {
         <p className="text-sm text-muted-foreground mt-1">
           Colunas aceitas:{" "}
           <code className="text-primary">
-            Data, Valor, Categoria, Descrição, Forma de Pagamento, Tipo
+            Data, Valor, Categoria, Descrição, Forma de Pagamento, Tipo, Cartão
           </code>
         </p>
       </header>

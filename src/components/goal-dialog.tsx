@@ -1,6 +1,7 @@
 import { useState, useEffect, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/friendly-error";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -73,7 +74,7 @@ export function GoalDialog({
       invalidateFinance(qc, "goals");
       onOpenChange(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao salvar");
+      toast.error(friendlyError(err, "Erro ao salvar"));
     } finally {
       setSaving(false);
     }

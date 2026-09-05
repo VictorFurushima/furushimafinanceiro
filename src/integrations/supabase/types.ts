@@ -264,12 +264,12 @@ export type Database = {
       }
       credit_card_bills: {
         Row: {
+          manual_amount: number
           amount: number
           card_id: string
           created_at: string
           due_date: string
           id: string
-          manual_amount: number
           month: number
           payment_date: string | null
           status: string
@@ -277,12 +277,12 @@ export type Database = {
           year: number
         }
         Insert: {
+          manual_amount?: number
           amount?: number
           card_id: string
           created_at?: string
           due_date: string
           id?: string
-          manual_amount?: number
           month: number
           payment_date?: string | null
           status?: string
@@ -290,12 +290,12 @@ export type Database = {
           year: number
         }
         Update: {
+          manual_amount?: number
           amount?: number
           card_id?: string
           created_at?: string
           due_date?: string
           id?: string
-          manual_amount?: number
           month?: number
           payment_date?: string | null
           status?: string
@@ -649,8 +649,8 @@ export type Database = {
           amount: number
           billing_day: number
           category_id: string | null
-          created_at: string
           credit_card_id: string | null
+          created_at: string
           end_date: string | null
           frequency: string
           id: string
@@ -666,8 +666,8 @@ export type Database = {
           amount: number
           billing_day?: number
           category_id?: string | null
-          created_at?: string
           credit_card_id?: string | null
+          created_at?: string
           end_date?: string | null
           frequency?: string
           id?: string
@@ -683,8 +683,8 @@ export type Database = {
           amount?: number
           billing_day?: number
           category_id?: string | null
-          created_at?: string
           credit_card_id?: string | null
+          created_at?: string
           end_date?: string | null
           frequency?: string
           id?: string
@@ -757,7 +757,6 @@ export type Database = {
           desired_date?: string | null
           discount?: number
           down_payment?: number
-          down_payment_transaction_id?: string | null
           goal_id?: string | null
           id?: string
           image_url?: string | null
@@ -786,7 +785,6 @@ export type Database = {
           desired_date?: string | null
           discount?: number
           down_payment?: number
-          down_payment_transaction_id?: string | null
           goal_id?: string | null
           id?: string
           image_url?: string | null
@@ -830,17 +828,17 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "shopping_items_down_payment_transaction_id_fkey"
-            columns: ["down_payment_transaction_id"]
-            isOneToOne: false
-            referencedRelation: "transactions"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "shopping_items_goal_id_fkey"
             columns: ["goal_id"]
             isOneToOne: false
             referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shopping_items_down_payment_transaction_id_fkey"
+            columns: ["down_payment_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
             referencedColumns: ["id"]
           },
           {
@@ -854,6 +852,7 @@ export type Database = {
       }
       transactions: {
         Row: {
+          installment_count: number
           account_id: string | null
           amount: number
           bill_id: string | null
@@ -864,7 +863,6 @@ export type Database = {
           destination_account_id: string | null
           flow: string
           id: string
-          installment_count: number
           notes: string | null
           occurred_at: string
           payment_method: string | null
@@ -874,6 +872,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          installment_count?: number
           account_id?: string | null
           amount: number
           bill_id?: string | null
@@ -884,7 +883,6 @@ export type Database = {
           destination_account_id?: string | null
           flow?: string
           id?: string
-          installment_count?: number
           notes?: string | null
           occurred_at?: string
           payment_method?: string | null
@@ -894,6 +892,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          installment_count?: number
           account_id?: string | null
           amount?: number
           bill_id?: string | null
@@ -904,7 +903,6 @@ export type Database = {
           destination_account_id?: string | null
           flow?: string
           id?: string
-          installment_count?: number
           notes?: string | null
           occurred_at?: string
           payment_method?: string | null
@@ -1121,10 +1119,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      accept_viewer_access: {
-        Args: { p_invitation_id: string }
-        Returns: string
-      }
       card_cycle_due: {
         Args: { p_closing: number; p_date: string; p_due: number }
         Returns: string
@@ -1137,12 +1131,12 @@ export type Database = {
         }
         Returns: string
       }
-      confirm_recharge_as_income: {
-        Args: { p_recharge_id: string }
+      accept_viewer_access: {
+        Args: { p_invitation_id: string }
         Returns: string
       }
-      decline_viewer_access: {
-        Args: { p_invitation_id: string }
+      confirm_recharge_as_income: {
+        Args: { p_recharge_id: string }
         Returns: string
       }
       generate_recurring_recharges: { Args: never; Returns: number }
@@ -1227,17 +1221,28 @@ export type Database = {
         Args: { p_investment_id: string; p_new_amount: number; p_notes: string }
         Returns: undefined
       }
-      is_admin: { Args: { _user_id: string }; Returns: boolean }
-      leave_viewer_access: { Args: never; Returns: string }
-      list_my_viewer_invitations: {
-        Args: never
-        Returns: {
-          created_at: string
-          expires_at: string
-          id: string
-          owner_email: string
-        }[]
+      update_investment_details: {
+        Args: {
+          p_applied_at: string
+          p_color: string
+          p_current_amount: number
+          p_initial_amount: number
+          p_institution: string | null
+          p_inv_type: string
+          p_invested_amount: number
+          p_investment_id: string
+          p_is_emergency_reserve: boolean
+          p_liquidity: string
+          p_maturity_date: string | null
+          p_name: string
+          p_notes: string | null
+          p_objective: string | null
+          p_risk: string
+          p_status: string
+        }
+        Returns: undefined
       }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
       list_my_viewers: {
         Args: never
         Returns: {
@@ -1247,48 +1252,41 @@ export type Database = {
           user_id: string
         }[]
       }
+      list_my_viewer_invitations: {
+        Args: never
+        Returns: {
+          created_at: string
+          expires_at: string
+          id: string
+          owner_email: string
+        }[]
+      }
+      decline_viewer_access: {
+        Args: { p_invitation_id: string }
+        Returns: string
+      }
+      leave_viewer_access: { Args: never; Returns: string }
       mark_overdue_recharges: { Args: never; Returns: number }
       pay_credit_card_bill: {
-        Args: { p_account_id?: string; p_bill_id: string }
+        Args: { p_account_id: string; p_bill_id: string }
         Returns: undefined
       }
       revoke_viewer_access: { Args: { p_user_id: string }; Returns: string }
       save_ocr_detected_transaction: {
         Args: {
-          p_account_id: string
+          p_account_id: string | null
           p_amount: number
-          p_category_id: string
-          p_credit_card_id?: string
-          p_description: string
+          p_category_id: string | null
+          p_credit_card_id?: string | null
+          p_description: string | null
           p_detected_id: string
           p_occurred_at: string
-          p_payment_method: string
+          p_payment_method: string | null
           p_type: string
         }
         Returns: string
       }
       space_owner: { Args: { _user_id: string }; Returns: string }
-      update_investment_details: {
-        Args: {
-          p_applied_at: string
-          p_color: string
-          p_current_amount: number
-          p_initial_amount: number
-          p_institution: string
-          p_inv_type: string
-          p_invested_amount: number
-          p_investment_id: string
-          p_is_emergency_reserve: boolean
-          p_liquidity: string
-          p_maturity_date: string
-          p_name: string
-          p_notes: string
-          p_objective: string
-          p_risk: string
-          p_status: string
-        }
-        Returns: undefined
-      }
     }
     Enums: {
       app_role: "admin" | "viewer"

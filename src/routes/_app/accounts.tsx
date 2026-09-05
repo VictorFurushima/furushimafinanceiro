@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/friendly-error";
 import { Plus, Wallet, CreditCard, PiggyBank, Banknote, TrendingUp, Trash2 } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -77,7 +78,7 @@ function AccountsPage() {
       initial_balance: parseFloat(balance.replace(",", ".")) || 0,
       color,
     });
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(friendlyError(error));
     toast.success("Conta criada");
     invalidateFinance(qc, "accounts");
     setOpen(false);
@@ -87,7 +88,7 @@ function AccountsPage() {
 
   const remove = async (id: string) => {
     const { error } = await supabase.from("accounts").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(friendlyError(error));
     toast.success("Removida");
     invalidateFinance(qc, "accounts");
   };

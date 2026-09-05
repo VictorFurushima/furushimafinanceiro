@@ -68,3 +68,4 @@ SELECT jsonb_build_object(
 ) FROM dow, pay, top, opening;
 $function$
 ;
+
