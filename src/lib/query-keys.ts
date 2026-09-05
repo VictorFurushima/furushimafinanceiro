@@ -7,7 +7,7 @@
 export interface TransactionFilters {
   page?: number;
   pageSize?: number;
-  type?: "all" | "income" | "expense";
+  type?: "all" | "income" | "expense" | "transfer";
   categoryId?: string;
   accountId?: string;
   paymentMethod?: string;
@@ -71,7 +71,13 @@ export type FinanceDomain =
 
 /** Famílias de query afetadas por cada domínio de mutação. */
 const DOMAIN_KEYS: Record<FinanceDomain, readonly (readonly unknown[])[]> = {
-  transactions: [financeKeys.transactions, financeKeys.aggregates, financeKeys.budgetsAll],
+  transactions: [
+    financeKeys.transactions,
+    financeKeys.aggregates,
+    financeKeys.budgetsAll,
+    financeKeys.creditCards,
+    financeKeys.creditCardBills,
+  ],
   accounts: [financeKeys.accounts, financeKeys.aggregates],
   categories: [financeKeys.categories, financeKeys.aggregates],
   budgets: [financeKeys.budgetsAll],
@@ -87,7 +93,13 @@ const DOMAIN_KEYS: Record<FinanceDomain, readonly (readonly unknown[])[]> = {
     financeKeys.aggregates,
   ],
 
-  shopping: [financeKeys.shoppingItems, financeKeys.transactions, financeKeys.aggregates],
+  shopping: [
+    financeKeys.shoppingItems,
+    financeKeys.transactions,
+    financeKeys.aggregates,
+    financeKeys.creditCards,
+    financeKeys.creditCardBills,
+  ],
   settings: [financeKeys.userSettings, financeKeys.aggregates],
   viewers: [financeKeys.viewers],
 };

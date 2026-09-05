@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/friendly-error";
 import {
   Upload,
   ImageIcon,
@@ -30,7 +31,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { invalidateFinance } from "@/lib/query-keys";
 import { useAuth } from "@/hooks/use-auth";
-import { useCategories, useAccounts } from "@/hooks/use-finance-data";
+import { useCategories, useAccounts, useCreditCards } from "@/hooks/use-finance-data";
 import { PAYMENT_METHODS } from "@/lib/finance-constants";
 import { formatCurrency } from "@/lib/format";
 import { extractTransactionsFromImage } from "@/lib/ocr.functions";
@@ -83,6 +84,7 @@ function ImportPrintsPage() {
   const qc = useQueryClient();
   const { data: categories = [] } = useCategories();
   const { data: accounts = [] } = useAccounts();
+  const { data: cards = [] } = useCreditCards();
   const extract = useServerFn(extractTransactionsFromImage);
   const [uploading, setUploading] = useState(false);
   const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
@@ -147,7 +149,7 @@ function ImportPrintsPage() {
         .from("transaction-prints")
         .upload(path, file, { upsert: false, contentType: file.type });
       if (upErr) {
-        toast.error(`Falha no upload de ${file.name}: ${upErr.message}`);
+        toast.error(`Falha no upload de ${file.name}: ${friendlyError(upErr)}`);
         return;
       }
 
@@ -164,15 +166,15 @@ function ImportPrintsPage() {
       if (insErr || !imgRow) {
         // Sem metadados o objeto ficaria órfão no Storage.
         await supabase.storage.from("transaction-prints").remove([path]);
-        toast.error(`Falha ao registrar ${file.name}: ${insErr?.message ?? ""}`);
+        toast.error(`Falha ao registrar ${file.name}: ${friendlyError(insErr)}`);
         return;
       }
 
       try {
-        const result = await extract({ data: { imageId: imgRow.id, storagePath: path } });
+        const result = await extract({ data: { imageId: imgRow.id } });
         toast.success(`${result.count} transações identificadas em ${file.name}`);
       } catch (e) {
-        toast.error(`Falha ao ler ${file.name}: ${e instanceof Error ? e.message : ""}`);
+        toast.error(`Falha ao ler ${file.name}: ${friendlyError(e)}`);
       }
     };
 
@@ -209,8 +211,17 @@ function ImportPrintsPage() {
 
   const deleteImage = async (img: ImageRow) => {
     if (!confirm("Excluir este print e suas transações detectadas?")) return;
-    await supabase.storage.from("transaction-prints").remove([img.storage_path]);
-    await supabase.from("uploaded_transaction_images").delete().eq("id", img.id);
+    const { error: rowError } = await supabase
+      .from("uploaded_transaction_images")
+      .delete()
+      .eq("id", img.id);
+    if (rowError) return toast.error(friendlyError(rowError));
+    const { error: storageError } = await supabase.storage
+      .from("transaction-prints")
+      .remove([img.storage_path]);
+    if (storageError) {
+      toast.warning("O registro foi excluído, mas o arquivo precisará de limpeza posterior.");
+    }
     qc.invalidateQueries({ queryKey: ["uploaded-prints"] });
     qc.invalidateQueries({ queryKey: ["ocr-detected"] });
     toast.success("Print excluído");
@@ -221,13 +232,13 @@ function ImportPrintsPage() {
     try {
       // Só substitui o conjunto anterior no servidor após a nova leitura dar certo.
       const result = await extract({
-        data: { imageId: img.id, storagePath: img.storage_path, replacePrevious: true },
+        data: { imageId: img.id, replacePrevious: true },
       });
       toast.success(`${result.count} transações identificadas`);
       qc.invalidateQueries({ queryKey: ["uploaded-prints"] });
       qc.invalidateQueries({ queryKey: ["ocr-detected"] });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
+      toast.error(friendlyError(e, "Erro"));
     }
   };
 
@@ -355,6 +366,7 @@ function ImportPrintsPage() {
                 userId={user?.id ?? null}
                 categories={categories}
                 accounts={accounts}
+                cards={cards}
                 onChanged={() => {
                   qc.invalidateQueries({ queryKey: ["ocr-detected"] });
                   invalidateFinance(qc, "transactions");
@@ -373,12 +385,14 @@ function DetectedRow({
   userId,
   categories,
   accounts,
+  cards,
   onChanged,
 }: {
   tx: DetectedTx;
   userId: string | null;
   categories: { id: string; name: string; type: string }[];
   accounts: { id: string; name: string }[];
+  cards: { id: string; name: string }[];
   onChanged: () => void;
 }) {
   const [date, setDate] = useState(tx.detected_date ?? "");
@@ -389,6 +403,7 @@ function DetectedRow({
   const [description, setDescription] = useState(tx.detected_description ?? "");
   const [categoryId, setCategoryId] = useState(tx.suggested_category_id ?? "");
   const [accountId, setAccountId] = useState<string>("");
+  const [cardId, setCardId] = useState<string>("");
   const [payment, setPayment] = useState(tx.detected_payment_method ?? "");
   const [saving, setSaving] = useState(false);
 
@@ -396,8 +411,13 @@ function DetectedRow({
 
   const save = async () => {
     if (!userId) return;
-    if (!date || !amount) {
+    const numericAmount = Number(amount);
+    if (!date || !Number.isFinite(numericAmount) || numericAmount <= 0) {
       toast.error("Data e valor são obrigatórios");
+      return;
+    }
+    if (payment === "credito" && !cardId) {
+      toast.error("Selecione o cartão da compra");
       return;
     }
     if (
@@ -407,39 +427,33 @@ function DetectedRow({
       return;
     setSaving(true);
     try {
-      const { data: ins, error } = await supabase
-        .from("transactions")
-        .insert({
-          user_id: userId,
-          occurred_at: date,
-          amount: parseFloat(amount),
-          type,
-          description: description || null,
-          category_id: categoryId || null,
-          account_id: accountId || null,
-          payment_method: payment || null,
-        })
-        .select("id")
-        .single();
+      const { error } = await supabase.rpc("save_ocr_detected_transaction", {
+        p_detected_id: tx.id,
+        p_occurred_at: date,
+        p_amount: numericAmount,
+        p_type: type,
+        p_description: description || null,
+        p_category_id: categoryId || null,
+        p_account_id: payment === "credito" ? null : accountId || null,
+        p_payment_method: payment || null,
+        p_credit_card_id: payment === "credito" ? cardId : null,
+      });
       if (error) throw error;
-      await supabase
-        .from("ocr_detected_transactions")
-        .update({ review_status: "saved", saved_transaction_id: ins.id })
-        .eq("id", tx.id);
       toast.success("Transação salva!");
       onChanged();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
+      toast.error(friendlyError(e, "Erro"));
     } finally {
       setSaving(false);
     }
   };
 
   const ignore = async () => {
-    await supabase
+    const { error } = await supabase
       .from("ocr_detected_transactions")
       .update({ review_status: "ignored" })
       .eq("id", tx.id);
+    if (error) return toast.error(friendlyError(error));
     onChanged();
   };
 
@@ -509,7 +523,13 @@ function DetectedRow({
         </div>
         <div className="space-y-1">
           <Label className="text-xs">Pagamento</Label>
-          <Select value={payment} onValueChange={setPayment}>
+          <Select
+            value={payment}
+            onValueChange={(value) => {
+              setPayment(value);
+              if (value !== "credito") setCardId("");
+            }}
+          >
             <SelectTrigger className="h-9">
               <SelectValue placeholder="—" />
             </SelectTrigger>
@@ -550,21 +570,39 @@ function DetectedRow({
             </SelectContent>
           </Select>
         </div>
-        <div className="space-y-1">
-          <Label className="text-xs">Conta</Label>
-          <Select value={accountId} onValueChange={setAccountId}>
-            <SelectTrigger className="h-9">
-              <SelectValue placeholder="—" />
-            </SelectTrigger>
-            <SelectContent>
-              {accounts.map((a) => (
-                <SelectItem key={a.id} value={a.id}>
-                  {a.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {payment === "credito" ? (
+          <div className="space-y-1">
+            <Label className="text-xs">Cartão</Label>
+            <Select value={cardId} onValueChange={setCardId}>
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent>
+                {cards.map((card) => (
+                  <SelectItem key={card.id} value={card.id}>
+                    {card.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            <Label className="text-xs">Conta</Label>
+            <Select value={accountId} onValueChange={setAccountId}>
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder="—" />
+              </SelectTrigger>
+              <SelectContent>
+                {accounts.map((a) => (
+                  <SelectItem key={a.id} value={a.id}>
+                    {a.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
 
       <div className="flex gap-2 justify-end">

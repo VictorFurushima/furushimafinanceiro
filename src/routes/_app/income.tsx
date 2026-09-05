@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Plus, TrendingUp, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/friendly-error";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,7 +41,7 @@ function IncomePage() {
 
   const remove = async (id: string) => {
     const { error } = await supabase.from("transactions").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(friendlyError(error));
     invalidateFinance(qc, "transactions");
   };
 
@@ -99,8 +100,7 @@ function IncomePage() {
                       {t.description || t.categories?.name || "Receita"}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {t.categories?.name ?? "—"} ·{" "}
-                      {formatDateOnlyPtBR(t.occurred_at)}
+                      {t.categories?.name ?? "—"} · {formatDateOnlyPtBR(t.occurred_at)}
                     </p>
                   </div>
                   <span className="text-sm font-semibold text-success">

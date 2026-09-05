@@ -35,7 +35,7 @@
       {
         "name": "list_transactions",
         "title": "Listar transações",
-        "description": "Lista transações do usuário com paginação real no servidor. Pode filtrar por tipo (income/expense), intervalo de datas (YYYY-MM-DD), limite por página e página/offset. Retorna as mais recentes primeiro.",
+        "description": "Lista transações do usuário com paginação real no servidor. Pode filtrar por tipo (income/expense/transfer), intervalo de datas (YYYY-MM-DD), limite por página e página/offset. Retorna as mais recentes primeiro.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -48,7 +48,8 @@
               "type": "string",
               "enum": [
                 "income",
-                "expense"
+                "expense",
+                "transfer"
               ],
               "description": "Filtra por tipo de transação."
             },
@@ -99,9 +100,10 @@
               "type": "string",
               "enum": [
                 "income",
-                "expense"
+                "expense",
+                "transfer"
               ],
-              "description": "Tipo: income (receita) ou expense (despesa)."
+              "description": "Tipo: income, expense ou transfer."
             },
             "amount": {
               "type": "number",
@@ -123,6 +125,22 @@
               "format": "uuid",
               "description": "ID da conta (opcional)."
             },
+            "destination_account_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Conta de destino, obrigatória em transferências."
+            },
+            "credit_card_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Cartão, obrigatório para despesas no crédito."
+            },
+            "installment_count": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 120,
+              "description": "Número de parcelas."
+            },
             "category_id": {
               "type": "string",
               "format": "uuid",
@@ -130,6 +148,14 @@
             },
             "payment_method": {
               "type": "string",
+              "enum": [
+                "pix",
+                "dinheiro",
+                "debito",
+                "credito",
+                "boleto",
+                "transferencia"
+              ],
               "description": "pix, dinheiro, debito, credito, boleto, transferencia."
             },
             "notes": {
