@@ -47,11 +47,18 @@ export const financeKeys = {
   recharges: ["recharges"] as const,
   creditCards: ["credit_cards"] as const,
   creditCardBills: ["credit_card_bills"] as const,
+  installments: ["installments"] as const,
+  installmentsList: (card: string, status: string, search: string, page: number) =>
+    ["installments", card, status, search, page] as const,
   investments: ["investments"] as const,
   investmentEvents: (id?: string) => ["investment_events", id ?? "all"] as const,
   shoppingItems: ["shopping_items"] as const,
   userSettings: ["user_settings"] as const,
   viewers: ["my_viewers"] as const,
+  ocr: ["ocr"] as const,
+  ocrImages: (page: number) => ["ocr", "images", page] as const,
+  ocrReview: (image: string, state: string, page: number) =>
+    ["ocr", "review", image, state, page] as const,
 };
 
 export type FinanceDomain =
@@ -67,16 +74,19 @@ export type FinanceDomain =
   | "investments"
   | "shopping"
   | "settings"
-  | "viewers";
+  | "viewers"
+  | "ocr";
 
 /** Famílias de query afetadas por cada domínio de mutação. */
 const DOMAIN_KEYS: Record<FinanceDomain, readonly (readonly unknown[])[]> = {
   transactions: [
+    financeKeys.ocr,
     financeKeys.transactions,
     financeKeys.aggregates,
     financeKeys.budgetsAll,
     financeKeys.creditCards,
     financeKeys.creditCardBills,
+    financeKeys.installments,
   ],
   accounts: [financeKeys.accounts, financeKeys.aggregates],
   categories: [financeKeys.categories, financeKeys.aggregates],
@@ -85,7 +95,12 @@ const DOMAIN_KEYS: Record<FinanceDomain, readonly (readonly unknown[])[]> = {
   goals: [financeKeys.goals, financeKeys.aggregates],
   categoryLimits: [financeKeys.categoryLimits],
   recharges: [financeKeys.recharges, financeKeys.aggregates],
-  cards: [financeKeys.creditCards, financeKeys.creditCardBills, financeKeys.aggregates],
+  cards: [
+    financeKeys.creditCards,
+    financeKeys.creditCardBills,
+    financeKeys.installments,
+    financeKeys.aggregates,
+  ],
   investments: [
     financeKeys.investments,
     ["investment_events"] as const,
@@ -94,6 +109,7 @@ const DOMAIN_KEYS: Record<FinanceDomain, readonly (readonly unknown[])[]> = {
   ],
 
   shopping: [
+    financeKeys.installments,
     financeKeys.shoppingItems,
     financeKeys.transactions,
     financeKeys.aggregates,
@@ -102,6 +118,7 @@ const DOMAIN_KEYS: Record<FinanceDomain, readonly (readonly unknown[])[]> = {
   ],
   settings: [financeKeys.userSettings, financeKeys.aggregates],
   viewers: [financeKeys.viewers],
+  ocr: [financeKeys.ocr],
 };
 
 interface QueryInvalidator {

@@ -53,10 +53,12 @@ export function TransactionDialog({
   open,
   onOpenChange,
   defaultType = "expense",
+  installmentMode = false,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   defaultType?: TxType;
+  installmentMode?: boolean;
 }) {
   const qc = useQueryClient();
   const { data: categories = [] } = useCategories();
@@ -79,7 +81,12 @@ export function TransactionDialog({
 
   useEffect(() => {
     setType(defaultType);
-  }, [defaultType, open]);
+    if (open && installmentMode) {
+      setType("expense");
+      setPaymentMethod("credito");
+      setInstallments(2);
+    }
+  }, [defaultType, open, installmentMode]);
   useEffect(() => {
     if (open && accounts.length > 0 && !accountId) setAccountId(accounts[0].id);
   }, [open, accounts, accountId]);
@@ -115,6 +122,15 @@ export function TransactionDialog({
     });
     if (!parsed.success) {
       toast.error(parsed.error.issues[0]?.message ?? "Dados inválidos");
+      return;
+    }
+    if (
+      isCardPurchase &&
+      (!Number.isInteger(installments) ||
+        installments < (installmentMode ? 2 : 1) ||
+        installments > 120)
+    ) {
+      toast.error(`Informe entre ${installmentMode ? 2 : 1} e 120 parcelas inteiras`);
       return;
     }
     setSaving(true);
@@ -155,35 +171,39 @@ export function TransactionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-card border-border/50 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="font-display text-2xl">Nova transação</DialogTitle>
+          <DialogTitle className="font-display text-2xl">
+            {installmentMode ? "Nova compra parcelada" : "Nova transação"}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
-          <Tabs value={type} onValueChange={(v) => setType(v as TxType)}>
-            <TabsList className="grid grid-cols-3 w-full">
-              <TabsTrigger
-                value="expense"
-                className="data-[state=active]:bg-destructive/20 data-[state=active]:text-destructive"
-              >
-                Despesa
-              </TabsTrigger>
-              <TabsTrigger
-                value="income"
-                className="data-[state=active]:bg-success/20 data-[state=active]:text-success"
-              >
-                Receita
-              </TabsTrigger>
-              <TabsTrigger
-                value="transfer"
-                className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary-glow"
-              >
-                Transferência
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+          {!installmentMode && (
+            <Tabs value={type} onValueChange={(v) => setType(v as TxType)}>
+              <TabsList className="grid grid-cols-3 w-full">
+                <TabsTrigger
+                  value="expense"
+                  className="data-[state=active]:bg-destructive/20 data-[state=active]:text-destructive"
+                >
+                  Despesa
+                </TabsTrigger>
+                <TabsTrigger
+                  value="income"
+                  className="data-[state=active]:bg-success/20 data-[state=active]:text-success"
+                >
+                  Receita
+                </TabsTrigger>
+                <TabsTrigger
+                  value="transfer"
+                  className="data-[state=active]:bg-primary/20 data-[state=active]:text-primary-glow"
+                >
+                  Transferência
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
-              <Label>Valor (R$)</Label>
+              <Label>{isCardPurchase ? "Valor total da compra (R$)" : "Valor (R$)"}</Label>
               <Input
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
@@ -288,7 +308,11 @@ export function TransactionDialog({
             ) : (
               <div className="space-y-2">
                 <Label>Forma de pagamento</Label>
-                <Select value={paymentMethod} onValueChange={setPaymentMethod}>
+                <Select
+                  value={paymentMethod}
+                  onValueChange={setPaymentMethod}
+                  disabled={installmentMode}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -309,7 +333,7 @@ export function TransactionDialog({
               <Label>Parcelas</Label>
               <Input
                 type="number"
-                min={1}
+                min={installmentMode ? 2 : 1}
                 max={120}
                 value={installments}
                 onChange={(e) => setInstallments(Number(e.target.value))}
