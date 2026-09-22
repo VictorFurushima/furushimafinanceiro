@@ -123,3 +123,23 @@ Codex executou implementação e testes. GitHub registra checkpoint, mudanças e
 Lovable recebe o trabalho pronto para sincronização, verificação do ambiente e
 publicação, evitando reconstruir as funcionalidades por chat. Nenhuma economia
 numérica de tokens/créditos é presumida.
+
+## Registro da implantação nesta sessão
+
+- PR [#4](https://github.com/VictorFurushima/furushimafinanceiro/pull/4) integrado.
+  Código funcional validado: `1f844c143d02775c465e7a7f62f37ce946142be1`.
+- GitHub e Lovable confirmaram esse mesmo SHA. As três migrations foram
+  aplicadas em uma transação e registradas em `supabase_migrations.schema_migrations`.
+- Conferência no banco conectado: RPCs instaladas, SECURITY INVOKER, índices
+  UNIQUE presentes, RLS dos recibos habilitada e nenhuma movimentação criada.
+- Publicação solicitada pela API para https://furushimafinanceiro.lovable.app.
+  Último retorno: `pending`, deployment `410aa885-712a-4aab-9ffd-2a2400f17043`.
+  A conclusão da publicação não foi confirmada nesta sessão.
+- A conferência adicional por chat no Lovable encerrou com erro interno. Os
+  resultados de build/tipos/testes afirmados neste documento são os executados
+  no Codex; não se presume sucesso da checagem interrompida.
+- Acesso automatizado à URL pública retornou HTTP 403/Cloudflare. Esse retorno
+  limita a verificação a partir deste ambiente e não prova indisponibilidade
+  para o usuário. Não houve validação de leitura IA ponta a ponta com print real.
+- Ao conferir, abrir o sistema e verificar a presença de Parcelas. Se ainda
+  aparecer a versão antiga, conferir o estado da publicação no projeto Lovable.
