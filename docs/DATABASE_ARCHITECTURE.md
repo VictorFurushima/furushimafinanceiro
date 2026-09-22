@@ -23,8 +23,9 @@ do banco.
 - Policies usam **subquery InitPlan**: `user_id = (select auth.uid())` — nunca
   `auth.uid()` direto, que é avaliado por linha.
 - Toda `CREATE TABLE` em `public` vem acompanhada de `GRANT` no mesmo arquivo.
-- Funções expostas ao cliente são `SECURITY INVOKER` + `STABLE` + `search_path`
-  fixo. `SECURITY DEFINER` só quando não existe `auth.uid()` (jobs de cron) e,
+- Funções de leitura expostas ao cliente são `SECURITY INVOKER` + `STABLE` +
+  `search_path` fixo. RPCs de escrita são `VOLATILE SECURITY INVOKER`, verificam
+  administrador e preservam a RLS. `SECURITY DEFINER` só quando não existe `auth.uid()` (jobs de cron) e,
   nesse caso, a função fica em schema `private`, sem `EXECUTE` para
   `anon`/`authenticated`/`public`.
 
@@ -93,7 +94,10 @@ Ao criar tabela, relação ou filtro relevante, revisar **sempre**:
 - `QueryClient`: `staleTime` 60s, `gcTime` 10min, `refetchOnWindowFocus` false,
   `refetchOnReconnect` true, `retry` 1.
 
-## Hub Pessoal (Agenda, Rotinas, Tarefas, Alertas)
+## Hub Pessoal (histórico; removido em 2026-09-04)
+
+As seções de Hub e Agenda abaixo documentam a versão antiga. As tabelas e rotas
+foram removidas; não devem orientar funcionalidades novas.
 
 Tabelas: `calendar_events`, `routines`, `routine_occurrences`, `tasks`, `alerts`,
 `calendar_integrations`. Todas com RLS em padrão InitPlan
@@ -150,3 +154,22 @@ Unidirecional (Postgres -> Google), executada apenas em server functions
 Colunas `DATE` são tratadas como rótulo de calendário. O frontend usa exclusivamente
 `src/lib/date-only.ts` (`parseDateOnly`, `formatDateOnlyPtBR`, `toLocalDateString`, `todayISO`).
 Não usar `new Date("YYYY-MM-DD")` nem `toISOString().slice(0,10)` para esses campos.
+
+## Parcelas e OCR (2026-09-22)
+
+- `/installments` consulta `get_installments`: compras paginadas, resumo e
+  projeção no PostgreSQL sobre o ledger existente. Pagamento continua em Faturas.
+- `/import-prints` é independente de Parcelas. Prompt versionado e esquema
+  estruturado preservam campos ausentes; Hoje/Ontem usam referência explícita.
+- `uploaded_transaction_images`: UNIQUE parcial `(user_id, content_hash)`;
+  `begin_ocr_processing`/`finish_ocr_processing` usam token de processamento.
+- `ocr_detected_transactions`: UNIQUE `(user_id, image_id, source_key)`, FKs de
+  contas/cartão revisados; paginação por `get_ocr_review`.
+- `ocr_import_receipts`: UNIQUE por titular/origem e índice único parcial por
+  titular/conta/referência bancária confirmada; FKs SET NULL preservam memória.
+- `save_ocr_review` serializa confirmações do titular, revalida candidatos e grava
+  transação, recibo e estado em uma única operação atômica. A API antiga usa este fluxo.
+- PK/FK não determinam semelhança. Duplicidade provável exige comparação e decisão;
+  igualdade de data/valor não recebe UNIQUE no ledger. Cache não é fonte de verdade.
+- Tipos Supabase, `financeKeys` e `invalidateFinance` acompanham os novos domínios.
+- Detalhes, limites e validação: [patch](patches/PATCH_2026-09-22_PARCELAS_IMPORTADOR.md).
