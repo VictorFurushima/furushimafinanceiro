@@ -24,6 +24,7 @@ import { Route as AppGoalsRouteImport } from './routes/_app/goals'
 import { Route as AppImportRouteImport } from './routes/_app/import'
 import { Route as AppImportPrintsRouteImport } from './routes/_app/import-prints'
 import { Route as AppIncomeRouteImport } from './routes/_app/income'
+import { Route as AppInstallmentsRouteImport } from './routes/_app/installments'
 import { Route as AppInvestmentsRouteImport } from './routes/_app/investments'
 import { Route as AppRechargesRouteImport } from './routes/_app/recharges'
 import { Route as AppRecurringRouteImport } from './routes/_app/recurring'
@@ -111,6 +112,11 @@ const AppIncomeRoute = AppIncomeRouteImport.update({
   path: '/income',
   getParentRoute: () => AppRoute,
 } as any)
+const AppInstallmentsRoute = AppInstallmentsRouteImport.update({
+  id: '/installments',
+  path: '/installments',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppInvestmentsRoute = AppInvestmentsRouteImport.update({
   id: '/investments',
   path: '/investments',
@@ -178,6 +184,7 @@ export interface FileRoutesByFullPath {
   '/import': typeof AppImportRoute
   '/import-prints': typeof AppImportPrintsRoute
   '/income': typeof AppIncomeRoute
+  '/installments': typeof AppInstallmentsRoute
   '/investments': typeof AppInvestmentsRoute
   '/recharges': typeof AppRechargesRoute
   '/recurring': typeof AppRecurringRoute
@@ -204,6 +211,7 @@ export interface FileRoutesByTo {
   '/import': typeof AppImportRoute
   '/import-prints': typeof AppImportPrintsRoute
   '/income': typeof AppIncomeRoute
+  '/installments': typeof AppInstallmentsRoute
   '/investments': typeof AppInvestmentsRoute
   '/recharges': typeof AppRechargesRoute
   '/recurring': typeof AppRecurringRoute
@@ -232,6 +240,7 @@ export interface FileRoutesById {
   '/_app/import': typeof AppImportRoute
   '/_app/import-prints': typeof AppImportPrintsRoute
   '/_app/income': typeof AppIncomeRoute
+  '/_app/installments': typeof AppInstallmentsRoute
   '/_app/investments': typeof AppInvestmentsRoute
   '/_app/recharges': typeof AppRechargesRoute
   '/_app/recurring': typeof AppRecurringRoute
@@ -260,6 +269,7 @@ export interface FileRouteTypes {
     | '/import'
     | '/import-prints'
     | '/income'
+    | '/installments'
     | '/investments'
     | '/recharges'
     | '/recurring'
@@ -286,6 +296,7 @@ export interface FileRouteTypes {
     | '/import'
     | '/import-prints'
     | '/income'
+    | '/installments'
     | '/investments'
     | '/recharges'
     | '/recurring'
@@ -313,6 +324,7 @@ export interface FileRouteTypes {
     | '/_app/import'
     | '/_app/import-prints'
     | '/_app/income'
+    | '/_app/installments'
     | '/_app/investments'
     | '/_app/recharges'
     | '/_app/recurring'
@@ -444,6 +456,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIncomeRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/installments': {
+      id: '/_app/installments'
+      path: '/installments'
+      fullPath: '/installments'
+      preLoaderRoute: typeof AppInstallmentsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/investments': {
       id: '/_app/investments'
       path: '/investments'
@@ -526,6 +545,7 @@ interface AppRouteChildren {
   AppImportRoute: typeof AppImportRoute
   AppImportPrintsRoute: typeof AppImportPrintsRoute
   AppIncomeRoute: typeof AppIncomeRoute
+  AppInstallmentsRoute: typeof AppInstallmentsRoute
   AppInvestmentsRoute: typeof AppInvestmentsRoute
   AppRechargesRoute: typeof AppRechargesRoute
   AppRecurringRoute: typeof AppRecurringRoute
@@ -545,6 +565,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppImportRoute: AppImportRoute,
   AppImportPrintsRoute: AppImportPrintsRoute,
   AppIncomeRoute: AppIncomeRoute,
+  AppInstallmentsRoute: AppInstallmentsRoute,
   AppInvestmentsRoute: AppInvestmentsRoute,
   AppRechargesRoute: AppRechargesRoute,
   AppRecurringRoute: AppRecurringRoute,

@@ -54,7 +54,9 @@ Regras:
   `pg_cron`.
 - Cache sempre por `financeKeys` + `invalidateFinance`.
 
-## Convenções do Hub Pessoal
+## Convenções do Hub Pessoal (histórico)
+
+O Hub foi removido em 2026-09-04. As regras abaixo descrevem o módulo antigo.
 
 - Eventos derivados (rotina, fatura) sempre gravam `source_type`/`source_id` e
   dependem de índice único parcial para deduplicação. Nunca deduplicar no cliente.

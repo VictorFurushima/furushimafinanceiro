@@ -40,6 +40,7 @@ const items = [
   { to: "/cards", label: "Cartões", short: "Cartões", icon: CreditCard },
   { to: "/timeline", label: "Linha do Tempo", short: "Linha", icon: CalendarClock },
   { to: "/recurring", label: "Assinaturas", short: "Assinaturas", icon: Repeat },
+  { to: "/installments", label: "Parcelas", short: "Parcelas", icon: CalendarClock },
   { to: "/budgets", label: "Orçamentos", short: "Orçamento", icon: Target },
   { to: "/goals", label: "Metas", short: "Metas", icon: Target },
   { to: "/statistics", label: "Estatísticas", short: "Stats", icon: BarChart3 },

@@ -534,8 +534,52 @@ export type Database = {
         }
         Relationships: []
       }
+      ocr_import_receipts: {
+        Row: {
+          id: string
+          user_id: string
+          import_key: string
+          image_id: string | null
+          candidate_id: string | null
+          transaction_id: string | null
+          account_scope: string | null
+          bank_reference: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          import_key: string
+          image_id?: string | null
+          candidate_id?: string | null
+          transaction_id?: string | null
+          account_scope?: string | null
+          bank_reference?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          import_key?: string
+          image_id?: string | null
+          candidate_id?: string | null
+          transaction_id?: string | null
+          account_scope?: string | null
+          bank_reference?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
       ocr_detected_transactions: {
         Row: {
+          source_key: string
+          movement_kind: string
+          transaction_status: string
+          issues: string[]
+          external_reference: string | null
+          review_account_id: string | null
+          review_card_id: string | null
+          review_destination_account_id: string | null
           confidence_level: string | null
           created_at: string
           detected_account: string | null
@@ -555,6 +599,14 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          source_key?: string
+          movement_kind?: string
+          transaction_status?: string
+          issues?: string[]
+          external_reference?: string | null
+          review_account_id?: string | null
+          review_card_id?: string | null
+          review_destination_account_id?: string | null
           confidence_level?: string | null
           created_at?: string
           detected_account?: string | null
@@ -574,6 +626,14 @@ export type Database = {
           user_id: string
         }
         Update: {
+          source_key?: string
+          movement_kind?: string
+          transaction_status?: string
+          issues?: string[]
+          external_reference?: string | null
+          review_account_id?: string | null
+          review_card_id?: string | null
+          review_destination_account_id?: string | null
           confidence_level?: string | null
           created_at?: string
           detected_account?: string | null
@@ -958,6 +1018,16 @@ export type Database = {
       }
       uploaded_transaction_images: {
         Row: {
+          content_hash: string | null
+          reference_date: string
+          prompt_version: string | null
+          document_type: string | null
+          analysis_status: string
+          analysis_warnings: string[]
+          visible_transaction_count: number | null
+          extracted_count: number
+          processing_token: string | null
+          processing_started_at: string | null
           created_at: string
           delete_after_processing: boolean
           error_message: string | null
@@ -971,6 +1041,16 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          content_hash?: string | null
+          reference_date?: string
+          prompt_version?: string | null
+          document_type?: string | null
+          analysis_status?: string
+          analysis_warnings?: string[]
+          visible_transaction_count?: number | null
+          extracted_count?: number
+          processing_token?: string | null
+          processing_started_at?: string | null
           created_at?: string
           delete_after_processing?: boolean
           error_message?: string | null
@@ -984,6 +1064,16 @@ export type Database = {
           user_id: string
         }
         Update: {
+          content_hash?: string | null
+          reference_date?: string
+          prompt_version?: string | null
+          document_type?: string | null
+          analysis_status?: string
+          analysis_warnings?: string[]
+          visible_transaction_count?: number | null
+          extracted_count?: number
+          processing_token?: string | null
+          processing_started_at?: string | null
           created_at?: string
           delete_after_processing?: boolean
           error_message?: string | null
@@ -1119,6 +1209,65 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      begin_ocr_processing: {
+        Args: {
+          p_image_id: string
+          p_reference_date: string
+          p_force?: boolean
+        }
+        Returns: Json
+      }
+      finish_ocr_processing: {
+        Args: {
+          p_image_id: string
+          p_token: string
+          p_result: Json
+          p_prompt_version: string
+        }
+        Returns: number
+      }
+      get_ocr_review: {
+        Args: {
+          p_image_id?: string
+          p_state?: string
+          p_page?: number
+          p_page_size?: number
+        }
+        Returns: Json
+      }
+      ocr_duplicate_matches: {
+        Args: {
+          p_date: string
+          p_amount: number
+          p_type: string
+          p_description: string
+          p_candidate_id: string
+          p_account_id?: string
+          p_card_id?: string
+        }
+        Returns: Json
+      }
+      ocr_text_key: { Args: { value: string }; Returns: string }
+      save_ocr_review: {
+        Args: {
+          p_detected_id: string
+          p_fields: Json
+          p_allow_duplicate?: boolean
+          p_existing_id?: string
+          p_recreate_deleted?: boolean
+        }
+        Returns: Json
+      }
+      get_installments: {
+        Args: {
+          p_card_id?: string
+          p_status?: string
+          p_search?: string
+          p_page?: number
+          p_page_size?: number
+        }
+        Returns: Json
+      }
       card_cycle_due: {
         Args: { p_closing: number; p_date: string; p_due: number }
         Returns: string
@@ -1332,8 +1481,7 @@ export type Tables<
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
@@ -1357,8 +1505,7 @@ export type TablesInsert<
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
@@ -1382,8 +1529,7 @@ export type TablesUpdate<
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
+    keyof DefaultSchema["Enums"] | { schema: keyof DatabaseWithoutInternals },
   EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
