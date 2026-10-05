@@ -52,6 +52,10 @@ export const financeKeys = {
   installmentsList: (card: string, status: string, search: string, page: number) =>
     ["installments", card, status, search, page] as const,
   investments: ["investments"] as const,
+  investmentValuations: ["finance", "investment-valuations"] as const,
+  investmentProviders: ["investment-providers"] as const,
+  investmentPrices: (id: string) => ["investment-prices", id] as const,
+  globalWallet: ["finance", "global-wallet"] as const,
   investmentEvents: (id?: string) => ["investment_events", id ?? "all"] as const,
   shoppingItems: ["shopping_items"] as const,
   userSettings: ["user_settings"] as const,
@@ -108,6 +112,7 @@ const DOMAIN_KEYS: Record<FinanceDomain, readonly (readonly unknown[])[]> = {
   ],
   investments: [
     financeKeys.investments,
+    ["investment-prices"],
     ["investment_events"] as const,
     financeKeys.transactions,
     financeKeys.aggregates,

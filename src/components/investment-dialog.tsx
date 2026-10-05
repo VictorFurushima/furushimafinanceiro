@@ -72,6 +72,9 @@ export function InvestmentDialog({
   const [notes, setNotes] = useState("");
   const [status, setStatus] = useState("ativo");
   const [reserve, setReserve] = useState(false);
+  const [provider, setProvider] = useState("manual");
+  const [assetCode, setAssetCode] = useState("");
+  const [quantity, setQuantity] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -79,9 +82,12 @@ export function InvestmentDialog({
       setName(editing.name);
       setType(editing.inv_type);
       setInstitution(editing.institution ?? "");
-      setInvested(String(editing.invested_amount));
-      setCurrent(String(editing.current_amount));
-      setInitial(String(editing.initial_amount));
+      setInvested(String(editing.invested_amount).replace(".", ","));
+      setCurrent(String(editing.book_amount ?? editing.current_amount).replace(".", ","));
+      setProvider(editing.provider ?? "manual");
+      setAssetCode(editing.asset_code ?? "");
+      setQuantity(String(editing.quantity ?? "").replace(".", ","));
+      setInitial(String(editing.initial_amount).replace(".", ","));
       setAppliedAt(editing.applied_at);
       setMaturity(editing.maturity_date ?? "");
       setLiquidity(editing.liquidity);
@@ -91,6 +97,9 @@ export function InvestmentDialog({
       setStatus(editing.status);
       setReserve(editing.is_emergency_reserve);
     } else if (open) {
+      setProvider("manual");
+      setAssetCode("");
+      setQuantity("");
       setName("");
       setType("cdb");
       setInstitution("");
@@ -136,30 +145,14 @@ export function InvestmentDialog({
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) throw new Error("Não autenticado");
       const payload = { ...parsed.data, color: investmentTypeColor(type), user_id: u.user.id };
-      if (editing) {
-        const { error } = await supabase.rpc("update_investment_details", {
-          p_investment_id: editing.id,
-          p_name: parsed.data.name,
-          p_inv_type: parsed.data.inv_type,
-          p_institution: parsed.data.institution,
-          p_invested_amount: parsed.data.invested_amount,
-          p_current_amount: parsed.data.current_amount,
-          p_initial_amount: parsed.data.initial_amount,
-          p_applied_at: parsed.data.applied_at,
-          p_maturity_date: parsed.data.maturity_date,
-          p_liquidity: parsed.data.liquidity,
-          p_risk: parsed.data.risk,
-          p_objective: parsed.data.objective,
-          p_notes: parsed.data.notes,
-          p_status: parsed.data.status,
-          p_is_emergency_reserve: parsed.data.is_emergency_reserve,
-          p_color: payload.color,
-        });
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("investments").insert(payload);
-        if (error) throw error;
-      }
+      const { error } = await supabase.rpc("save_investment_position", {
+        p_id: editing?.id ?? null,
+        p_details: payload,
+        p_provider: provider,
+        p_asset_code: provider === "manual" ? null : assetCode.trim(),
+        p_quantity: provider === "manual" ? null : parseNum(quantity),
+      });
+      if (error) throw error;
       toast.success(editing ? "Investimento atualizado" : "Investimento criado");
       invalidateFinance(qc, "investments");
       onOpenChange(false);
@@ -178,6 +171,10 @@ export function InvestmentDialog({
             {editing ? "Editar investimento" : "Novo investimento"}
           </DialogTitle>
         </DialogHeader>
+        <p className="text-xs text-muted-foreground">
+          O cadastro registra uma posição existente. Para transferir dinheiro de uma conta e comprar
+          mais, use Registrar aporte.
+        </p>
         <form onSubmit={submit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="inv-name">Nome</Label>
@@ -193,7 +190,13 @@ export function InvestmentDialog({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Tipo</Label>
-              <Select value={type} onValueChange={setType}>
+              <Select
+                value={type}
+                onValueChange={(value) => {
+                  setType(value);
+                  setProvider("manual");
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -216,6 +219,62 @@ export function InvestmentDialog({
                 maxLength={120}
               />
             </div>
+          </div>
+          <div className="space-y-3 rounded-lg border border-border p-3">
+            <Label htmlFor="inv-provider">Acompanhamento do valor</Label>
+            <Select value={provider} onValueChange={setProvider}>
+              <SelectTrigger id="inv-provider">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="manual">Valor informado manualmente</SelectItem>
+                {["acoes", "fiis", "outros"].includes(type) && (
+                  <SelectItem value="brapi">Cotação B3, brapi</SelectItem>
+                )}
+                {type === "cripto" && (
+                  <SelectItem value="coingecko">Cotação de cripto, CoinGecko</SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+            {provider !== "manual" ? (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="inv-code">
+                      {provider === "brapi" ? "Ticker" : "Identificador CoinGecko"}
+                    </Label>
+                    <Input
+                      id="inv-code"
+                      value={assetCode}
+                      onChange={(e) => setAssetCode(e.target.value)}
+                      placeholder={provider === "brapi" ? "PETR4" : "bitcoin"}
+                      maxLength={80}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="inv-quantity">Quantidade atual</Label>
+                    <Input
+                      id="inv-quantity"
+                      value={quantity}
+                      onChange={(e) => setQuantity(e.target.value)}
+                      placeholder="0,00"
+                      inputMode="decimal"
+                      required
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Valor de mercado = quantidade × cotação. Não inclui impostos ou taxas de resgate.
+                  A primeira cotação depende da chave e da cobertura da fonte.
+                </p>
+              </>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Use o valor do extrato para CDB, Tesouro, fundos e outros produtos sem uma fonte
+                conectada.
+              </p>
+            )}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="space-y-2">
@@ -240,7 +299,7 @@ export function InvestmentDialog({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="inv-current">Valor atual (R$)</Label>
+              <Label htmlFor="inv-current">Valor do extrato ou inicial (R$)</Label>
               <Input
                 id="inv-current"
                 value={current}

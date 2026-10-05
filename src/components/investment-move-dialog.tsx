@@ -44,6 +44,7 @@ export function InvestmentMoveDialog({
 }) {
   const qc = useQueryClient();
   const { data: accounts = [] } = useAccounts();
+  const [units, setUnits] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(toISODate(new Date()));
   const [accountId, setAccountId] = useState("");
@@ -73,39 +74,30 @@ export function InvestmentMoveDialog({
     }
     setSaving(true);
     try {
-      const nullable = <T,>(v: T | null) => v as unknown as T;
-      if (kind === "aporte") {
-        const { error } = await supabase.rpc("invest_contribute", {
-          p_investment_id: investment.id,
+      if (kind !== "valor") {
+        const { error } = await supabase.rpc("invest_move_position", {
+          p_id: investment.id,
+          p_kind: kind,
           p_amount: value,
           p_date: date,
-          p_account_id: nullable(accountId || null),
-          p_notes: nullable(notes || null),
+          p_account_id: accountId || null,
+          p_units: investment.provider && investment.provider !== "manual" ? parseNum(units) : null,
+          p_notes: notes || null,
         });
         if (error) throw error;
-        toast.success("Aporte registrado");
-      } else if (kind === "resgate") {
-        const { error } = await supabase.rpc("invest_redeem", {
-          p_investment_id: investment.id,
-          p_amount: value,
-          p_date: date,
-          p_account_id: nullable(accountId || null),
-          p_notes: nullable(notes || null),
-        });
-        if (error) throw error;
-        toast.success("Resgate registrado");
+        toast.success(kind === "aporte" ? "Aporte registrado" : "Resgate registrado");
       } else {
         const { error } = await supabase.rpc("invest_update_value", {
           p_investment_id: investment.id,
           p_new_amount: value,
-          p_notes: nullable(notes || null),
+          p_notes: notes || null,
         });
-
         if (error) throw error;
         toast.success("Valor atualizado");
       }
       invalidateFinance(qc, "investments");
       invalidateFinance(qc, "transactions");
+      setUnits("");
       setAmount("");
       setNotes("");
       onOpenChange(false);
@@ -142,6 +134,23 @@ export function InvestmentMoveDialog({
               required
             />
           </div>
+          {kind !== "valor" && investment?.provider !== "manual" && investment?.provider && (
+            <div className="space-y-2">
+              <Label htmlFor="mv-units">
+                Quantidade {kind === "aporte" ? "comprada" : "vendida"}
+              </Label>
+              <Input
+                id="mv-units"
+                value={units}
+                onChange={(e) => setUnits(e.target.value)}
+                inputMode="decimal"
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                Informe o valor executado e as unidades da operação no extrato.
+              </p>
+            </div>
+          )}
           {kind !== "valor" && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-2">
@@ -183,7 +192,7 @@ export function InvestmentMoveDialog({
           </div>
           <Button
             type="submit"
-            disabled={saving}
+            disabled={saving || (kind !== "valor" && !accountId)}
             className="w-full bg-gradient-primary text-primary-foreground shadow-glow"
           >
             {saving ? "Salvando..." : "Confirmar"}

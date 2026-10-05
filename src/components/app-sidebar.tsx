@@ -33,9 +33,10 @@ import logo from "@/assets/furushima-logo.jpg";
 
 const items = [
   { to: "/dashboard", label: "Visão Geral", short: "Início", icon: LayoutDashboard },
+  { to: "/global-wallet", label: "Carteira Global", short: "Global", icon: Wallet },
   { to: "/transactions", label: "Transações", short: "Gastos", icon: ArrowLeftRight },
   { to: "/income", label: "Receitas", short: "Receitas", icon: ArrowDownToLine },
-  { to: "/investments", label: "Investimentos", short: "Invest.", icon: PiggyBank },
+  { to: "/investments", label: "Carteira de Investimentos", short: "Invest.", icon: PiggyBank },
   { to: "/shopping-planner", label: "Planejador de Compras", short: "Compras", icon: ShoppingCart },
   { to: "/recharges", label: "Recargas de Saldo", short: "Recargas", icon: Inbox },
   { to: "/cards", label: "Cartões", short: "Cartões", icon: CreditCard },

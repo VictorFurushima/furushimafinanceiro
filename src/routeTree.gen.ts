@@ -20,6 +20,7 @@ import { Route as AppAccountsRouteImport } from './routes/_app/accounts'
 import { Route as AppBudgetsRouteImport } from './routes/_app/budgets'
 import { Route as AppCardsRouteImport } from './routes/_app/cards'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
+import { Route as AppGlobalWalletRouteImport } from './routes/_app/global-wallet'
 import { Route as AppGoalsRouteImport } from './routes/_app/goals'
 import { Route as AppHistoryRouteImport } from './routes/_app/history'
 import { Route as AppImportRouteImport } from './routes/_app/import'
@@ -91,6 +92,11 @@ const AppCardsRoute = AppCardsRouteImport.update({
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppGlobalWalletRoute = AppGlobalWalletRouteImport.update({
+  id: '/global-wallet',
+  path: '/global-wallet',
   getParentRoute: () => AppRoute,
 } as any)
 const AppGoalsRoute = AppGoalsRouteImport.update({
@@ -186,6 +192,7 @@ export interface FileRoutesByFullPath {
   '/budgets': typeof AppBudgetsRoute
   '/cards': typeof AppCardsRoute
   '/dashboard': typeof AppDashboardRoute
+  '/global-wallet': typeof AppGlobalWalletRoute
   '/goals': typeof AppGoalsRoute
   '/history': typeof AppHistoryRoute
   '/import': typeof AppImportRoute
@@ -214,6 +221,7 @@ export interface FileRoutesByTo {
   '/budgets': typeof AppBudgetsRoute
   '/cards': typeof AppCardsRoute
   '/dashboard': typeof AppDashboardRoute
+  '/global-wallet': typeof AppGlobalWalletRoute
   '/goals': typeof AppGoalsRoute
   '/history': typeof AppHistoryRoute
   '/import': typeof AppImportRoute
@@ -244,6 +252,7 @@ export interface FileRoutesById {
   '/_app/budgets': typeof AppBudgetsRoute
   '/_app/cards': typeof AppCardsRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/global-wallet': typeof AppGlobalWalletRoute
   '/_app/goals': typeof AppGoalsRoute
   '/_app/history': typeof AppHistoryRoute
   '/_app/import': typeof AppImportRoute
@@ -274,6 +283,7 @@ export interface FileRouteTypes {
     | '/budgets'
     | '/cards'
     | '/dashboard'
+    | '/global-wallet'
     | '/goals'
     | '/history'
     | '/import'
@@ -302,6 +312,7 @@ export interface FileRouteTypes {
     | '/budgets'
     | '/cards'
     | '/dashboard'
+    | '/global-wallet'
     | '/goals'
     | '/history'
     | '/import'
@@ -331,6 +342,7 @@ export interface FileRouteTypes {
     | '/_app/budgets'
     | '/_app/cards'
     | '/_app/dashboard'
+    | '/_app/global-wallet'
     | '/_app/goals'
     | '/_app/history'
     | '/_app/import'
@@ -438,6 +450,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AppDashboardRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/global-wallet': {
+      id: '/_app/global-wallet'
+      path: '/global-wallet'
+      fullPath: '/global-wallet'
+      preLoaderRoute: typeof AppGlobalWalletRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/goals': {
@@ -560,6 +579,7 @@ interface AppRouteChildren {
   AppBudgetsRoute: typeof AppBudgetsRoute
   AppCardsRoute: typeof AppCardsRoute
   AppDashboardRoute: typeof AppDashboardRoute
+  AppGlobalWalletRoute: typeof AppGlobalWalletRoute
   AppGoalsRoute: typeof AppGoalsRoute
   AppHistoryRoute: typeof AppHistoryRoute
   AppImportRoute: typeof AppImportRoute
@@ -581,6 +601,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppBudgetsRoute: AppBudgetsRoute,
   AppCardsRoute: AppCardsRoute,
   AppDashboardRoute: AppDashboardRoute,
+  AppGlobalWalletRoute: AppGlobalWalletRoute,
   AppGoalsRoute: AppGoalsRoute,
   AppHistoryRoute: AppHistoryRoute,
   AppImportRoute: AppImportRoute,
