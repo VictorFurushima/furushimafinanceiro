@@ -49,12 +49,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { StatCard } from "@/components/stat-card";
+import {
+  InvestmentQuoteControls,
+  InvestmentQuoteStatus,
+  InvestmentPriceHistory,
+} from "@/components/investment-quotes";
 import { InvestmentDialog } from "@/components/investment-dialog";
 import { InvestmentMoveDialog, type MoveKind } from "@/components/investment-move-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { invalidateFinance } from "@/lib/query-keys";
 import {
-  useInvestments,
+  useInvestmentPortfolio,
+  useInvestmentValuations,
   useInvestmentEvents,
   useUserSettings,
   type Investment,
@@ -79,7 +85,7 @@ export const Route = createFileRoute("/_app/investments")({
   component: InvestmentsPage,
   head: () => ({
     meta: [
-      { title: "Investimentos — Furushima Financeiro" },
+      { title: "Carteira de Investimentos | Furushima Financeiro" },
       {
         name: "description",
         content: "Acompanhe aportes, resgates, rendimento e composição da sua carteira.",
@@ -91,8 +97,11 @@ export const Route = createFileRoute("/_app/investments")({
 const parseNum = (v: string) => parseFloat(v.replace(/\./g, "").replace(",", ".")) || 0;
 
 function InvestmentsPage() {
-  const { data: investments = [], isLoading } = useInvestments();
+  const { data: portfolio, isLoading, isError } = useInvestmentPortfolio();
+  const investments = portfolio?.rows ?? [];
+  const summary = portfolio?.summary;
   const { data: events = [] } = useInvestmentEvents();
+  const valuations = useInvestmentValuations();
   const { data: settings } = useUserSettings();
   const { isAdmin } = useRole();
   const qc = useQueryClient();
@@ -107,31 +116,14 @@ function InvestmentsPage() {
   const [reminderVisible, setReminderVisible] = useState(false);
 
   const ativos = investments.filter((i) => i.status !== "resgatado");
-  const totalInvestido = ativos.reduce((s, i) => s + i.invested_amount, 0);
-  const valorAtual = ativos.reduce((s, i) => s + i.current_amount, 0);
-  const rendimento = valorAtual - totalInvestido;
-  const rentabilidade = totalInvestido > 0 ? (rendimento / totalInvestido) * 100 : 0;
-  const reserva = ativos
-    .filter((i) => i.is_emergency_reserve)
-    .reduce((s, i) => s + i.current_amount, 0);
-
-  const rendPorInv = ativos.map((i) => ({ ...i, rend: i.current_amount - i.invested_amount }));
-  const maior = [...rendPorInv].sort((a, b) => b.rend - a.rend)[0];
-  const menor = [...rendPorInv].sort((a, b) => a.rend - b.rend)[0];
-
-  const rendimentoMensalEstimado = useMemo(() => {
-    // rendimento acumulado dividido pelos meses médios de aplicação
-    const now = Date.now();
-    let total = 0;
-    for (const i of ativos) {
-      const meses = Math.max(
-        1,
-        (now - (parseDateOnly(i.applied_at) ?? new Date()).getTime()) / (30 * 86400000),
-      );
-      total += (i.current_amount - i.invested_amount) / meses;
-    }
-    return total;
-  }, [ativos]);
+  const totalInvestido = summary?.invested ?? 0;
+  const valorAtual = summary?.value ?? 0;
+  const rendimento = summary?.profit ?? 0;
+  const rentabilidade = summary?.profit_pct ?? 0;
+  const reserva = summary?.reserve ?? 0;
+  const maior = summary?.highest;
+  const menor = summary?.lowest;
+  const rendimentoMensalEstimado = summary?.monthly_average ?? 0;
 
   const byType = useMemo(() => {
     const map = new Map<string, number>();
@@ -240,7 +232,7 @@ function InvestmentsPage() {
             Carteira, rendimento e projeções
           </p>
           <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold mt-1">
-            Investimentos
+            Carteira de Investimentos
           </h1>
         </div>
         {isAdmin && (
@@ -255,6 +247,13 @@ function InvestmentsPage() {
           </Button>
         )}
       </header>
+
+      <InvestmentQuoteControls isAdmin={isAdmin} />
+      {isError && (
+        <p role="alert" className="text-destructive">
+          Não foi possível carregar os investimentos. Recarregue a página.
+        </p>
+      )}
 
       {reminderVisible && (
         <Alert className="border-primary/50 bg-primary/10">
@@ -302,7 +301,7 @@ function InvestmentsPage() {
           accent="success"
         />
         <StatCard
-          label="Rendimento total"
+          label="Resultado das posições"
           value={formatCurrency(rendimento)}
           icon={TrendingUp}
           accent={rendimento >= 0 ? "success" : "destructive"}
@@ -314,7 +313,8 @@ function InvestmentsPage() {
           accent={rentabilidade >= 0 ? "success" : "destructive"}
         />
         <StatCard
-          label="Rendimento mensal est."
+          label="Média mensal acumulada"
+          hint="Resultado acumulado dividido pelo tempo aplicado"
           value={formatCurrency(rendimentoMensalEstimado)}
           icon={TrendingUp}
         />
@@ -322,14 +322,14 @@ function InvestmentsPage() {
           label="Maior rendimento"
           value={maior ? maior.name : "—"}
           icon={TrendingUp}
-          hint={maior ? formatCurrency(maior.rend) : undefined}
+          hint={maior ? formatCurrency(maior.profit) : undefined}
           accent="success"
         />
         <StatCard
           label="Menor rendimento"
           value={menor ? menor.name : "—"}
           icon={TrendingDown}
-          hint={menor ? formatCurrency(menor.rend) : undefined}
+          hint={menor ? formatCurrency(menor.profit) : undefined}
           accent="destructive"
         />
         <StatCard
@@ -372,26 +372,54 @@ function InvestmentsPage() {
           <Card className="bg-gradient-card border-border/50 shadow-card">
             <CardHeader>
               <CardTitle className="font-display text-base sm:text-lg">
-                Evolução do patrimônio
+                Histórico do valor da carteira
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={230}>
-                <AreaChart data={evolucao}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                  <XAxis dataKey="label" fontSize={11} stroke="hsl(var(--muted-foreground))" />
-                  <YAxis fontSize={11} stroke="hsl(var(--muted-foreground))" width={50} />
-                  <Tooltip formatter={(v: number) => formatCurrency(v)} />
-                  <Area
-                    type="monotone"
-                    dataKey="acumulado"
-                    stroke="#228E9A"
-                    fill="#228E9A"
-                    fillOpacity={0.25}
-                    name="Acumulado"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+              {valuations.isError ? (
+                <p role="alert" className="text-sm text-destructive">
+                  Não foi possível carregar o histórico.
+                </p>
+              ) : !valuations.data?.length ? (
+                <p className="text-sm text-muted-foreground py-10">
+                  Aguardando o primeiro registro automático. O histórico começa com esta
+                  atualização.
+                </p>
+              ) : (
+                <>
+                  <ResponsiveContainer width="100%" height={230}>
+                    <AreaChart
+                      data={(valuations.data ?? []).map((p) => ({
+                        ...p,
+                        label: new Date(p.captured_at).toLocaleDateString("pt-BR", {
+                          timeZone: "America/Sao_Paulo",
+                        }),
+                      }))}
+                    >
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="hsl(var(--border))"
+                        opacity={0.3}
+                      />
+                      <XAxis dataKey="label" fontSize={11} stroke="hsl(var(--muted-foreground))" />
+                      <YAxis fontSize={11} stroke="hsl(var(--muted-foreground))" width={50} />
+                      <Tooltip formatter={(v: number) => formatCurrency(v)} />
+                      <Area
+                        type="monotone"
+                        dataKey="value"
+                        stroke="#228E9A"
+                        fill="#228E9A"
+                        fillOpacity={0.25}
+                        name="Valor da carteira"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Último registro de cada dia. Inclui valores manuais nas posições sem fonte
+                    conectada.
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
           <Card className="bg-gradient-card border-border/50 shadow-card">
@@ -516,6 +544,10 @@ function InvestmentsPage() {
                         · {share.toFixed(1)}% da carteira
                       </p>
                     </div>
+                    <InvestmentQuoteStatus investment={i} />
+                    {i.provider !== "manual" && i.provider && (
+                      <InvestmentPriceHistory investment={i} />
+                    )}
                     <div className="text-right">
                       <p className="text-sm font-semibold">{formatCurrency(i.current_amount)}</p>
                       <p className={`text-xs ${rend >= 0 ? "text-success" : "text-destructive"}`}>
@@ -549,6 +581,7 @@ function InvestmentsPage() {
                           onClick={() => openMove(i, "valor")}
                           aria-label="Atualizar valor"
                           title="Atualizar valor"
+                          disabled={i.provider !== "manual"}
                         >
                           <RefreshCw className="h-4 w-4" />
                         </Button>

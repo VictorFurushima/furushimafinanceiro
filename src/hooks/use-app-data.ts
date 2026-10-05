@@ -20,6 +20,15 @@ export interface Investment {
   is_emergency_reserve: boolean;
   color: string;
   created_at: string;
+  book_amount?: number;
+  provider?: string;
+  asset_code?: string | null;
+  quantity?: number | null;
+  unit_price?: number | null;
+  quoted_at?: string | null;
+  checked_at?: string | null;
+  quote_error?: string | null;
+  valuation_status?: string;
 }
 
 export interface InvestmentEvent {
@@ -97,23 +106,53 @@ export const DEFAULT_SETTINGS: Omit<UserSettings, "user_id"> = {
 
 const num = (v: unknown) => Number(v ?? 0);
 
-export const useInvestments = () =>
+export interface InvestmentSummary {
+  invested: number;
+  value: number;
+  profit: number;
+  profit_pct: number;
+  reserve: number;
+  monthly_average: number;
+  manual_count: number;
+  pending_count: number;
+  highest: { name: string; profit: number } | null;
+  lowest: { name: string; profit: number } | null;
+}
+export interface InvestmentPortfolio {
+  rows: Investment[];
+  summary: InvestmentSummary;
+}
+export const useInvestmentPortfolio = () =>
   useQuery({
     queryKey: financeKeys.investments,
-    queryFn: async (): Promise<Investment[]> => {
-      const { data, error } = await supabase
-        .from("investments")
-        .select(
-          "id, name, inv_type, institution, invested_amount, current_amount, initial_amount, applied_at, maturity_date, liquidity, risk, objective, notes, status, is_emergency_reserve, color, created_at",
-        )
-        .order("created_at", { ascending: false });
+    staleTime: 60_000,
+    refetchInterval: 120_000,
+    queryFn: async (): Promise<InvestmentPortfolio> => {
+      const { data, error } = await supabase.rpc("get_investment_portfolio");
       if (error) throw error;
-      return (data ?? []).map((i) => ({
-        ...i,
-        invested_amount: num(i.invested_amount),
-        current_amount: num(i.current_amount),
-        initial_amount: num(i.initial_amount),
-      })) as Investment[];
+      return data as unknown as InvestmentPortfolio;
+    },
+  });
+export const useInvestments = () => {
+  const query = useInvestmentPortfolio();
+  return { ...query, data: query.data?.rows };
+};
+
+export const useInvestmentValuations = () =>
+  useQuery({
+    queryKey: financeKeys.investmentValuations,
+    staleTime: 60_000,
+    refetchInterval: 120_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_investment_valuation_history");
+      if (error) throw error;
+      return data as unknown as {
+        captured_at: string;
+        invested: number;
+        value: number;
+        manual_count: number;
+        pending_count: number;
+      }[];
     },
   });
 
