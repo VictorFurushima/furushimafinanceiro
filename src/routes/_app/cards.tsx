@@ -33,14 +33,19 @@ import { BillDialog } from "@/components/bill-dialog";
 
 export const Route = createFileRoute("/_app/cards")({
   component: CardsPage,
-  head: () => ({ meta: [
-    { title: "Cartões | Furushima Financeiro" },
-    { name: "description", content: "Limites, faturas, fechamentos e vencimentos dos cartões." },
-    { property: "og:title", content: "Cartões | Furushima Financeiro" },
-    { property: "og:description", content: "Limites, faturas, fechamentos e vencimentos dos cartões." },
-    { property: "og:type", content: "website" },
-    { name: "twitter:card", content: "summary" },
-  ] }),
+  head: () => ({
+    meta: [
+      { title: "Cartões | Furushima Financeiro" },
+      { name: "description", content: "Limites, faturas, fechamentos e vencimentos dos cartões." },
+      { property: "og:title", content: "Cartões | Furushima Financeiro" },
+      {
+        property: "og:description",
+        content: "Limites, faturas, fechamentos e vencimentos dos cartões.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
 });
 
 function nextDueDate(dueDay: number): Date {
@@ -137,10 +142,7 @@ function CardsPage() {
             const daysToDue = Math.ceil((due.getTime() - Date.now()) / 86400000);
             const lowLimit = usedPct >= 80;
             return (
-              <Card
-                key={c.id}
-                 className="overflow-hidden"
-              >
+              <Card key={c.id} className="overflow-hidden">
                 <div className="h-0.5" style={{ background: c.color }} />
                 <CardHeader className="flex flex-row items-start justify-between space-y-0">
                   <div>

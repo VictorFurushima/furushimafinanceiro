@@ -12,14 +12,19 @@ import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_app/global-wallet")({
   component: GlobalWallet,
-  head: () => ({ meta: [
-    { title: "Carteira Global | Furushima Financeiro" },
-    { name: "description", content: "Visão consolidada do capital disponível e investido." },
-    { property: "og:title", content: "Carteira Global | Furushima Financeiro" },
-    { property: "og:description", content: "Visão consolidada do capital disponível e investido." },
-    { property: "og:type", content: "website" },
-    { name: "twitter:card", content: "summary" },
-  ] }),
+  head: () => ({
+    meta: [
+      { title: "Carteira Global | Furushima Financeiro" },
+      { name: "description", content: "Visão consolidada do capital disponível e investido." },
+      { property: "og:title", content: "Carteira Global | Furushima Financeiro" },
+      {
+        property: "og:description",
+        content: "Visão consolidada do capital disponível e investido.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
 });
 export interface GlobalWalletData {
   overview: FinancialOverviewRow;
@@ -63,19 +68,29 @@ function GlobalWallet() {
       ) : (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div className="col-span-2"><StatCard label="Capital global" value={formatCurrency(data.overview.patrimonio_total)} icon={Wallet} gradient hint="Saldo disponível + valor atual dos investimentos" /></div>
+            <div className="col-span-2">
+              <StatCard
+                label="Capital global"
+                value={formatCurrency(data.overview.patrimonio_total)}
+                icon={Wallet}
+                gradient
+                hint="Saldo disponível + valor atual dos investimentos"
+              />
+            </div>
             <StatCard
               label="Disponível nas contas"
               value={formatCurrency(data.overview.saldo_disponivel)}
               icon={Banknote}
               hint="Saldo em contas e dinheiro físico"
             />
-            <div className="col-span-2"><StatCard
-              label="Investimentos, valor atual"
-              value={formatCurrency(data.overview.valor_atual_investimentos)}
-              icon={PiggyBank}
-              accent="success"
-            /></div>
+            <div className="col-span-2">
+              <StatCard
+                label="Investimentos, valor atual"
+                value={formatCurrency(data.overview.valor_atual_investimentos)}
+                icon={PiggyBank}
+                accent="success"
+              />
+            </div>
             <StatCard
               label="Capital aplicado"
               value={formatCurrency(data.overview.total_investido)}

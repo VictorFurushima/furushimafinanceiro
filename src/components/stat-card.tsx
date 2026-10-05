@@ -37,16 +37,12 @@ export function StatCard({ label, value, hint, icon: Icon, gradient, accent = "p
             <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </div>
         </div>
-        <p className={`mt-2 sm:mt-3 font-display text-lg sm:text-2xl lg:text-3xl font-semibold tabular-nums break-words leading-tight ${gradient ? "text-foreground" : ""}`}>
+        <p
+          className={`mt-2 sm:mt-3 font-display text-lg sm:text-2xl lg:text-3xl font-semibold tabular-nums break-words leading-tight ${gradient ? "text-foreground" : ""}`}
+        >
           {value}
         </p>
-        {hint && (
-          <p
-            className="text-[10px] sm:text-xs mt-1 text-muted-foreground"
-          >
-            {hint}
-          </p>
-        )}
+        {hint && <p className="text-[10px] sm:text-xs mt-1 text-muted-foreground">{hint}</p>}
       </CardContent>
     </Card>
   );

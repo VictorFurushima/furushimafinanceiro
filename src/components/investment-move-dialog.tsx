@@ -81,7 +81,10 @@ export function InvestmentMoveDialog({
           p_amount: value,
           p_date: date,
           p_account_id: accountId || (null as unknown as string),
-          p_units: investment.provider && investment.provider !== "manual" ? parseNum(units) : (null as unknown as number),
+          p_units:
+            investment.provider && investment.provider !== "manual"
+              ? parseNum(units)
+              : (null as unknown as number),
           p_notes: notes || (null as unknown as string),
         });
         if (error) throw error;

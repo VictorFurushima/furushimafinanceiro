@@ -136,16 +136,29 @@ function LoginPage() {
             alt="Furushima Financeiro"
             className="h-12 w-12 rounded-md object-contain"
           />
-          <span><span className="block font-display text-base font-semibold uppercase tracking-[0.14em]">Furushima</span><span className="block text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Financeiro</span></span>
+          <span>
+            <span className="block font-display text-base font-semibold uppercase tracking-[0.14em]">
+              Furushima
+            </span>
+            <span className="block text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+              Financeiro
+            </span>
+          </span>
         </Link>
 
         <div className="relative z-10 max-w-sm">
           <div className="mb-6 h-px w-24 furushima-brand-line" />
-          <h1 className="font-display text-3xl font-semibold leading-tight">Controle financeiro pessoal</h1>
-          <p className="mt-3 text-sm leading-6 text-muted-foreground">Patrimônio, movimentações, planejamento e investimentos.</p>
+          <h1 className="font-display text-3xl font-semibold leading-tight">
+            Controle financeiro pessoal
+          </h1>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            Patrimônio, movimentações, planejamento e investimentos.
+          </p>
         </div>
 
-        <p className="relative z-10 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Furushima Financeiro</p>
+        <p className="relative z-10 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+          Furushima Financeiro
+        </p>
       </div>
 
       {/* Form side */}
@@ -157,7 +170,14 @@ function LoginPage() {
               alt="Furushima Financeiro"
               className="h-11 w-11 rounded-md object-contain"
             />
-            <span><span className="block font-display text-sm font-semibold uppercase tracking-[0.12em]">Furushima</span><span className="block text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Financeiro</span></span>
+            <span>
+              <span className="block font-display text-sm font-semibold uppercase tracking-[0.12em]">
+                Furushima
+              </span>
+              <span className="block text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                Financeiro
+              </span>
+            </span>
           </div>
 
           <h2 className="font-display text-3xl font-bold">
@@ -194,12 +214,7 @@ function LoginPage() {
                 required
               />
             </div>
-            <Button
-              type="submit"
-              disabled={loading}
-             className="w-full"
-              size="lg"
-            >
+            <Button type="submit" disabled={loading} className="w-full" size="lg">
               {loading ? "Carregando..." : mode === "login" ? "Entrar" : "Criar conta"}
             </Button>
           </form>
@@ -208,7 +223,7 @@ function LoginPage() {
             {mode === "login" ? "Não tem uma conta?" : "Já tem uma conta?"}{" "}
             <button
               onClick={() => setMode(mode === "login" ? "signup" : "login")}
-               className="text-primary hover:underline font-medium"
+              className="text-primary hover:underline font-medium"
             >
               {mode === "login" ? "Criar conta" : "Entrar"}
             </button>

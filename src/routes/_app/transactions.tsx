@@ -27,14 +27,16 @@ const PAGE_SIZE = 50;
 
 export const Route = createFileRoute("/_app/transactions")({
   component: TransactionsPage,
-  head: () => ({ meta: [
-    { title: "Transações | Furushima Financeiro" },
-    { name: "description", content: "Histórico e filtros de movimentações financeiras." },
-    { property: "og:title", content: "Transações | Furushima Financeiro" },
-    { property: "og:description", content: "Histórico e filtros de movimentações financeiras." },
-    { property: "og:type", content: "website" },
-    { name: "twitter:card", content: "summary" },
-  ] }),
+  head: () => ({
+    meta: [
+      { title: "Transações | Furushima Financeiro" },
+      { name: "description", content: "Histórico e filtros de movimentações financeiras." },
+      { property: "og:title", content: "Transações | Furushima Financeiro" },
+      { property: "og:description", content: "Histórico e filtros de movimentações financeiras." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
 });
 
 function TransactionsPage() {

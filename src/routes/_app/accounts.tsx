@@ -25,14 +25,16 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_app/accounts")({
   component: AccountsPage,
-  head: () => ({ meta: [
-    { title: "Contas | Furushima Financeiro" },
-    { name: "description", content: "Saldos em contas bancárias e dinheiro físico." },
-    { property: "og:title", content: "Contas | Furushima Financeiro" },
-    { property: "og:description", content: "Saldos em contas bancárias e dinheiro físico." },
-    { property: "og:type", content: "website" },
-    { name: "twitter:card", content: "summary" },
-  ] }),
+  head: () => ({
+    meta: [
+      { title: "Contas | Furushima Financeiro" },
+      { name: "description", content: "Saldos em contas bancárias e dinheiro físico." },
+      { property: "og:title", content: "Contas | Furushima Financeiro" },
+      { property: "og:description", content: "Saldos em contas bancárias e dinheiro físico." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
 });
 
 const typeIcons: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -116,10 +118,7 @@ function AccountsPage() {
           const total = a.balance;
 
           return (
-            <Card
-              key={a.id}
-              className="group relative overflow-hidden"
-            >
+            <Card key={a.id} className="group relative overflow-hidden">
               <div className="absolute inset-y-0 left-0 w-0.5" style={{ background: a.color }} />
               <CardContent className="p-6 relative">
                 <div className="flex items-start justify-between">
@@ -127,7 +126,7 @@ function AccountsPage() {
                     className="h-10 w-10 rounded-md flex items-center justify-center"
                     style={{ background: `${a.color}25`, color: a.color }}
                   >
-                   <Icon className="h-5 w-5" />
+                    <Icon className="h-5 w-5" />
                   </div>
                   <button
                     onClick={() => remove(a.id)}

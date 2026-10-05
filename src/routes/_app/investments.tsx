@@ -91,7 +91,10 @@ export const Route = createFileRoute("/_app/investments")({
         content: "Acompanhe aportes, resgates, rendimento e composição da sua carteira.",
       },
       { property: "og:title", content: "Carteira de Investimentos | Furushima Financeiro" },
-      { property: "og:description", content: "Acompanhe aportes, resgates, rendimento e composição da sua carteira." },
+      {
+        property: "og:description",
+        content: "Acompanhe aportes, resgates, rendimento e composição da sua carteira.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -400,11 +403,7 @@ function InvestmentsPage() {
                         }),
                       }))}
                     >
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        stroke="var(--border)"
-                        opacity={0.3}
-                      />
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
                       <XAxis dataKey="label" fontSize={11} stroke="var(--muted-foreground)" />
                       <YAxis fontSize={11} stroke="var(--muted-foreground)" width={50} />
                       <Tooltip formatter={(v: number) => formatCurrency(v)} />
@@ -440,14 +439,24 @@ function InvestmentsPage() {
                   <YAxis fontSize={11} stroke="var(--muted-foreground)" width={50} />
                   <Tooltip formatter={(v: number) => formatCurrency(v)} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Bar dataKey="aporte" fill="var(--chart-1)" name="Aportes" radius={[3, 3, 0, 0]} />
+                  <Bar
+                    dataKey="aporte"
+                    fill="var(--chart-1)"
+                    name="Aportes"
+                    radius={[3, 3, 0, 0]}
+                  />
                   <Bar
                     dataKey="rendimento"
                     fill="var(--chart-3)"
                     name="Rendimento"
                     radius={[3, 3, 0, 0]}
                   />
-                  <Bar dataKey="resgate" fill="var(--chart-5)" name="Resgates" radius={[3, 3, 0, 0]} />
+                  <Bar
+                    dataKey="resgate"
+                    fill="var(--chart-5)"
+                    name="Resgates"
+                    radius={[3, 3, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -464,7 +473,12 @@ function InvestmentsPage() {
                   <YAxis fontSize={11} stroke="var(--muted-foreground)" width={50} />
                   <Tooltip formatter={(v: number) => formatCurrency(v)} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Bar dataKey="investido" fill="var(--chart-1)" name="Investido" radius={[3, 3, 0, 0]} />
+                  <Bar
+                    dataKey="investido"
+                    fill="var(--chart-1)"
+                    name="Investido"
+                    radius={[3, 3, 0, 0]}
+                  />
                   <Bar dataKey="atual" fill="var(--chart-3)" name="Atual" radius={[3, 3, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>

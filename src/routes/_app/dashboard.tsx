@@ -48,9 +48,15 @@ export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({
     meta: [
       { title: "Visão Geral | Furushima Financeiro" },
-      { name: "description", content: "Resumo do patrimônio, fluxo mensal, cartões e investimentos." },
+      {
+        name: "description",
+        content: "Resumo do patrimônio, fluxo mensal, cartões e investimentos.",
+      },
       { property: "og:title", content: "Visão Geral | Furushima Financeiro" },
-      { property: "og:description", content: "Resumo do patrimônio, fluxo mensal, cartões e investimentos." },
+      {
+        property: "og:description",
+        content: "Resumo do patrimônio, fluxo mensal, cartões e investimentos.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -149,10 +155,7 @@ function DashboardPage() {
             Visão Geral
           </h1>
         </div>
-        <Button
-          onClick={() => setOpenTx(true)}
-          className="w-full sm:w-auto"
-        >
+        <Button onClick={() => setOpenTx(true)} className="w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" /> Nova transação
         </Button>
       </header>
@@ -178,7 +181,15 @@ function DashboardPage() {
       )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
-        <div className="col-span-2 lg:col-span-2"><StatCard label="Patrimônio total" value={formatCurrency(overview?.patrimonio_total ?? 0)} icon={Sparkles} gradient hint="contas + investimentos" /></div>
+        <div className="col-span-2 lg:col-span-2">
+          <StatCard
+            label="Patrimônio total"
+            value={formatCurrency(overview?.patrimonio_total ?? 0)}
+            icon={Sparkles}
+            gradient
+            hint="contas + investimentos"
+          />
+        </div>
         <StatCard label="Saldo real" value={formatCurrency(balance)} icon={Wallet} />
         <StatCard
           label="Saldo previsto"

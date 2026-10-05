@@ -10,7 +10,6 @@ function AppLayout() {
   // A automação de recorrências/recargas roda no backend (pg_cron:
   // private.run_financial_daily_maintenance, diariamente às 03:10 America/Sao_Paulo).
 
-
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -28,6 +27,5 @@ function AppLayout() {
 
       <MobileNav />
     </div>
-
   );
 }

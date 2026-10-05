@@ -43,14 +43,22 @@ import {
 
 export const Route = createFileRoute("/_app/import-prints")({
   component: ImportPrintsPage,
-  head: () => ({ meta: [
-    { title: "Importar por Print | Furushima Financeiro" },
-    { name: "description", content: "Reconhecimento e revisão de movimentações financeiras por imagem." },
-    { property: "og:title", content: "Importar por Print | Furushima Financeiro" },
-    { property: "og:description", content: "Reconhecimento e revisão de movimentações financeiras por imagem." },
-    { property: "og:type", content: "website" },
-    { name: "twitter:card", content: "summary" },
-  ] }),
+  head: () => ({
+    meta: [
+      { title: "Importar por Print | Furushima Financeiro" },
+      {
+        name: "description",
+        content: "Reconhecimento e revisão de movimentações financeiras por imagem.",
+      },
+      { property: "og:title", content: "Importar por Print | Furushima Financeiro" },
+      {
+        property: "og:description",
+        content: "Reconhecimento e revisão de movimentações financeiras por imagem.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
 });
 const PAGE_SIZE = 25;
 interface ImageRow {
@@ -432,7 +440,7 @@ function ImportPrintsPage() {
               </p>
             </div>
             <label
-               className={`flex items-center justify-center gap-3 rounded-md border border-dashed border-primary/35 bg-primary/5 p-6 cursor-pointer transition-colors hover:bg-primary/8 ${uploading ? "opacity-60 pointer-events-none" : ""}`}
+              className={`flex items-center justify-center gap-3 rounded-md border border-dashed border-primary/35 bg-primary/5 p-6 cursor-pointer transition-colors hover:bg-primary/8 ${uploading ? "opacity-60 pointer-events-none" : ""}`}
             >
               {uploading ? (
                 <Loader2 className="animate-spin h-5 w-5" />
@@ -476,7 +484,7 @@ function ImportPrintsPage() {
           </summary>
           <div className="space-y-2">
             {imageQuery.data.rows.map((img) => (
-            <Card key={img.id} className="bg-secondary/25 shadow-none">
+              <Card key={img.id} className="bg-secondary/25 shadow-none">
                 <CardContent className="p-3 space-y-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="min-w-0">
@@ -656,7 +664,10 @@ function ImportPrintsPage() {
           const incomplete =
             !item.detected_date || item.detected_amount === null || !item.detected_type;
           return (
-            <Card key={item.id} className={matches.length ? "border-warning/50" : "border-border/80"}>
+            <Card
+              key={item.id}
+              className={matches.length ? "border-warning/50" : "border-border/80"}
+            >
               <CardContent className="p-4 space-y-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline">

@@ -61,7 +61,12 @@ const itemGroups: NavGroup[] = [
   {
     label: "Planejamento",
     items: [
-      { to: "/shopping-planner", label: "Planejador de Compras", short: "Compras", icon: ShoppingCart },
+      {
+        to: "/shopping-planner",
+        label: "Planejador de Compras",
+        short: "Compras",
+        icon: ShoppingCart,
+      },
       { to: "/budgets", label: "Orçamentos", short: "Orçamento", icon: Target },
       { to: "/goals", label: "Metas", short: "Metas", icon: Target },
     ],
@@ -98,7 +103,10 @@ export function AppSidebar() {
 
   return (
     <aside className="hidden lg:flex flex-col w-64 shrink-0 border-r border-sidebar-border bg-sidebar px-3 py-4">
-      <Link to="/dashboard" className="relative flex items-center gap-3 px-2 py-2 mb-5 overflow-hidden">
+      <Link
+        to="/dashboard"
+        className="relative flex items-center gap-3 px-2 py-2 mb-5 overflow-hidden"
+      >
         <span className="absolute inset-x-2 bottom-0 h-px furushima-brand-line opacity-70" />
         <img
           src={logo}
@@ -106,8 +114,12 @@ export function AppSidebar() {
           className="h-10 w-10 rounded-md object-contain"
         />
         <div className="leading-tight">
-          <span className="font-display text-sm font-semibold uppercase tracking-[0.12em] block">Furushima</span>
-          <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Financeiro</span>
+          <span className="font-display text-sm font-semibold uppercase tracking-[0.12em] block">
+            Furushima
+          </span>
+          <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+            Financeiro
+          </span>
         </div>
       </Link>
 
@@ -121,10 +133,16 @@ export function AppSidebar() {
               {group.items.map((it) => {
                 const active = path === it.to;
                 return (
-                  <Link key={it.to} to={it.to} className={cn(
-                    "relative flex min-h-9 items-center gap-3 rounded-md px-3 py-2 text-[13px] transition-colors",
-                    active ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-primary" : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
-                  )}>
+                  <Link
+                    key={it.to}
+                    to={it.to}
+                    className={cn(
+                      "relative flex min-h-9 items-center gap-3 rounded-md px-3 py-2 text-[13px] transition-colors",
+                      active
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-primary"
+                        : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+                    )}
+                  >
                     <it.icon className={cn("h-4 w-4", active && "text-primary")} />
                     <span className="truncate">{it.label}</span>
                   </Link>
@@ -217,9 +235,16 @@ export function MobileNav() {
                 <img
                   src={logo}
                   alt="Furushima Financeiro"
-                   className="h-9 w-9 rounded-md object-contain"
+                  className="h-9 w-9 rounded-md object-contain"
                 />
-                 <span><span className="block font-display text-sm font-semibold uppercase tracking-[0.12em]">Furushima</span><span className="block text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Financeiro</span></span>
+                <span>
+                  <span className="block font-display text-sm font-semibold uppercase tracking-[0.12em]">
+                    Furushima
+                  </span>
+                  <span className="block text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                    Financeiro
+                  </span>
+                </span>
               </SheetTitle>
             </SheetHeader>
 
@@ -233,8 +258,8 @@ export function MobileNav() {
                     onClick={() => setOpen(false)}
                     className={cn(
                       "flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition",
-                       active
-                         ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      active
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
                         : "text-sidebar-foreground hover:bg-sidebar-accent",
                     )}
                   >
