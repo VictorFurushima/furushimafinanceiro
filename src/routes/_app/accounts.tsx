@@ -25,6 +25,16 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_app/accounts")({
   component: AccountsPage,
+  head: () => ({
+    meta: [
+      { title: "Contas | Furushima Financeiro" },
+      { name: "description", content: "Saldos em contas bancárias e dinheiro físico." },
+      { property: "og:title", content: "Contas | Furushima Financeiro" },
+      { property: "og:description", content: "Saldos em contas bancárias e dinheiro físico." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
 });
 
 const typeIcons: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -94,13 +104,10 @@ function AccountsPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-10 max-w-5xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold">Contas</h1>
-        <Button
-          onClick={() => setOpen(true)}
-          className="bg-gradient-primary text-primary-foreground shadow-glow"
-        >
+        <Button onClick={() => setOpen(true)}>
           <Plus className="h-4 w-4 mr-2" /> Nova
         </Button>
       </header>
@@ -111,21 +118,15 @@ function AccountsPage() {
           const total = a.balance;
 
           return (
-            <Card
-              key={a.id}
-              className="bg-gradient-card border-border/50 shadow-card group relative overflow-hidden"
-            >
-              <div
-                className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-20"
-                style={{ background: a.color }}
-              />
+            <Card key={a.id} className="group relative overflow-hidden">
+              <div className="absolute inset-y-0 left-0 w-0.5" style={{ background: a.color }} />
               <CardContent className="p-6 relative">
                 <div className="flex items-start justify-between">
                   <div
-                    className="h-12 w-12 rounded-xl flex items-center justify-center"
+                    className="h-10 w-10 rounded-md flex items-center justify-center"
                     style={{ background: `${a.color}25`, color: a.color }}
                   >
-                    <Icon className="h-6 w-6" />
+                    <Icon className="h-5 w-5" />
                   </div>
                   <button
                     onClick={() => remove(a.id)}
@@ -195,10 +196,7 @@ function AccountsPage() {
                 />
               </div>
             </div>
-            <Button
-              type="submit"
-              className="w-full bg-gradient-primary text-primary-foreground shadow-glow"
-            >
+            <Button type="submit" className="w-full">
               Criar
             </Button>
           </form>

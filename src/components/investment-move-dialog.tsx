@@ -80,9 +80,12 @@ export function InvestmentMoveDialog({
           p_kind: kind,
           p_amount: value,
           p_date: date,
-          p_account_id: accountId || null,
-          p_units: investment.provider && investment.provider !== "manual" ? parseNum(units) : null,
-          p_notes: notes || null,
+          p_account_id: accountId || (null as unknown as string),
+          p_units:
+            investment.provider && investment.provider !== "manual"
+              ? parseNum(units)
+              : (null as unknown as number),
+          p_notes: notes || (null as unknown as string),
         });
         if (error) throw error;
         toast.success(kind === "aporte" ? "Aporte registrado" : "Resgate registrado");
@@ -90,7 +93,7 @@ export function InvestmentMoveDialog({
         const { error } = await supabase.rpc("invest_update_value", {
           p_investment_id: investment.id,
           p_new_amount: value,
-          p_notes: notes || null,
+          p_notes: notes || (null as unknown as string),
         });
         if (error) throw error;
         toast.success("Valor atualizado");

@@ -41,7 +41,25 @@ import {
   type OcrSaveResult,
 } from "@/lib/ocr-review";
 
-export const Route = createFileRoute("/_app/import-prints")({ component: ImportPrintsPage });
+export const Route = createFileRoute("/_app/import-prints")({
+  component: ImportPrintsPage,
+  head: () => ({
+    meta: [
+      { title: "Importar por Print | Furushima Financeiro" },
+      {
+        name: "description",
+        content: "Reconhecimento e revisão de movimentações financeiras por imagem.",
+      },
+      { property: "og:title", content: "Importar por Print | Furushima Financeiro" },
+      {
+        property: "og:description",
+        content: "Reconhecimento e revisão de movimentações financeiras por imagem.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
+});
 const PAGE_SIZE = 25;
 interface ImageRow {
   id: string;
@@ -396,7 +414,7 @@ function ImportPrintsPage() {
   };
   const error = imageQuery.error ?? reviewQuery.error ?? cardQuery.error ?? preference.error;
   return (
-    <div className="p-4 sm:p-6 lg:p-10 max-w-6xl mx-auto space-y-5">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-[1440px] mx-auto space-y-5">
       <header>
         <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold">
           Importar por Print
@@ -407,7 +425,7 @@ function ImportPrintsPage() {
       </header>
       {isAdmin && <CardPreference cards={cards} prompt />}
       {isAdmin && (
-        <Card>
+        <Card className="border-primary/25 furushima-accent">
           <CardContent className="p-4 space-y-3">
             <div className="max-w-xs">
               <Label htmlFor="capture-date">Data de referência do print</Label>
@@ -422,7 +440,7 @@ function ImportPrintsPage() {
               </p>
             </div>
             <label
-              className={`flex items-center justify-center gap-3 border-2 border-dashed border-border rounded-lg p-6 cursor-pointer ${uploading ? "opacity-60 pointer-events-none" : ""}`}
+              className={`flex items-center justify-center gap-3 rounded-md border border-dashed border-primary/35 bg-primary/5 p-6 cursor-pointer transition-colors hover:bg-primary/8 ${uploading ? "opacity-60 pointer-events-none" : ""}`}
             >
               {uploading ? (
                 <Loader2 className="animate-spin h-5 w-5" />
@@ -460,13 +478,13 @@ function ImportPrintsPage() {
       )}
       {imageQuery.isPending && <p>Carregando prints...</p>}
       {!!imageQuery.data?.rows.length && (
-        <details open>
-          <summary className="cursor-pointer text-sm font-semibold py-2">
+        <details open className="rounded-lg border border-border bg-card px-4 py-2">
+          <summary className="cursor-pointer text-sm font-semibold py-2 text-primary">
             Prints enviados ({imageQuery.data.count})
           </summary>
           <div className="space-y-2">
             {imageQuery.data.rows.map((img) => (
-              <Card key={img.id}>
+              <Card key={img.id} className="bg-secondary/25 shadow-none">
                 <CardContent className="p-3 space-y-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="min-w-0">
@@ -646,7 +664,10 @@ function ImportPrintsPage() {
           const incomplete =
             !item.detected_date || item.detected_amount === null || !item.detected_type;
           return (
-            <Card key={item.id} className={matches.length ? "border-warning/50" : ""}>
+            <Card
+              key={item.id}
+              className={matches.length ? "border-warning/50" : "border-border/80"}
+            >
               <CardContent className="p-4 space-y-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="outline">

@@ -43,7 +43,25 @@ import { TransactionDialog } from "@/components/transaction-dialog";
 import { StatCard } from "@/components/stat-card";
 import { formatDateOnlyPtBR, parseDateOnly } from "@/lib/date-only";
 
-export const Route = createFileRoute("/_app/dashboard")({ component: DashboardPage });
+export const Route = createFileRoute("/_app/dashboard")({
+  component: DashboardPage,
+  head: () => ({
+    meta: [
+      { title: "Visão Geral | Furushima Financeiro" },
+      {
+        name: "description",
+        content: "Resumo do patrimônio, fluxo mensal, cartões e investimentos.",
+      },
+      { property: "og:title", content: "Visão Geral | Furushima Financeiro" },
+      {
+        property: "og:description",
+        content: "Resumo do patrimônio, fluxo mensal, cartões e investimentos.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
+});
 
 function DashboardPage() {
   const now = new Date();
@@ -127,7 +145,7 @@ function DashboardPage() {
     });
 
   return (
-    <div className="p-3 sm:p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 max-w-7xl mx-auto">
+    <div className="p-3 sm:p-6 lg:p-8 space-y-4 sm:space-y-6 max-w-[1440px] mx-auto">
       <header className="flex flex-col sm:flex-row sm:flex-wrap sm:items-end sm:justify-between gap-3 sm:gap-4">
         <div>
           <p className="text-xs sm:text-sm text-muted-foreground capitalize">
@@ -137,10 +155,7 @@ function DashboardPage() {
             Visão Geral
           </h1>
         </div>
-        <Button
-          onClick={() => setOpenTx(true)}
-          className="bg-gradient-primary text-primary-foreground shadow-glow hover:opacity-90 w-full sm:w-auto"
-        >
+        <Button onClick={() => setOpenTx(true)} className="w-full sm:w-auto">
           <Plus className="h-4 w-4 mr-2" /> Nova transação
         </Button>
       </header>
@@ -166,7 +181,16 @@ function DashboardPage() {
       )}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
-        <StatCard label="Saldo real" value={formatCurrency(balance)} icon={Wallet} gradient />
+        <div className="col-span-2 lg:col-span-2">
+          <StatCard
+            label="Patrimônio total"
+            value={formatCurrency(overview?.patrimonio_total ?? 0)}
+            icon={Sparkles}
+            gradient
+            hint="contas + investimentos"
+          />
+        </div>
+        <StatCard label="Saldo real" value={formatCurrency(balance)} icon={Wallet} />
         <StatCard
           label="Saldo previsto"
           value={formatCurrency(saldoPrevisto)}
@@ -217,13 +241,6 @@ function DashboardPage() {
           hint={topCategory ? formatCurrency(topCategory.value) : undefined}
         />
         <StatCard
-          label="Patrimônio total"
-          value={formatCurrency(overview?.patrimonio_total ?? 0)}
-          icon={Sparkles}
-          gradient
-          hint="contas + investimentos"
-        />
-        <StatCard
           label="Investido"
           value={formatCurrency(overview?.valor_atual_investimentos ?? 0)}
           icon={PiggyBank}
@@ -243,7 +260,7 @@ function DashboardPage() {
 
       {/* Próxima recarga + Cartões + Faturas */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card className="bg-gradient-card border-border/50 shadow-card lg:col-span-1">
+        <Card className="lg:col-span-1 furushima-accent">
           <CardHeader>
             <CardTitle className="font-display flex items-center gap-2">
               <Inbox className="h-5 w-5 text-primary" /> Próxima recarga
@@ -274,7 +291,7 @@ function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-card border-border/50 shadow-card">
+        <Card>
           <CardHeader>
             <CardTitle className="font-display flex items-center gap-2">
               <CardIcon className="h-5 w-5 text-primary" /> Limite dos cartões
@@ -305,7 +322,7 @@ function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-card border-border/50 shadow-card">
+        <Card>
           <CardHeader>
             <CardTitle className="font-display flex items-center gap-2">
               <FileText className="h-5 w-5 text-primary" /> Faturas próximas
@@ -352,7 +369,7 @@ function DashboardPage() {
 
       {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card className="lg:col-span-2 bg-gradient-card border-border/50 shadow-card">
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="font-display">Evolução — últimos 6 meses</CardTitle>
           </CardHeader>
@@ -403,7 +420,7 @@ function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-card border-border/50 shadow-card">
+        <Card>
           <CardHeader>
             <CardTitle className="font-display">Despesas por categoria</CardTitle>
           </CardHeader>
@@ -460,7 +477,7 @@ function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <Card className="lg:col-span-2 bg-gradient-card border-border/50 shadow-card">
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="font-display">Transações recentes</CardTitle>
           </CardHeader>
@@ -514,7 +531,7 @@ function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-card border-border/50 shadow-card">
+        <Card>
           <CardHeader>
             <CardTitle className="font-display flex items-center gap-2">
               <Repeat className="h-5 w-5" /> Próximas assinaturas
