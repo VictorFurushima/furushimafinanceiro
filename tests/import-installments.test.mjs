@@ -80,7 +80,7 @@ try {
  CREATE TABLE storage.objects(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),bucket_id text,name text);ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
  CREATE FUNCTION storage.foldername(text) RETURNS text[] LANGUAGE sql IMMUTABLE AS $$ SELECT string_to_array($1,'/') $$;
  INSERT INTO storage.buckets(id) VALUES ('transaction-prints');`);
- for(const name of ['20260904190000_harden_financial_ledger.sql','20260904190100_fix_financial_cash_series.sql','20260904190200_full_project_hardening.sql','20260922180000_installments_dashboard.sql','20260922181000_ocr_review_pipeline.sql','20260922182000_ocr_import_receipts.sql','20261005163000_ocr_card_selection.sql']) await db.exec(await file('../supabase/migrations/'+name));
+ for(const name of ['20260904190000_harden_financial_ledger.sql','20260904190100_fix_financial_cash_series.sql','20260904190200_full_project_hardening.sql','20260922180000_installments_dashboard.sql','20260922181000_ocr_review_pipeline.sql','20260922182000_ocr_import_receipts.sql','20261005163000_ocr_card_selection.sql','20261005181000_financial_action_history.sql']) await db.exec(await file('../supabase/migrations/'+name));
  await db.exec(`INSERT INTO auth.users(id,email) VALUES ('${owner}','test-owner@example.com'),('${other}','test-other@example.com'),('${viewer}','test-viewer@example.com');
  INSERT INTO user_roles(user_id,role,owner_id) VALUES ('${owner}','admin',null),('${other}','admin',null),('${viewer}','viewer','${owner}');`);
  await db.exec(`INSERT INTO profiles(id) VALUES ('${owner}'),('${other}'),('${viewer}') ON CONFLICT(id) DO NOTHING;`);
@@ -98,7 +98,7 @@ try {
    assert.equal(await one('SELECT primary_card_id FROM profiles WHERE id=$1',[owner]),card);
    assert.equal(await one('SELECT primary_card_prompt_dismissed FROM profiles WHERE id=$1',[owner]),true);
    await rejects('UPDATE profiles SET primary_card_id=$1 WHERE id=$2',[crypto.randomUUID(),owner],/cartao ativo/);
-   await db.exec('RESET ROLE');
+   await db.exec("RESET ROLE;SELECT set_config('request.jwt.claim.sub','',false)");
    const foreignCard=await one("INSERT INTO credit_cards(user_id,name,total_limit) VALUES ($1,'Foreign',1000) RETURNING id",[other]);
    await db.exec(`SET ROLE authenticated;SELECT set_config('request.jwt.claim.sub','${owner}',false);`);
    await rejects('UPDATE profiles SET primary_card_id=$1 WHERE id=$2',[foreignCard,owner],/cartao ativo/);
