@@ -21,6 +21,7 @@ import { Route as AppBudgetsRouteImport } from './routes/_app/budgets'
 import { Route as AppCardsRouteImport } from './routes/_app/cards'
 import { Route as AppDashboardRouteImport } from './routes/_app/dashboard'
 import { Route as AppGoalsRouteImport } from './routes/_app/goals'
+import { Route as AppHistoryRouteImport } from './routes/_app/history'
 import { Route as AppImportRouteImport } from './routes/_app/import'
 import { Route as AppImportPrintsRouteImport } from './routes/_app/import-prints'
 import { Route as AppIncomeRouteImport } from './routes/_app/income'
@@ -95,6 +96,11 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
 const AppGoalsRoute = AppGoalsRouteImport.update({
   id: '/goals',
   path: '/goals',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppHistoryRoute = AppHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
   getParentRoute: () => AppRoute,
 } as any)
 const AppImportRoute = AppImportRouteImport.update({
@@ -181,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/cards': typeof AppCardsRoute
   '/dashboard': typeof AppDashboardRoute
   '/goals': typeof AppGoalsRoute
+  '/history': typeof AppHistoryRoute
   '/import': typeof AppImportRoute
   '/import-prints': typeof AppImportPrintsRoute
   '/income': typeof AppIncomeRoute
@@ -208,6 +215,7 @@ export interface FileRoutesByTo {
   '/cards': typeof AppCardsRoute
   '/dashboard': typeof AppDashboardRoute
   '/goals': typeof AppGoalsRoute
+  '/history': typeof AppHistoryRoute
   '/import': typeof AppImportRoute
   '/import-prints': typeof AppImportPrintsRoute
   '/income': typeof AppIncomeRoute
@@ -237,6 +245,7 @@ export interface FileRoutesById {
   '/_app/cards': typeof AppCardsRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/goals': typeof AppGoalsRoute
+  '/_app/history': typeof AppHistoryRoute
   '/_app/import': typeof AppImportRoute
   '/_app/import-prints': typeof AppImportPrintsRoute
   '/_app/income': typeof AppIncomeRoute
@@ -266,6 +275,7 @@ export interface FileRouteTypes {
     | '/cards'
     | '/dashboard'
     | '/goals'
+    | '/history'
     | '/import'
     | '/import-prints'
     | '/income'
@@ -293,6 +303,7 @@ export interface FileRouteTypes {
     | '/cards'
     | '/dashboard'
     | '/goals'
+    | '/history'
     | '/import'
     | '/import-prints'
     | '/income'
@@ -321,6 +332,7 @@ export interface FileRouteTypes {
     | '/_app/cards'
     | '/_app/dashboard'
     | '/_app/goals'
+    | '/_app/history'
     | '/_app/import'
     | '/_app/import-prints'
     | '/_app/income'
@@ -435,6 +447,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppGoalsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/history': {
+      id: '/_app/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof AppHistoryRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/import': {
       id: '/_app/import'
       path: '/import'
@@ -542,6 +561,7 @@ interface AppRouteChildren {
   AppCardsRoute: typeof AppCardsRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppGoalsRoute: typeof AppGoalsRoute
+  AppHistoryRoute: typeof AppHistoryRoute
   AppImportRoute: typeof AppImportRoute
   AppImportPrintsRoute: typeof AppImportPrintsRoute
   AppIncomeRoute: typeof AppIncomeRoute
@@ -562,6 +582,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCardsRoute: AppCardsRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppGoalsRoute: AppGoalsRoute,
+  AppHistoryRoute: AppHistoryRoute,
   AppImportRoute: AppImportRoute,
   AppImportPrintsRoute: AppImportPrintsRoute,
   AppIncomeRoute: AppIncomeRoute,

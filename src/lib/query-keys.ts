@@ -56,6 +56,9 @@ export const financeKeys = {
   shoppingItems: ["shopping_items"] as const,
   userSettings: ["user_settings"] as const,
   viewers: ["my_viewers"] as const,
+  history: ["financial-history"] as const,
+  historyList: (filters: object) => ["financial-history", "list", filters] as const,
+  historyDetail: (id: string) => ["financial-history", "detail", id] as const,
   ocr: ["ocr"] as const,
   ocrImages: (page: number) => ["ocr", "images", page] as const,
   ocrReview: (image: string, state: string, page: number) =>
@@ -129,6 +132,7 @@ interface QueryInvalidator {
 
 /** Invalida somente as famílias relacionadas aos domínios informados. */
 export function invalidateFinance(qc: QueryInvalidator, ...domains: FinanceDomain[]) {
+  qc.invalidateQueries({ queryKey: financeKeys.history });
   const seen = new Set<string>();
   for (const domain of domains) {
     for (const key of DOMAIN_KEYS[domain]) {
@@ -138,4 +142,9 @@ export function invalidateFinance(qc: QueryInvalidator, ...domains: FinanceDomai
       qc.invalidateQueries({ queryKey: key });
     }
   }
+}
+
+/** Reversões abrangem a operação inteira e atualizam todos os dados financeiros. */
+export function invalidateAllFinance(qc: QueryInvalidator) {
+  invalidateFinance(qc, ...(Object.keys(DOMAIN_KEYS) as FinanceDomain[]));
 }

@@ -18,6 +18,7 @@ import {
   PiggyBank,
   ShoppingCart,
   Menu,
+  History,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -47,6 +48,7 @@ const items = [
   { to: "/accounts", label: "Contas", short: "Contas", icon: Wallet },
   { to: "/import-prints", label: "Importar por Print", short: "Prints", icon: ScanLine },
   { to: "/import", label: "Importar CSV", short: "CSV", icon: Upload },
+  { to: "/history", label: "Histórico de ações", short: "Histórico", icon: History },
   { to: "/settings", label: "Configurações", short: "Config", icon: Settings },
 ] as const;
 
