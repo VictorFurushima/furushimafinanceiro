@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { applyInvestmentMigrations } from "./helpers/investment-test-db.mjs";
 import { PGlite } from "@electric-sql/pglite";
 const db = new PGlite();
 const file = (p) => readFile(new URL(p, import.meta.url), "utf8");
@@ -57,6 +58,7 @@ try {
     [owner],
   );
   await db.exec(await file("../supabase/migrations/20261005181000_financial_action_history.sql"));
+  await applyInvestmentMigrations(db);
   await db.exec(
     `SET ROLE authenticated;SELECT set_config('request.jwt.claim.sub','${owner}',false);`,
   );

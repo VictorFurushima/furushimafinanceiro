@@ -19,7 +19,8 @@
     "typecheck": "tsc --noEmit",
     "test:finance": "node tests/financial-ledger.test.mjs",
     "test:import-installments": "node tests/import-installments.test.mjs",
-    "test:history": "node tests/financial-history.test.mjs"
+    "test:history": "node tests/financial-history.test.mjs",
+    "test:investments": "node tests/investment-wallets.test.mjs"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",

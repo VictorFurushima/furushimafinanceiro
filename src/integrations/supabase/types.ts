@@ -556,6 +556,12 @@ export type Database = {
           },
         ]
       }
+      investment_tracking: {
+        Row: { id: string; investment_id: string; user_id: string; provider: string; asset_code: string; quantity: number; created_at: string }
+        Insert: { id?: string; investment_id: string; user_id: string; provider: string; asset_code: string; quantity: number; created_at?: string }
+        Update: { id?: string; investment_id?: string; user_id?: string; provider?: string; asset_code?: string; quantity?: number; created_at?: string }
+        Relationships: [{ foreignKeyName: "investment_tracking_investment_id_fkey"; columns: ["investment_id"]; isOneToOne: true; referencedRelation: "investments"; referencedColumns: ["id"] }]
+      }
       investments: {
         Row: {
           applied_at: string
@@ -1362,6 +1368,39 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_investment_valuation_history: { Args: never; Returns: Json };
+      get_investment_portfolio: { Args: never; Returns: Json };
+      get_global_wallet: { Args: never; Returns: Json };
+      get_investment_provider_status: { Args: never; Returns: Json };
+      refresh_investment_quotes: { Args: never; Returns: Json };
+      configure_investment_provider: {
+        Args: { p_provider: string; p_token: string };
+        Returns: undefined;
+      };
+      get_investment_price_history: { Args: { p_id: string }; Returns: Json };
+      save_investment_position: {
+        Args: {
+          p_id: string | null;
+          p_details: Json;
+          p_provider?: string;
+          p_asset_code?: string | null;
+          p_quantity?: number | null;
+        };
+        Returns: string;
+      };
+      invest_move_position: {
+        Args: {
+          p_id: string;
+          p_kind: string;
+          p_amount: number;
+          p_date: string;
+          p_account_id: string | null;
+          p_units?: number | null;
+          p_notes?: string | null;
+        };
+        Returns: string;
+      };
+
       get_financial_history: {
         Args: {
           p_page?: number
@@ -1516,7 +1555,7 @@ export type Database = {
         Returns: string
       }
       invest_update_value: {
-        Args: { p_investment_id: string; p_new_amount: number; p_notes: string }
+        Args: { p_investment_id: string; p_new_amount: number; p_notes: string | null }
         Returns: undefined
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
