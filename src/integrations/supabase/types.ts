@@ -314,6 +314,7 @@ export type Database = {
       }
       credit_cards: {
         Row: {
+          last_four: string | null
           bank: string | null
           closing_day: number
           color: string
@@ -327,6 +328,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          last_four?: string | null
           bank?: string | null
           closing_day?: number
           color?: string
@@ -340,6 +342,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          last_four?: string | null
           bank?: string | null
           closing_day?: number
           color?: string
@@ -536,6 +539,7 @@ export type Database = {
       }
       ocr_import_receipts: {
         Row: {
+          card_selection_source: string | null
           id: string
           user_id: string
           import_key: string
@@ -547,6 +551,7 @@ export type Database = {
           created_at: string
         }
         Insert: {
+          card_selection_source?: string | null
           id?: string
           user_id: string
           import_key: string
@@ -558,6 +563,7 @@ export type Database = {
           created_at?: string
         }
         Update: {
+          card_selection_source?: string | null
           id?: string
           user_id?: string
           import_key?: string
@@ -572,6 +578,7 @@ export type Database = {
       }
       ocr_detected_transactions: {
         Row: {
+          card_selection_source: string | null
           source_key: string
           movement_kind: string
           transaction_status: string
@@ -599,6 +606,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          card_selection_source?: string | null
           source_key?: string
           movement_kind?: string
           transaction_status?: string
@@ -626,6 +634,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          card_selection_source?: string | null
           source_key?: string
           movement_kind?: string
           transaction_status?: string
@@ -678,6 +687,8 @@ export type Database = {
       }
       profiles: {
         Row: {
+          primary_card_id: string | null
+          primary_card_prompt_dismissed: boolean
           avatar_url: string | null
           created_at: string
           email: string | null
@@ -686,6 +697,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          primary_card_id?: string | null
+          primary_card_prompt_dismissed?: boolean
           avatar_url?: string | null
           created_at?: string
           email?: string | null
@@ -694,6 +707,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          primary_card_id?: string | null
+          primary_card_prompt_dismissed?: boolean
           avatar_url?: string | null
           created_at?: string
           email?: string | null
@@ -701,7 +716,13 @@ export type Database = {
           id?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [{
+          foreignKeyName: "profiles_primary_card_id_fkey"
+          columns: ["primary_card_id"]
+          isOneToOne: false
+          referencedRelation: "credit_cards"
+          referencedColumns: ["id"]
+        }]
       }
       recurring_expenses: {
         Row: {
