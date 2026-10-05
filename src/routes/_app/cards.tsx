@@ -31,7 +31,17 @@ import { CardPreference } from "@/components/card-preference";
 import { CreditCardDialog } from "@/components/credit-card-dialog";
 import { BillDialog } from "@/components/bill-dialog";
 
-export const Route = createFileRoute("/_app/cards")({ component: CardsPage });
+export const Route = createFileRoute("/_app/cards")({
+  component: CardsPage,
+  head: () => ({ meta: [
+    { title: "Cartões | Furushima Financeiro" },
+    { name: "description", content: "Limites, faturas, fechamentos e vencimentos dos cartões." },
+    { property: "og:title", content: "Cartões | Furushima Financeiro" },
+    { property: "og:description", content: "Limites, faturas, fechamentos e vencimentos dos cartões." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
+});
 
 function nextDueDate(dueDay: number): Date {
   const now = new Date();
@@ -87,7 +97,7 @@ function CardsPage() {
   const openBills = bills.filter((b) => b.status !== "paga");
 
   return (
-    <div className="p-4 sm:p-6 lg:p-10 space-y-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1440px] mx-auto">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-sm text-muted-foreground">Limites, faturas e vencimentos</p>
@@ -104,7 +114,6 @@ function CardsPage() {
               setEditing(null);
               setOpen(true);
             }}
-            className="bg-gradient-primary text-primary-foreground shadow-glow"
           >
             <Plus className="h-4 w-4 mr-2" /> Novo cartão
           </Button>
@@ -113,7 +122,7 @@ function CardsPage() {
       <CardPreference cards={cards.filter((c) => c.user_id === user?.id)} />
 
       {cards.length === 0 ? (
-        <Card className="bg-gradient-card border-border/50 shadow-card">
+        <Card>
           <CardContent className="py-16 text-center">
             <CardIcon className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
             <p className="text-sm text-muted-foreground">Nenhum cartão cadastrado.</p>
@@ -130,9 +139,9 @@ function CardsPage() {
             return (
               <Card
                 key={c.id}
-                className="bg-gradient-card border-border/50 shadow-card overflow-hidden"
+                 className="overflow-hidden"
               >
-                <div className="h-2" style={{ background: c.color }} />
+                <div className="h-0.5" style={{ background: c.color }} />
                 <CardHeader className="flex flex-row items-start justify-between space-y-0">
                   <div>
                     <CardTitle className="font-display flex items-center gap-2">

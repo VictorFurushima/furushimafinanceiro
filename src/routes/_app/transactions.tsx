@@ -25,7 +25,17 @@ import { formatDateOnlyPtBR, toLocalDateString, todayISO, parseDateOnly } from "
 
 const PAGE_SIZE = 50;
 
-export const Route = createFileRoute("/_app/transactions")({ component: TransactionsPage });
+export const Route = createFileRoute("/_app/transactions")({
+  component: TransactionsPage,
+  head: () => ({ meta: [
+    { title: "Transações | Furushima Financeiro" },
+    { name: "description", content: "Histórico e filtros de movimentações financeiras." },
+    { property: "og:title", content: "Transações | Furushima Financeiro" },
+    { property: "og:description", content: "Histórico e filtros de movimentações financeiras." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
+});
 
 function TransactionsPage() {
   const { data: categories = [] } = useCategories();
@@ -160,7 +170,7 @@ function TransactionsPage() {
   );
 
   return (
-    <div className="p-4 sm:p-6 lg:p-10 max-w-6xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-[1440px] mx-auto space-y-6">
       <header className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold">Transações</h1>
@@ -176,16 +186,13 @@ function TransactionsPage() {
             <Download className="h-4 w-4 mr-2" />
             CSV
           </Button>
-          <Button
-            onClick={() => setOpen(true)}
-            className="bg-gradient-primary text-primary-foreground shadow-glow"
-          >
+          <Button onClick={() => setOpen(true)}>
             <Plus className="h-4 w-4 mr-2" /> Nova
           </Button>
         </div>
       </header>
 
-      <Card className="bg-gradient-card border-border/50 shadow-card">
+      <Card>
         <CardContent className="p-4 space-y-3">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             <Input
@@ -267,7 +274,7 @@ function TransactionsPage() {
         </CardContent>
       </Card>
 
-      <Card className="bg-gradient-card border-border/50 shadow-card">
+      <Card>
         <CardHeader>
           <CardTitle className="font-display">Histórico</CardTitle>
         </CardHeader>
@@ -281,7 +288,7 @@ function TransactionsPage() {
               {rows.map((t) => (
                 <li key={t.id} className="flex items-center gap-4 py-3 group">
                   <div
-                    className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0"
+                    className="h-9 w-9 rounded-md flex items-center justify-center shrink-0"
                     style={{
                       background: `${t.categories?.color ?? "#22d3ee"}25`,
                       color: t.categories?.color ?? "#22d3ee",

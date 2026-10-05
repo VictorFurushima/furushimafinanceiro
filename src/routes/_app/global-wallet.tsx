@@ -12,7 +12,14 @@ import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_app/global-wallet")({
   component: GlobalWallet,
-  head: () => ({ meta: [{ title: "Carteira Global | Furushima Financeiro" }] }),
+  head: () => ({ meta: [
+    { title: "Carteira Global | Furushima Financeiro" },
+    { name: "description", content: "Visão consolidada do capital disponível e investido." },
+    { property: "og:title", content: "Carteira Global | Furushima Financeiro" },
+    { property: "og:description", content: "Visão consolidada do capital disponível e investido." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
 });
 export interface GlobalWalletData {
   overview: FinancialOverviewRow;
@@ -34,7 +41,7 @@ function GlobalWallet() {
   });
   const data = query.data;
   return (
-    <div className="p-4 sm:p-6 lg:p-10 max-w-7xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-[1440px] mx-auto space-y-6">
       <header>
         <p className="text-xs text-muted-foreground">Todo o seu capital em uma visão</p>
         <h1 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold mt-1">
@@ -55,26 +62,20 @@ function GlobalWallet() {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-            <StatCard
-              label="Capital total"
-              value={formatCurrency(data.overview.patrimonio_total)}
-              icon={Wallet}
-              gradient
-              hint="Saldo disponível + valor atual dos investimentos"
-            />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="col-span-2"><StatCard label="Capital global" value={formatCurrency(data.overview.patrimonio_total)} icon={Wallet} gradient hint="Saldo disponível + valor atual dos investimentos" /></div>
             <StatCard
               label="Disponível nas contas"
               value={formatCurrency(data.overview.saldo_disponivel)}
               icon={Banknote}
               hint="Saldo em contas e dinheiro físico"
             />
-            <StatCard
+            <div className="col-span-2"><StatCard
               label="Investimentos, valor atual"
               value={formatCurrency(data.overview.valor_atual_investimentos)}
               icon={PiggyBank}
               accent="success"
-            />
+            /></div>
             <StatCard
               label="Capital aplicado"
               value={formatCurrency(data.overview.total_investido)}
@@ -94,7 +95,7 @@ function GlobalWallet() {
             />
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Card>
+            <Card className="furushima-accent">
               <CardHeader>
                 <CardTitle className="font-display text-lg">Contas e dinheiro físico</CardTitle>
               </CardHeader>
@@ -130,7 +131,7 @@ function GlobalWallet() {
                 </Button>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-primary/25">
               <CardHeader>
                 <CardTitle className="font-display text-lg">Carteira de Investimentos</CardTitle>
               </CardHeader>
