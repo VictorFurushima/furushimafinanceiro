@@ -71,8 +71,28 @@ Não foi realizado teste visual autenticado ponta a ponta nesta sessão.
 
 ## Implantação
 
-Estado neste checkpoint: código validado localmente. Banco, integração e publicação
-serão registrados após os respectivos retornos, sem presumir sucesso.
+PR #5 integrado: https://github.com/VictorFurushima/furushimafinanceiro/pull/5.
+Versão funcional: 9ace7be8f334100923af86b6d334ed30d98495de.
+GitHub e Lovable confirmaram esse SHA. A árvore enviada correspondeu exatamente
+à árvore do código local testado: 36f2c392c8dac5b16a2c60b5d9e6aa4fad19cc04.
+
+A migration foi aplicada em uma transação e registrada em schema_migrations.
+Conferência no banco: cinco novas colunas, FK com SET NULL, trigger de titular
+instalado e save_ocr_review SECURITY INVOKER com gravação da origem.
+O banco tinha um cartão ativo, sem alterar seus dados nem criar transações.
+
+A publicação inicialmente retornou pending, deployment
+43321ab9-4bae-4605-8f43-545c2cc116ce. A confirmação por chat ficou na fila
+por server_error. A checagem direta resolveu a verificação: a URL pública
+respondeu HTTP 200 e passou a servir os bundles novos, incluindo
+import-prints-DRjTgXQi.js e card-preference-O5x7hlzX.js.
+Foram conferidos nos arquivos públicos a seleção automática, identificação pelo
+print, origens de seleção, oferta do principal, Agora não e campos persistidos.
+A publicação do código do patch foi confirmada pelos arquivos servidos.
+Não houve teste autenticado de interação ou gravação pelo navegador.
+
+Nenhuma nova implementação foi solicitada ao chat Lovable: apenas uma mensagem
+curta de conferência, em modo de planejamento, sem edição de código.
 
 ## Conferência pelo usuário
 
