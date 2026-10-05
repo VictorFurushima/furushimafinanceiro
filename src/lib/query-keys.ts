@@ -46,6 +46,7 @@ export const financeKeys = {
   categoryLimits: ["category_limits"] as const,
   recharges: ["recharges"] as const,
   creditCards: ["credit_cards"] as const,
+  cardPreference: (id: string) => ["card_preference", id] as const,
   creditCardBills: ["credit_card_bills"] as const,
   installments: ["installments"] as const,
   installmentsList: (card: string, status: string, search: string, page: number) =>
@@ -96,6 +97,7 @@ const DOMAIN_KEYS: Record<FinanceDomain, readonly (readonly unknown[])[]> = {
   categoryLimits: [financeKeys.categoryLimits],
   recharges: [financeKeys.recharges, financeKeys.aggregates],
   cards: [
+    ["card_preference"],
     financeKeys.creditCards,
     financeKeys.creditCardBills,
     financeKeys.installments,

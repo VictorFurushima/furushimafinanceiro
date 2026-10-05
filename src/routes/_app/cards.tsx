@@ -26,6 +26,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { invalidateFinance } from "@/lib/query-keys";
 import { formatCurrency } from "@/lib/format";
+import { useAuth } from "@/hooks/use-auth";
+import { CardPreference } from "@/components/card-preference";
 import { CreditCardDialog } from "@/components/credit-card-dialog";
 import { BillDialog } from "@/components/bill-dialog";
 
@@ -39,6 +41,7 @@ function nextDueDate(dueDay: number): Date {
 }
 
 function CardsPage() {
+  const { user } = useAuth();
   const { data: cards = [] } = useCreditCards();
   const { data: bills = [] } = useCreditCardBills();
   const { data: accounts = [] } = useAccounts();
@@ -107,6 +110,7 @@ function CardsPage() {
           </Button>
         </div>
       </header>
+      <CardPreference cards={cards.filter((c) => c.user_id === user?.id)} />
 
       {cards.length === 0 ? (
         <Card className="bg-gradient-card border-border/50 shadow-card">

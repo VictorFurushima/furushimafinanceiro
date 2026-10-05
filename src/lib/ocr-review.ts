@@ -1,5 +1,6 @@
 import type { Json } from "@/integrations/supabase/types";
 import { isValidDateOnly } from "./date-only";
+import { selectOcrCard, type SelectableCard, type CardSelectionSource } from "./ocr-card-selection";
 export interface OcrMatch {
   source: "transaction" | "review";
   id: string;
@@ -30,6 +31,7 @@ export interface OcrItem {
   external_reference: string | null;
   review_account_id: string | null;
   review_card_id: string | null;
+  card_selection_source?: CardSelectionSource | null;
   review_destination_account_id: string | null;
   matches: OcrMatch[];
 }
@@ -46,6 +48,7 @@ export interface OcrDraft {
   payment_method: string;
   account_id: string;
   card_id: string;
+  card_selection_source: CardSelectionSource | null;
   destination_account_id: string;
   category_id: string;
   confirmed: boolean;
@@ -67,6 +70,7 @@ export function newOcrDraft(item: OcrItem, defaultAccount = ""): OcrDraft {
     payment_method: item.detected_payment_method ?? "",
     account_id: item.review_account_id ?? defaultAccount,
     card_id: item.review_card_id ?? "",
+    card_selection_source: item.card_selection_source ?? (item.review_card_id ? "manual" : null),
     destination_account_id: item.review_destination_account_id ?? "",
     category_id: item.suggested_category_id ?? "",
     movement_kind: item.movement_kind,
@@ -105,7 +109,24 @@ export function ocrFields(draft: OcrDraft): Json {
     amount: draft.amount.trim() ? Number(draft.amount) : null,
     account_id: draft.payment_method === "credito" ? null : draft.account_id || null,
     card_id: draft.payment_method === "credito" ? draft.card_id || null : null,
+    card_selection_source: draft.payment_method === "credito" ? draft.card_selection_source : null,
     category_id: draft.type === "transfer" ? null : draft.category_id || null,
     destination_account_id: draft.type === "transfer" ? draft.destination_account_id || null : null,
+  };
+}
+
+/** Resolve at render/save time so asynchronously loaded cards and preferences are current. */
+export function resolveOcrDraft(
+  draft: OcrDraft,
+  item: OcrItem,
+  cards: SelectableCard[],
+  primaryId?: string | null,
+): OcrDraft {
+  if (draft.payment_method !== "credito" || item.review_status === "saved") return draft;
+  const chosen = cards.find((c) => c.id === draft.card_id && c.status === "active");
+  if (chosen && draft.card_selection_source === "manual") return draft;
+  return {
+    ...draft,
+    ...selectOcrCard(cards, `${item.detected_account ?? ""}\n${item.raw_text ?? ""}`, primaryId),
   };
 }
