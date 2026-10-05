@@ -90,13 +90,6 @@ export const Route = createFileRoute("/_app/investments")({
         name: "description",
         content: "Acompanhe aportes, resgates, rendimento e composição da sua carteira.",
       },
-      { property: "og:title", content: "Carteira de Investimentos | Furushima Financeiro" },
-      {
-        property: "og:description",
-        content: "Acompanhe aportes, resgates, rendimento e composição da sua carteira.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
     ],
   }),
 });
@@ -232,7 +225,7 @@ function InvestmentsPage() {
   const reminderInvestment = investments.find((i) => i.id === settings?.reminder_investment_id);
 
   return (
-    <div className="p-3 sm:p-6 lg:p-8 space-y-4 sm:space-y-6 max-w-[1440px] mx-auto">
+    <div className="p-3 sm:p-4 sm:p-6 lg:p-10 space-y-4 sm:space-y-6 max-w-7xl mx-auto">
       <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div>
           <p className="text-xs sm:text-sm text-muted-foreground">
@@ -248,7 +241,7 @@ function InvestmentsPage() {
               setEditing(null);
               setOpen(true);
             }}
-            className="w-full sm:w-auto"
+            className="bg-gradient-primary text-primary-foreground shadow-glow w-full sm:w-auto"
           >
             <Plus className="h-4 w-4 mr-2" /> Novo investimento
           </Button>
@@ -350,7 +343,7 @@ function InvestmentsPage() {
 
       {byType.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-          <Card>
+          <Card className="bg-gradient-card border-border/50 shadow-card">
             <CardHeader>
               <CardTitle className="font-display text-base sm:text-lg">
                 Distribuição por tipo
@@ -376,7 +369,7 @@ function InvestmentsPage() {
               </ResponsiveContainer>
             </CardContent>
           </Card>
-          <Card className="border-primary/25">
+          <Card className="bg-gradient-card border-border/50 shadow-card">
             <CardHeader>
               <CardTitle className="font-display text-base sm:text-lg">
                 Histórico do valor da carteira
@@ -403,15 +396,19 @@ function InvestmentsPage() {
                         }),
                       }))}
                     >
-                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
-                      <XAxis dataKey="label" fontSize={11} stroke="var(--muted-foreground)" />
-                      <YAxis fontSize={11} stroke="var(--muted-foreground)" width={50} />
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="hsl(var(--border))"
+                        opacity={0.3}
+                      />
+                      <XAxis dataKey="label" fontSize={11} stroke="hsl(var(--muted-foreground))" />
+                      <YAxis fontSize={11} stroke="hsl(var(--muted-foreground))" width={50} />
                       <Tooltip formatter={(v: number) => formatCurrency(v)} />
                       <Area
                         type="monotone"
                         dataKey="value"
-                        stroke="var(--chart-2)"
-                        fill="var(--chart-2)"
+                        stroke="#228E9A"
+                        fill="#228E9A"
                         fillOpacity={0.25}
                         name="Valor da carteira"
                       />
@@ -425,7 +422,7 @@ function InvestmentsPage() {
               )}
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-gradient-card border-border/50 shadow-card">
             <CardHeader>
               <CardTitle className="font-display text-base sm:text-lg">
                 Aportes e rendimento por mês
@@ -434,52 +431,37 @@ function InvestmentsPage() {
             <CardContent>
               <ResponsiveContainer width="100%" height={230}>
                 <BarChart data={evolucao}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
-                  <XAxis dataKey="label" fontSize={11} stroke="var(--muted-foreground)" />
-                  <YAxis fontSize={11} stroke="var(--muted-foreground)" width={50} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                  <XAxis dataKey="label" fontSize={11} stroke="hsl(var(--muted-foreground))" />
+                  <YAxis fontSize={11} stroke="hsl(var(--muted-foreground))" width={50} />
                   <Tooltip formatter={(v: number) => formatCurrency(v)} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Bar
-                    dataKey="aporte"
-                    fill="var(--chart-1)"
-                    name="Aportes"
-                    radius={[3, 3, 0, 0]}
-                  />
+                  <Bar dataKey="aporte" fill="#228E9A" name="Aportes" radius={[4, 4, 0, 0]} />
                   <Bar
                     dataKey="rendimento"
-                    fill="var(--chart-3)"
+                    fill="#5FA498"
                     name="Rendimento"
-                    radius={[3, 3, 0, 0]}
+                    radius={[4, 4, 0, 0]}
                   />
-                  <Bar
-                    dataKey="resgate"
-                    fill="var(--chart-5)"
-                    name="Resgates"
-                    radius={[3, 3, 0, 0]}
-                  />
+                  <Bar dataKey="resgate" fill="#f87171" name="Resgates" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-gradient-card border-border/50 shadow-card">
             <CardHeader>
               <CardTitle className="font-display text-base sm:text-lg">Investido x Atual</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={230}>
                 <BarChart data={investidoVsAtual}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
-                  <XAxis dataKey="name" fontSize={10} stroke="var(--muted-foreground)" />
-                  <YAxis fontSize={11} stroke="var(--muted-foreground)" width={50} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                  <XAxis dataKey="name" fontSize={10} stroke="hsl(var(--muted-foreground))" />
+                  <YAxis fontSize={11} stroke="hsl(var(--muted-foreground))" width={50} />
                   <Tooltip formatter={(v: number) => formatCurrency(v)} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Bar
-                    dataKey="investido"
-                    fill="var(--chart-1)"
-                    name="Investido"
-                    radius={[3, 3, 0, 0]}
-                  />
-                  <Bar dataKey="atual" fill="var(--chart-3)" name="Atual" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="investido" fill="#20656C" name="Investido" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="atual" fill="#5FA498" name="Atual" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -505,7 +487,7 @@ function InvestmentsPage() {
         </Select>
       </div>
 
-      <Card>
+      <Card className="bg-gradient-card border-border/50 shadow-card">
         <CardHeader>
           <CardTitle className="font-display text-base sm:text-lg">Seus investimentos</CardTitle>
         </CardHeader>
@@ -525,7 +507,7 @@ function InvestmentsPage() {
                 return (
                   <li key={i.id} className="py-3 flex flex-wrap items-center gap-3">
                     <div
-                      className="h-9 w-9 rounded-md flex items-center justify-center shrink-0"
+                      className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0"
                       style={{
                         background: `${investmentTypeColor(i.inv_type)}25`,
                         color: investmentTypeColor(i.inv_type),
@@ -633,7 +615,7 @@ function InvestmentsPage() {
       </Card>
 
       {participacao.length > 0 && (
-        <Card>
+        <Card className="bg-gradient-card border-border/50 shadow-card">
           <CardHeader>
             <CardTitle className="font-display text-base sm:text-lg">
               Participação por investimento
@@ -663,7 +645,7 @@ function InvestmentsPage() {
         </Card>
       )}
 
-      <Card>
+      <Card className="bg-gradient-card border-border/50 shadow-card">
         <CardHeader>
           <CardTitle className="font-display text-base sm:text-lg">Histórico</CardTitle>
         </CardHeader>
@@ -714,7 +696,7 @@ function InvestmentsPage() {
 
 function SelicCard({ selic }: { selic: ReturnType<typeof useSelic> }) {
   return (
-    <Card className="furushima-accent">
+    <Card className="bg-gradient-card border-border/50 shadow-card">
       <CardContent className="p-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs text-muted-foreground">Taxa Selic (Banco Central)</p>
@@ -776,7 +758,7 @@ function Simulator({ selicRate }: { selicRate: number | null }) {
   const rendMedio = serie.length > 0 ? rendimentoTotal / serie.length : 0;
 
   return (
-    <Card>
+    <Card className="bg-gradient-card border-border/50 shadow-card">
       <CardHeader>
         <CardTitle className="font-display text-base sm:text-lg flex items-center gap-2">
           <Calculator className="h-4 w-4" /> Simulador de investimento
@@ -866,9 +848,9 @@ function Simulator({ selicRate }: { selicRate: number | null }) {
 
         <ResponsiveContainer width="100%" height={220}>
           <AreaChart data={serie}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" opacity={0.3} />
-            <XAxis dataKey="mes" fontSize={10} stroke="var(--muted-foreground)" />
-            <YAxis fontSize={11} stroke="var(--muted-foreground)" width={50} />
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+            <XAxis dataKey="mes" fontSize={10} stroke="hsl(var(--muted-foreground))" />
+            <YAxis fontSize={11} stroke="hsl(var(--muted-foreground))" width={50} />
             <Tooltip
               formatter={(v: number) => formatCurrency(v)}
               labelFormatter={(l) => `Mês ${l}`}
@@ -877,16 +859,16 @@ function Simulator({ selicRate }: { selicRate: number | null }) {
             <Area
               type="monotone"
               dataKey="aportado"
-              stroke="var(--chart-1)"
-              fill="var(--chart-1)"
+              stroke="#20656C"
+              fill="#20656C"
               fillOpacity={0.2}
               name="Aportado"
             />
             <Area
               type="monotone"
               dataKey="valor"
-              stroke="var(--chart-3)"
-              fill="var(--chart-3)"
+              stroke="#5FA498"
+              fill="#5FA498"
               fillOpacity={0.25}
               name="Com rendimento"
             />

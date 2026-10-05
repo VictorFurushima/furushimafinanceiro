@@ -14,6 +14,91 @@ export type Database = {
   }
   public: {
     Tables: {
+      financial_actions: {
+        Row: {
+          id: string
+          user_id: string
+          transaction_key: number
+          root_table: string
+          root_operation: string
+          root_depth: number
+          description: string | null
+          created_at: string
+          reverted_at: string | null
+          reversal_id: string | null
+          reversal_of: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          transaction_key: number
+          root_table: string
+          root_operation: string
+          root_depth: number
+          description?: string | null
+          created_at?: string
+          reverted_at?: string | null
+          reversal_id?: string | null
+          reversal_of?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          transaction_key?: number
+          root_table?: string
+          root_operation?: string
+          root_depth?: number
+          description?: string | null
+          created_at?: string
+          reverted_at?: string | null
+          reversal_id?: string | null
+          reversal_of?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_actions_reversal_of_fkey"
+            columns: ["reversal_of"]
+            isOneToOne: false
+            referencedRelation: "financial_actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financial_action_changes: {
+        Row: {
+          id: number
+          action_id: string
+          table_name: string
+          record_id: string
+          before_row: Json | null
+          after_row: Json | null
+        }
+        Insert: {
+          id?: never
+          action_id: string
+          table_name: string
+          record_id: string
+          before_row?: Json | null
+          after_row?: Json | null
+        }
+        Update: {
+          id?: never
+          action_id?: string
+          table_name?: string
+          record_id?: string
+          before_row?: Json | null
+          after_row?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_action_changes_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "financial_actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       accounts: {
         Row: {
           color: string
@@ -357,91 +442,6 @@ export type Database = {
         }
         Relationships: []
       }
-      financial_action_changes: {
-        Row: {
-          action_id: string
-          after_row: Json | null
-          before_row: Json | null
-          id: number
-          record_id: string
-          table_name: string
-        }
-        Insert: {
-          action_id: string
-          after_row?: Json | null
-          before_row?: Json | null
-          id?: never
-          record_id: string
-          table_name: string
-        }
-        Update: {
-          action_id?: string
-          after_row?: Json | null
-          before_row?: Json | null
-          id?: never
-          record_id?: string
-          table_name?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "financial_action_changes_action_id_fkey"
-            columns: ["action_id"]
-            isOneToOne: false
-            referencedRelation: "financial_actions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      financial_actions: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          reversal_id: string | null
-          reversal_of: string | null
-          reverted_at: string | null
-          root_depth: number
-          root_operation: string
-          root_table: string
-          transaction_key: number
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          reversal_id?: string | null
-          reversal_of?: string | null
-          reverted_at?: string | null
-          root_depth: number
-          root_operation: string
-          root_table: string
-          transaction_key: number
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          reversal_id?: string | null
-          reversal_of?: string | null
-          reverted_at?: string | null
-          root_depth?: number
-          root_operation?: string
-          root_table?: string
-          transaction_key?: number
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "financial_actions_reversal_of_fkey"
-            columns: ["reversal_of"]
-            isOneToOne: false
-            referencedRelation: "financial_actions"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       goals: {
         Row: {
           category_id: string | null
@@ -557,42 +557,10 @@ export type Database = {
         ]
       }
       investment_tracking: {
-        Row: {
-          asset_code: string
-          created_at: string
-          id: string
-          investment_id: string
-          provider: string
-          quantity: number
-          user_id: string
-        }
-        Insert: {
-          asset_code: string
-          created_at?: string
-          id?: string
-          investment_id: string
-          provider: string
-          quantity: number
-          user_id: string
-        }
-        Update: {
-          asset_code?: string
-          created_at?: string
-          id?: string
-          investment_id?: string
-          provider?: string
-          quantity?: number
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "investment_tracking_investment_id_fkey"
-            columns: ["investment_id"]
-            isOneToOne: true
-            referencedRelation: "investments"
-            referencedColumns: ["id"]
-          },
-        ]
+        Row: { id: string; investment_id: string; user_id: string; provider: string; asset_code: string; quantity: number; created_at: string }
+        Insert: { id?: string; investment_id: string; user_id: string; provider: string; asset_code: string; quantity: number; created_at?: string }
+        Update: { id?: string; investment_id?: string; user_id?: string; provider?: string; asset_code?: string; quantity?: number; created_at?: string }
+        Relationships: [{ foreignKeyName: "investment_tracking_investment_id_fkey"; columns: ["investment_id"]; isOneToOne: true; referencedRelation: "investments"; referencedColumns: ["id"] }]
       }
       investments: {
         Row: {
@@ -1400,6 +1368,54 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_investment_valuation_history: { Args: never; Returns: Json };
+      get_investment_portfolio: { Args: never; Returns: Json };
+      get_global_wallet: { Args: never; Returns: Json };
+      get_investment_provider_status: { Args: never; Returns: Json };
+      refresh_investment_quotes: { Args: never; Returns: Json };
+      configure_investment_provider: {
+        Args: { p_provider: string; p_token: string };
+        Returns: undefined;
+      };
+      get_investment_price_history: { Args: { p_id: string }; Returns: Json };
+      save_investment_position: {
+        Args: {
+          p_id: string | null;
+          p_details: Json;
+          p_provider?: string;
+          p_asset_code?: string | null;
+          p_quantity?: number | null;
+        };
+        Returns: string;
+      };
+      invest_move_position: {
+        Args: {
+          p_id: string;
+          p_kind: string;
+          p_amount: number;
+          p_date: string;
+          p_account_id: string | null;
+          p_units?: number | null;
+          p_notes?: string | null;
+        };
+        Returns: string;
+      };
+
+      get_financial_history: {
+        Args: {
+          p_page?: number
+          p_page_size?: number
+          p_status?: string
+          p_table?: string
+          p_from?: string
+          p_to?: string
+          p_search?: string
+        }
+        Returns: Json
+      }
+      get_financial_action: { Args: { p_action_id: string }; Returns: Json }
+      revert_financial_action: { Args: { p_action_id: string }; Returns: Json }
+
       accept_viewer_access: {
         Args: { p_invitation_id: string }
         Returns: string
@@ -1423,10 +1439,6 @@ export type Database = {
           p_purchase_date?: string
         }
         Returns: string
-      }
-      configure_investment_provider: {
-        Args: { p_provider: string; p_token: string }
-        Returns: undefined
       }
       confirm_recharge_as_income: {
         Args: { p_recharge_id: string }
@@ -1460,21 +1472,7 @@ export type Database = {
       }
       get_dashboard_bundle: { Args: { p_months?: number }; Returns: Json }
       get_dashboard_snapshot: { Args: never; Returns: Json }
-      get_financial_action: { Args: { p_action_id: string }; Returns: Json }
-      get_financial_history: {
-        Args: {
-          p_from?: string
-          p_page?: number
-          p_page_size?: number
-          p_search?: string
-          p_status?: string
-          p_table?: string
-          p_to?: string
-        }
-        Returns: Json
-      }
       get_financial_overview: { Args: never; Returns: Json }
-      get_global_wallet: { Args: never; Returns: Json }
       get_installments: {
         Args: {
           p_card_id?: string
@@ -1485,10 +1483,6 @@ export type Database = {
         }
         Returns: Json
       }
-      get_investment_portfolio: { Args: never; Returns: Json }
-      get_investment_price_history: { Args: { p_id: string }; Returns: Json }
-      get_investment_provider_status: { Args: never; Returns: Json }
-      get_investment_valuation_history: { Args: never; Returns: Json }
       get_monthly_financial_summary: {
         Args: { p_from: string; p_to: string }
         Returns: {
@@ -1550,18 +1544,6 @@ export type Database = {
         }
         Returns: string
       }
-      invest_move_position: {
-        Args: {
-          p_account_id: string
-          p_amount: number
-          p_date: string
-          p_id: string
-          p_kind: string
-          p_notes?: string
-          p_units?: number
-        }
-        Returns: string
-      }
       invest_redeem: {
         Args: {
           p_account_id: string
@@ -1573,7 +1555,7 @@ export type Database = {
         Returns: string
       }
       invest_update_value: {
-        Args: { p_investment_id: string; p_new_amount: number; p_notes: string }
+        Args: { p_investment_id: string; p_new_amount: number; p_notes: string | null }
         Returns: undefined
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
@@ -1614,19 +1596,7 @@ export type Database = {
         Args: { p_account_id?: string; p_bill_id: string }
         Returns: undefined
       }
-      refresh_investment_quotes: { Args: never; Returns: Json }
-      revert_financial_action: { Args: { p_action_id: string }; Returns: Json }
       revoke_viewer_access: { Args: { p_user_id: string }; Returns: string }
-      save_investment_position: {
-        Args: {
-          p_asset_code?: string
-          p_details: Json
-          p_id: string
-          p_provider?: string
-          p_quantity?: number
-        }
-        Returns: string
-      }
       save_ocr_detected_transaction: {
         Args: {
           p_account_id: string
@@ -1658,16 +1628,16 @@ export type Database = {
           p_color: string
           p_current_amount: number
           p_initial_amount: number
-          p_institution: string
+          p_institution: string | null
           p_inv_type: string
           p_invested_amount: number
           p_investment_id: string
           p_is_emergency_reserve: boolean
           p_liquidity: string
-          p_maturity_date: string
+          p_maturity_date: string | null
           p_name: string
-          p_notes: string
-          p_objective: string
+          p_notes: string | null
+          p_objective: string | null
           p_risk: string
           p_status: string
         }

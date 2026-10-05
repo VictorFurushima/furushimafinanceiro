@@ -146,11 +146,11 @@ export function InvestmentDialog({
       if (!u.user) throw new Error("Não autenticado");
       const payload = { ...parsed.data, color: investmentTypeColor(type), user_id: u.user.id };
       const { error } = await supabase.rpc("save_investment_position", {
-        p_id: editing?.id ?? (null as unknown as string),
+        p_id: editing?.id ?? null,
         p_details: payload,
         p_provider: provider,
-        p_asset_code: provider === "manual" ? (null as unknown as string) : assetCode.trim(),
-        p_quantity: provider === "manual" ? (null as unknown as number) : parseNum(quantity),
+        p_asset_code: provider === "manual" ? null : assetCode.trim(),
+        p_quantity: provider === "manual" ? null : parseNum(quantity),
       });
       if (error) throw error;
       toast.success(editing ? "Investimento atualizado" : "Investimento criado");
