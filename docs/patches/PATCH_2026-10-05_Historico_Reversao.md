@@ -31,3 +31,15 @@ Rollback operacional: voltar o frontend, remover zz_history_capture das 19 tabel
 ## Fluxo de execução
 
 Código e testes no Codex; histórico e integração no GitHub; banco e publicação no Lovable, sem solicitar regeneração do código ao agente Lovable.
+
+## Evidência de publicação
+
+PR #6 integrado: https://github.com/VictorFurushima/furushimafinanceiro/pull/6. Commit funcional aa508b15340b66b1d1679bf99a61c649e2b212bc. Árvore enviada ao GitHub confere com a árvore testada localmente aa9a3d3f259d2bbbfc2cc6606784751d78842e72.
+
+Migração aplicada e registrada em produção: 19 triggers de captura, 9 funções originais preservadas. Permissões de leitura/escrita e isolamento do contexto privado conferidos. Teste em produção, sob papel authenticated, confirmou captura, reversão integral, idempotência e limpeza do contexto. Todos os registros do teste foram descartados por ROLLBACK.
+
+Publicação 6f9505a5-f0cc-4574-ac0b-8b0948d23d52. Página https://furushimafinanceiro.lovable.app/history responde HTTP 200 e carrega index-ErBNW4qQ.js, history-BXn9qPgW.js e history-CASGkgwF.js. O bundle publicado contém as três RPCs, o título Histórico de ações e Confirmar reversão.
+
+Verificação visual por Chromium/Playwright: 7 verificações passaram, incluindo fluxo navegador → RPC → PostgreSQL → resposta, persistência após recarga, busca sem resultados, conflito criado entre prévia e confirmação, viewport móvel de 390 px, controles do espectador e ausência de erros de página. A sessão foi sintética local e as requisições Supabase foram atendidas por uma instância PGlite com as migrações reais, sem usar credenciais ou dados reais no navegador. O teste SQL em produção e a conferência dos bundles complementam essa evidência; não representam uma sessão real do usuário na tela publicada.
+
+O CLI agent-browser não iniciou o daemon neste ambiente; a inspeção visual usou Playwright diretamente. O servidor e o navegador foram iniciados no mesmo processo de verificação para respeitar o isolamento de rede do ambiente.
