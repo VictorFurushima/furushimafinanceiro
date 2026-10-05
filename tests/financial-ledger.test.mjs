@@ -272,7 +272,7 @@ try {
       "INSERT INTO shopping_items(user_id,item,price,down_payment,card_id,account_id,payment_method,installments) VALUES ($1,'Planned with entry',100,20,$2,$3,'credito_parcelado',4) RETURNING id",
       [uid, card, account],
     );
-    const tx = await scalar("SELECT complete_shopping_item($1,true,CURRENT_DATE)", [item]);
+    const tx = await scalar("SELECT complete_shopping_item($1,true,'2026-09-04'::date)", [item]);
     const entry = await scalar(
       "SELECT down_payment_transaction_id FROM shopping_items WHERE id=$1",
       [item],

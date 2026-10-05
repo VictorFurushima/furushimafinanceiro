@@ -101,6 +101,8 @@ export interface BalanceRecharge {
 }
 
 export interface CreditCard {
+  user_id: string;
+  last_four?: string | null;
   id: string;
   name: string;
   bank: string | null;
@@ -295,7 +297,9 @@ export const useCreditCards = () =>
     queryFn: async (): Promise<CreditCard[]> => {
       const { data, error } = await supabase
         .from("credit_cards")
-        .select("id, name, bank, total_limit, used_limit, closing_day, due_day, status, color")
+        .select(
+          "id, user_id, name, bank, last_four, total_limit, used_limit, closing_day, due_day, status, color",
+        )
         .order("created_at");
       if (error) throw error;
       return ((data ?? []) as unknown as CreditCard[]).map((c) => ({

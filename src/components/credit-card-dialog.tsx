@@ -15,6 +15,10 @@ import type { CreditCard } from "@/hooks/use-finance-data";
 const schema = z.object({
   name: z.string().min(1).max(60),
   bank: z.string().max(60).nullable(),
+  last_four: z
+    .string()
+    .regex(/^[0-9]{4}$/, "Informe os 4 últimos dígitos")
+    .nullable(),
   total_limit: z.number().min(0),
   used_limit: z.number().min(0),
   closing_day: z.number().int().min(1).max(31),
@@ -34,6 +38,7 @@ export function CreditCardDialog({
   const qc = useQueryClient();
   const [name, setName] = useState("");
   const [bank, setBank] = useState("");
+  const [lastFour, setLastFour] = useState("");
   const [total, setTotal] = useState("");
   const [used, setUsed] = useState("0");
   const [closing, setClosing] = useState(1);
@@ -45,6 +50,7 @@ export function CreditCardDialog({
     if (editing) {
       setName(editing.name);
       setBank(editing.bank ?? "");
+      setLastFour(editing.last_four ?? "");
       setTotal(String(editing.total_limit));
       setUsed(String(editing.used_limit));
       setClosing(editing.closing_day);
@@ -53,6 +59,7 @@ export function CreditCardDialog({
     } else if (open) {
       setName("");
       setBank("");
+      setLastFour("");
       setTotal("");
       setUsed("0");
       setClosing(1);
@@ -66,6 +73,7 @@ export function CreditCardDialog({
     const parsed = schema.safeParse({
       name,
       bank: bank || null,
+      last_four: lastFour || null,
       total_limit: parseFloat(total.replace(",", ".")) || 0,
       used_limit: parseFloat(used.replace(",", ".")) || 0,
       closing_day: closing,
@@ -105,6 +113,18 @@ export function CreditCardDialog({
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="card-last-four">Últimos 4 dígitos (opcional)</Label>
+            <Input
+              id="card-last-four"
+              inputMode="numeric"
+              maxLength={4}
+              pattern="[0-9]{4}"
+              value={lastFour}
+              onChange={(e) => setLastFour(e.target.value.replace(/\D/g, "").slice(0, 4))}
+              placeholder="Ex: 5461"
+            />
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>Nome</Label>

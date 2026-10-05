@@ -21,6 +21,8 @@ import { financeKeys, invalidateFinance } from "@/lib/query-keys";
 import { useAuth } from "@/hooks/use-auth";
 import { useRole } from "@/hooks/use-role";
 import { useCategories, useAccounts, useCreditCards } from "@/hooks/use-finance-data";
+import { useCardPreference } from "@/hooks/use-card-preference";
+import { CardPreference } from "@/components/card-preference";
 import { PAYMENT_METHODS } from "@/lib/finance-constants";
 import { formatCurrency } from "@/lib/format";
 import { formatDateOnlyPtBR, isValidDateOnly, todayISO } from "@/lib/date-only";
@@ -29,6 +31,7 @@ import { sha256Hex } from "@/lib/ocr-schema";
 import { friendlyError } from "@/lib/friendly-error";
 import {
   newOcrDraft,
+  resolveOcrDraft,
   ocrDraftReady,
   ocrFields,
   requiresOcrConfirmation,
@@ -67,7 +70,11 @@ function ImportPrintsPage() {
   const extract = useServerFn(extractTransactionsFromImage);
   const { data: categories = [] } = useCategories();
   const { data: accounts = [] } = useAccounts();
-  const { data: cards = [] } = useCreditCards();
+  const cardQuery = useCreditCards();
+  const cards = (cardQuery.data ?? []).filter(
+    (c) => c.user_id === user?.id && c.status === "active",
+  );
+  const preference = useCardPreference();
   const [uploading, setUploading] = useState(false);
   const [referenceDate, setReferenceDate] = useState(todayISO());
   const [imageDates, setImageDates] = useState<Record<string, string>>({});
@@ -120,7 +127,13 @@ function ImportPrintsPage() {
     setPage(0);
     setSelected(new Set());
   };
-  const draftOf = (item: OcrItem) => drafts[item.id] ?? newOcrDraft(item, defaultAccount);
+  const draftOf = (item: OcrItem) =>
+    resolveOcrDraft(
+      drafts[item.id] ?? newOcrDraft(item, defaultAccount),
+      item,
+      cards,
+      preference.isSuccess ? preference.data?.primary_card_id : null,
+    );
   const matchesOf = (item: OcrItem) => results[item.id]?.matches ?? item.matches;
   const update = (item: OcrItem, change: Partial<OcrDraft>) => {
     setSelected((ids) => {
@@ -130,7 +143,7 @@ function ImportPrintsPage() {
     });
     setDrafts((d) => ({
       ...d,
-      [item.id]: { ...(d[item.id] ?? newOcrDraft(item, defaultAccount)), ...change },
+      [item.id]: { ...draftOf(item), ...change },
     }));
     setResults((r) => {
       const next = { ...r };
@@ -358,6 +371,7 @@ function ImportPrintsPage() {
         suggested_category_id: d.category_id || null,
         review_account_id: d.payment_method === "credito" ? null : d.account_id || null,
         review_card_id: d.payment_method === "credito" ? d.card_id || null : null,
+        card_selection_source: d.payment_method === "credito" ? d.card_selection_source : null,
         review_destination_account_id:
           d.type === "transfer" ? d.destination_account_id || null : null,
         external_reference: d.external_reference || null,
@@ -380,7 +394,7 @@ function ImportPrintsPage() {
     if (error) toast.error(friendlyError(error));
     else refresh();
   };
-  const error = imageQuery.error ?? reviewQuery.error;
+  const error = imageQuery.error ?? reviewQuery.error ?? cardQuery.error ?? preference.error;
   return (
     <div className="p-4 sm:p-6 lg:p-10 max-w-6xl mx-auto space-y-5">
       <header>
@@ -391,6 +405,7 @@ function ImportPrintsPage() {
           Envie a imagem, confira os lançamentos e resolva os avisos antes de salvar.
         </p>
       </header>
+      {isAdmin && <CardPreference cards={cards} prompt />}
       {isAdmin && (
         <Card>
           <CardContent className="p-4 space-y-3">
@@ -758,15 +773,46 @@ function ImportPrintsPage() {
                         update(
                           item,
                           draft.payment_method === "credito"
-                            ? { card_id: value }
+                            ? { card_id: value, card_selection_source: "manual" }
                             : { account_id: value },
                         )
                       }
+                      placeholder={
+                        draft.payment_method === "credito" && !cards.length
+                          ? cardQuery.isPending
+                            ? "Carregando cartões"
+                            : "Nenhum cartão cadastrado"
+                          : "Selecione"
+                      }
                       options={(draft.payment_method === "credito" ? cards : accounts).map((a) => [
                         a.id,
-                        a.name,
+                        a.name + ("last_four" in a && a.last_four ? ` •••• ${a.last_four}` : ""),
                       ])}
                     />
+                    {draft.payment_method === "credito" &&
+                      draft.card_id &&
+                      draft.card_selection_source !== "manual" && (
+                        <p className="text-xs text-muted-foreground">
+                          {draft.card_selection_source === "ocr_match"
+                            ? "Identificado no print"
+                            : draft.card_selection_source === "primary_card"
+                              ? "Cartão principal selecionado"
+                              : "Selecionado automaticamente"}
+                        </p>
+                      )}
+                    {draft.payment_method === "credito" &&
+                      !draft.card_id &&
+                      !cardQuery.isPending && (
+                        <p className="text-xs text-muted-foreground">
+                          {cards.length ? (
+                            "Selecione o cartão para este lançamento."
+                          ) : (
+                            <Link to="/cards" className="underline">
+                              Cadastre um cartão
+                            </Link>
+                          )}
+                        </p>
+                      )}
                   </Field>
                   {draft.type === "transfer" ? (
                     <Field label="Conta de destino">

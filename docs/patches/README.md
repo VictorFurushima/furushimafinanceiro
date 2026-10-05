@@ -10,6 +10,7 @@ completo do patch.
 | 2026-09-04 | Integridade do ledger financeiro | Validado; aguardando aplicação | [PATCH_2026-09-04_FINANCIAL_LEDGER_HARDENING.md](./PATCH_2026-09-04_FINANCIAL_LEDGER_HARDENING.md) |
 | 2026-09-04 | Auditoria integral e hardening | Validado; aguardando aplicação | [PATCH_2026-09-04_FULL_PROJECT_AUDIT.md](./PATCH_2026-09-04_FULL_PROJECT_AUDIT.md) |
 | 2026-09-22 | Parcelas e importação por print | Código e banco aplicados; publicação sem confirmação final | [PATCH_2026-09-22_PARCELAS_IMPORTADOR.md](./PATCH_2026-09-22_PARCELAS_IMPORTADOR.md) |
+| 2026-10-05 | Seleção de cartão no importador | Validado; implantação em andamento | [PATCH_2026-10-05_CARTAO_IMPORTADOR.md](./PATCH_2026-10-05_CARTAO_IMPORTADOR.md) |
 
 Documentos relacionados: `docs/BUGFIX_AUDIT_2026-08-31.md`, `docs/DATABASE_ARCHITECTURE.md`,
 `docs/CHANGE_CONVENTIONS.md`.
