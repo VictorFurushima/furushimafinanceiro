@@ -1,6 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { Wallet, TrendingUp, PieChart } from "lucide-react";
 import { z } from "zod";
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/friendly-error";
@@ -127,53 +126,24 @@ function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen grid lg:grid-cols-2">
-      {/* Hero side */}
-      <div className="relative hidden lg:flex flex-col justify-between p-12 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-primary opacity-20" />
-        <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-primary/30 blur-3xl" />
-        <div className="absolute bottom-0 right-0 w-96 h-96 rounded-full bg-primary-glow/20 blur-3xl" />
-
+    <main className="min-h-screen grid lg:grid-cols-[minmax(20rem,0.8fr)_minmax(32rem,1.2fr)]">
+      <div className="relative hidden lg:flex flex-col justify-between border-r border-border bg-sidebar p-10 xl:p-14 overflow-hidden furushima-loop before:left-1/2 before:top-1/2 before:h-48 before:w-96 before:-translate-x-1/2 before:-translate-y-1/2 before:border-primary/12 after:left-1/2 after:top-1/2 after:h-48 after:w-96 after:-translate-x-1/2 after:-translate-y-1/2 after:border-success/10">
         <Link to="/" className="relative z-10 flex items-center gap-3">
           <img
             src={logo}
             alt="Furushima Financeiro"
-            className="h-12 w-12 rounded-xl object-cover shadow-glow"
+            className="h-12 w-12 rounded-md object-contain"
           />
-          <span className="font-display text-2xl font-bold">Furushima Financeiro</span>
+          <span><span className="block font-display text-base font-semibold uppercase tracking-[0.14em]">Furushima</span><span className="block text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Financeiro</span></span>
         </Link>
 
-        <div className="relative z-10 space-y-8">
-          <div>
-            <h1 className="font-display text-5xl font-bold leading-tight">
-              Seu dinheiro
-              <br />
-              na <span className="text-gradient">palma da mão.</span>
-            </h1>
-            <p className="mt-4 text-lg text-muted-foreground max-w-md">
-              Receitas, despesas, orçamentos e estatísticas — tudo em um só lugar, rápido e bonito.
-            </p>
-          </div>
-          <div className="grid grid-cols-3 gap-4 max-w-md">
-            {[
-              { icon: TrendingUp, label: "Estatísticas em tempo real" },
-              { icon: PieChart, label: "Gráficos por categoria" },
-              { icon: Wallet, label: "Múltiplas contas" },
-            ].map(({ icon: Icon, label }) => (
-              <div
-                key={label}
-                className="rounded-xl bg-card/40 backdrop-blur border border-border/50 p-4"
-              >
-                <Icon className="h-5 w-5 text-primary-glow mb-2" />
-                <p className="text-xs text-muted-foreground leading-tight">{label}</p>
-              </div>
-            ))}
-          </div>
+        <div className="relative z-10 max-w-sm">
+          <div className="mb-6 h-px w-24 furushima-brand-line" />
+          <h1 className="font-display text-3xl font-semibold leading-tight">Controle financeiro pessoal</h1>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">Patrimônio, movimentações, planejamento e investimentos.</p>
         </div>
 
-        <p className="relative z-10 text-xs text-muted-foreground">
-          © Furushima Financeiro — controle financeiro inteligente
-        </p>
+        <p className="relative z-10 text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Furushima Financeiro</p>
       </div>
 
       {/* Form side */}
@@ -183,9 +153,9 @@ function LoginPage() {
             <img
               src={logo}
               alt="Furushima Financeiro"
-              className="h-11 w-11 rounded-xl object-cover shadow-glow"
+              className="h-11 w-11 rounded-md object-contain"
             />
-            <span className="font-display text-2xl font-bold">Furushima Financeiro</span>
+            <span><span className="block font-display text-sm font-semibold uppercase tracking-[0.12em]">Furushima</span><span className="block text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Financeiro</span></span>
           </div>
 
           <h2 className="font-display text-3xl font-bold">
@@ -225,7 +195,7 @@ function LoginPage() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-primary text-primary-foreground shadow-glow hover:opacity-90 transition"
+             className="w-full"
               size="lg"
             >
               {loading ? "Carregando..." : mode === "login" ? "Entrar" : "Criar conta"}
@@ -236,7 +206,7 @@ function LoginPage() {
             {mode === "login" ? "Não tem uma conta?" : "Já tem uma conta?"}{" "}
             <button
               onClick={() => setMode(mode === "login" ? "signup" : "login")}
-              className="text-primary-glow hover:underline font-medium"
+               className="text-primary hover:underline font-medium"
             >
               {mode === "login" ? "Criar conta" : "Entrar"}
             </button>
