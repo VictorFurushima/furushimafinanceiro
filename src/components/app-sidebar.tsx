@@ -19,6 +19,7 @@ import {
   ShoppingCart,
   Menu,
   History,
+  type LucideIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -31,7 +32,10 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/furushima-logo.jpg";
 
-const itemGroups = [
+type NavItem = { to: string; label: string; short: string; icon: LucideIcon };
+type NavGroup = { label: string; items: NavItem[] };
+
+const itemGroups: NavGroup[] = [
   {
     label: "Visão e patrimônio",
     items: [
@@ -71,7 +75,7 @@ const itemGroups = [
       { to: "/settings", label: "Configurações", short: "Config", icon: Settings },
     ],
   },
-] as const;
+];
 
 const items = itemGroups.flatMap((group) => group.items);
 

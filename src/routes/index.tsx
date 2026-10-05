@@ -11,6 +11,8 @@ export const Route = createFileRoute("/")({
       { property: "og:url", content: "https://furushimafinanceiro.lovable.app/" },
       { name: "twitter:title", content: "Furushima Financeiro — Controle financeiro pessoal" },
       { name: "twitter:description", content: "Gerencie receitas, despesas, assinaturas, metas e cartões em um só lugar com estatísticas em tempo real." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
     links: [{ rel: "canonical", href: "https://furushimafinanceiro.lovable.app/" }],
   }),

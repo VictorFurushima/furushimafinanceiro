@@ -34,6 +34,8 @@ export const Route = createFileRoute("/login")({
           "Acesse sua conta do Furushima Financeiro para gerenciar receitas, despesas, metas e cartões.",
       },
       { name: "robots", content: "noindex" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
     links: [{ rel: "canonical", href: "https://furushimafinanceiro.lovable.app/login" }],
   }),
