@@ -14,6 +14,91 @@ export type Database = {
   }
   public: {
     Tables: {
+      financial_actions: {
+        Row: {
+          id: string
+          user_id: string
+          transaction_key: number
+          root_table: string
+          root_operation: string
+          root_depth: number
+          description: string | null
+          created_at: string
+          reverted_at: string | null
+          reversal_id: string | null
+          reversal_of: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          transaction_key: number
+          root_table: string
+          root_operation: string
+          root_depth: number
+          description?: string | null
+          created_at?: string
+          reverted_at?: string | null
+          reversal_id?: string | null
+          reversal_of?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          transaction_key?: number
+          root_table?: string
+          root_operation?: string
+          root_depth?: number
+          description?: string | null
+          created_at?: string
+          reverted_at?: string | null
+          reversal_id?: string | null
+          reversal_of?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_actions_reversal_of_fkey"
+            columns: ["reversal_of"]
+            isOneToOne: false
+            referencedRelation: "financial_actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financial_action_changes: {
+        Row: {
+          id: number
+          action_id: string
+          table_name: string
+          record_id: string
+          before_row: Json | null
+          after_row: Json | null
+        }
+        Insert: {
+          id?: never
+          action_id: string
+          table_name: string
+          record_id: string
+          before_row?: Json | null
+          after_row?: Json | null
+        }
+        Update: {
+          id?: never
+          action_id?: string
+          table_name?: string
+          record_id?: string
+          before_row?: Json | null
+          after_row?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_action_changes_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "financial_actions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       accounts: {
         Row: {
           color: string
@@ -1277,6 +1362,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_financial_history: {
+        Args: {
+          p_page?: number
+          p_page_size?: number
+          p_status?: string
+          p_table?: string
+          p_from?: string
+          p_to?: string
+          p_search?: string
+        }
+        Returns: Json
+      }
+      get_financial_action: { Args: { p_action_id: string }; Returns: Json }
+      revert_financial_action: { Args: { p_action_id: string }; Returns: Json }
+
       accept_viewer_access: {
         Args: { p_invitation_id: string }
         Returns: string
@@ -1489,16 +1589,16 @@ export type Database = {
           p_color: string
           p_current_amount: number
           p_initial_amount: number
-          p_institution: string
+          p_institution: string | null
           p_inv_type: string
           p_invested_amount: number
           p_investment_id: string
           p_is_emergency_reserve: boolean
           p_liquidity: string
-          p_maturity_date: string
+          p_maturity_date: string | null
           p_name: string
-          p_notes: string
-          p_objective: string
+          p_notes: string | null
+          p_objective: string | null
           p_risk: string
           p_status: string
         }
