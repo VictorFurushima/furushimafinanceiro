@@ -6,8 +6,9 @@ Projeto: VictorFurushima/furushimafinanceiro, Lovable ec051308-bc31-4b3a-854d-14
 
 ## Resumo
 
-Revisão integral do projeto, com o banco conferido **contra produção** (conector Lovable, somente
-leitura, exceto a ação de dados autorizada descrita abaixo). Foram encontrados e corrigidos 4 problemas
+Revisão integral do projeto, com o banco conferido **contra produção** pelo conector Lovable. O acesso
+foi somente leitura, exceto duas escritas autorizadas pelo titular: o cancelamento da cópia duplicada e a
+aplicação das 2 migrations, ambos descritos abaixo. Foram encontrados e corrigidos 4 problemas
 no banco, 5 no front e 2 no back. Um deles já tinha afetado dados reais: o salário de outubro aparecia
 em dobro na receita prevista.
 
@@ -134,20 +135,40 @@ e que as duas ações continuam reversíveis no Histórico.
 Não houve verificação visual em navegador neste patch. As mudanças de front são de lógica de datas
 e de importação, cobertas por TypeScript, pela validação do helper e pela revisão do diff.
 
-## Aplicação no banco pelo Lovable
+## Aplicação no banco
 
-As migrations são retrocompatíveis: podem ir ao banco antes do merge, e o front entra no ar depois do
-merge e da publicação.
+As migrations são retrocompatíveis: foram ao banco antes do merge. O front entra no ar depois do merge
+do PR e da publicação no Lovable.
 
-Prompt enviado ao Lovable (curto, sem gerar código):
+### Tentativa pelo Lovable (recusada, nada aplicado)
 
-> Aplique no banco, exatamente como estão, as migrations do PR (branch
-> `claude/furushima-audit-completo-a40zdy`): `supabase/migrations/20261013120000_fix_recurrence_generation.sql`
-> e `supabase/migrations/20261013120100_pin_financial_functions_timezone.sql`, registrando as versões
-> 20261013120000 e 20261013120100. Não gere, altere ou crie arquivos de código nem migrations novas.
-> Responda apenas OK ou o erro.
+Primeiro foi pedido ao agente do Lovable que aplicasse as 2 migrations com os nomes exatos do PR, sem
+gerar código. Ele respondeu: "a ferramenta disponível gera migrations em caminhos próprios e não permite
+especificar os dois caminhos exatos exigidos; nenhuma migration foi aplicada". Custo: 0,9 crédito. O
+banco ficou intacto. Na mesma rodada, a plataforma atualizou `@lovable.dev/vite-tanstack-config` para
+2.25.3 na `main`; essa atualização já foi incorporada ao PR por merge.
 
-Situação: **pendente**. Atualizar esta seção com a confirmação e a conferência em produção.
+### Aplicação pelo conector (13/10/2026, autorizada pelo titular)
+
+Para manter os nomes do PR e não gastar créditos, o titular autorizou aplicar pelo conector do banco.
+O bloco único `BEGIN … COMMIT` contém o conteúdo integral dos 2 arquivos e os 2 registros em
+`supabase_migrations.schema_migrations`, no mesmo formato usado pelo Lovable: versão, nome e conteúdo
+do arquivo. Antes, o bloco foi ensaiado em PGlite sobre o schema anterior.
+
+Conferência em produção (somente leitura), idêntica ao ensaio local:
+
+| Item                                                                                                          | Resultado                                                                                                                                                                                    |
+| ------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| md5 de `run_financial_daily_maintenance` / `generate_recurring_transactions` / `generate_recurring_recharges` | `d19be89d…` / `280a711e…` / `5f162880…` (iguais ao ensaio)                                                                                                                                   |
+| Funções com `TimeZone=America/Sao_Paulo` / `TimeZone=UTC`                                                     | 13 / 3                                                                                                                                                                                       |
+| `schema_migrations`                                                                                           | `20261013120000 fix_recurrence_generation` e `20261013120100 pin_financial_functions_timezone`; md5 do conteúdo igual aos arquivos do PR (`a6c74af9…` / `3f36e848…`); 47 migrations no total |
+| Permissões                                                                                                    | inalteradas (cron só `postgres`; gerador de recargas sem `authenticated`; gerador de despesas com `authenticated`)                                                                           |
+| Cron `financial-daily-maintenance`                                                                            | ativo                                                                                                                                                                                        |
+| Cópia do Salário de 20/10                                                                                     | `cancelada`; modelo `confirmada` intacto                                                                                                                                                     |
+| Receita fixa prevista de outubro                                                                              | R$ 2.750 em 1 recarga (antes R$ 5.500 em 2)                                                                                                                                                  |
+
+Próximo passo: fazer o merge do PR e publicar no Lovable (botão Publish). Não é preciso enviar
+prompt nem regenerar tipos, porque nenhuma assinatura mudou.
 
 ## Rollback
 
