@@ -97,6 +97,7 @@ function AccountsPage() {
   };
 
   const remove = async (id: string) => {
+    if (!confirm("Excluir esta conta? Contas com lançamentos não podem ser excluídas.")) return;
     const { error } = await supabase.from("accounts").delete().eq("id", id);
     if (error) return toast.error(friendlyError(error));
     toast.success("Removida");

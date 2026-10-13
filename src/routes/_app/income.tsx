@@ -40,8 +40,10 @@ function IncomePage() {
   const totalAll = allTime?.receitas ?? 0;
 
   const remove = async (id: string) => {
+    if (!confirm("Excluir esta receita? O valor sai do saldo da conta.")) return;
     const { error } = await supabase.from("transactions").delete().eq("id", id);
     if (error) return toast.error(friendlyError(error));
+    toast.success("Receita excluída");
     invalidateFinance(qc, "transactions");
   };
 

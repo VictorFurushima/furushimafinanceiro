@@ -1,7 +1,7 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
 import { errorResult, jsonResult, requireAuth, supabaseForUser } from "../supabase-client";
-import { toLocalDateString } from "@/lib/date-only";
+import { todayISO } from "@/lib/date-only";
 
 export default defineTool({
   name: "financial_summary",
@@ -16,12 +16,13 @@ export default defineTool({
   handler: async ({ year, month }, ctx) => {
     const authErr = requireAuth(ctx);
     if (authErr) return authErr;
-    const now = new Date();
-    const y = year ?? now.getUTCFullYear();
-    const m = month ?? now.getUTCMonth() + 1;
-    const start = `${y}-${String(m).padStart(2, "0")}-01`;
-    const endDate = new Date(Date.UTC(y, m, 0));
-    const end = toLocalDateString(endDate);
+    // Mês padrão no fuso do app (America/Sao_Paulo), não no relógio UTC do servidor.
+    const [currentYear, currentMonth] = todayISO().split("-").map(Number);
+    const y = year ?? currentYear;
+    const m = month ?? currentMonth;
+    const mm = String(m).padStart(2, "0");
+    const start = `${y}-${mm}-01`;
+    const end = `${y}-${mm}-${String(new Date(Date.UTC(y, m, 0)).getUTCDate()).padStart(2, "0")}`;
 
     const supa = supabaseForUser(ctx);
     const [sumRes, accRes] = await Promise.all([

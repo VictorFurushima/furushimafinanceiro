@@ -14,6 +14,7 @@ import { formatCurrency } from "@/lib/format";
 import { GoalDialog } from "@/components/goal-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { invalidateFinance } from "@/lib/query-keys";
+import { diffDaysISO, todayISO } from "@/lib/date-only";
 
 export const Route = createFileRoute("/_app/goals")({ component: GoalsPage });
 
@@ -71,9 +72,7 @@ function GoalsPage() {
           {goals.map((g) => {
             const pct = Math.min(100, (Number(g.current_amount) / Number(g.target_amount)) * 100);
             const remaining = Math.max(0, Number(g.target_amount) - Number(g.current_amount));
-            const daysLeft = g.deadline
-              ? Math.ceil((new Date(g.deadline).getTime() - Date.now()) / 86400000)
-              : null;
+            const daysLeft = g.deadline ? diffDaysISO(todayISO(), g.deadline) : null;
             return (
               <Card
                 key={g.id}

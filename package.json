@@ -20,7 +20,10 @@
     "test:finance": "node tests/financial-ledger.test.mjs",
     "test:import-installments": "node tests/import-installments.test.mjs",
     "test:history": "node tests/financial-history.test.mjs",
-    "test:investments": "node tests/investment-wallets.test.mjs"
+    "test:investments": "node tests/investment-wallets.test.mjs",
+    "test:recurrence": "node tests/recurrence-timezone.test.mjs",
+    "test:viewers": "node tests/viewer-invitations.test.mjs",
+    "test:e2e": "node tests/e2e/site.e2e.mjs"
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.25.5",

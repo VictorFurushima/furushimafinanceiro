@@ -24,6 +24,13 @@ export async function applyInvestmentMigrations(db) {
     sql = sql.replace(/^CREATE EXTENSION IF NOT EXISTS pg_net WITH SCHEMA extensions;$/m, "");
     await db.exec(sql);
   }
+  // Migrations posteriores entram aqui para que todas as suites rodem sobre o schema atual.
+  for (const name of [
+    "20261013120000_fix_recurrence_generation.sql",
+    "20261013120100_pin_financial_functions_timezone.sql",
+    "20261013130000_fix_viewer_invitations_listing.sql",
+  ])
+    await db.exec(await readProject("supabase/migrations/" + name));
 }
 export async function createInvestmentDb() {
   const db = new PGlite();

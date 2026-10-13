@@ -14,6 +14,7 @@ import { paymentLabel, FREQUENCIES } from "@/lib/finance-constants";
 import { RecurringDialog } from "@/components/recurring-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { invalidateFinance } from "@/lib/query-keys";
+import { diffDaysISO, nextMonthlyDateISO, todayISO } from "@/lib/date-only";
 
 export const Route = createFileRoute("/_app/recurring")({ component: RecurringPage });
 
@@ -23,7 +24,7 @@ function RecurringPage() {
   const [editing, setEditing] = useState<RecurringExpense | null>(null);
   const qc = useQueryClient();
 
-  const today = new Date();
+  const today = todayISO();
   const active = items.filter((i) => i.status === "active");
   const missingCard = items.filter((i) => i.payment_method === "credito" && !i.credit_card_id);
   const monthlyTotal = active
@@ -33,11 +34,8 @@ function RecurringPage() {
   const upcoming = active
     .filter((i) => i.frequency === "monthly")
     .map((i) => {
-      const day = i.billing_day;
-      const next = new Date(today.getFullYear(), today.getMonth(), day);
-      if (next < today) next.setMonth(next.getMonth() + 1);
-      const daysLeft = Math.ceil((next.getTime() - today.getTime()) / 86400000);
-      return { ...i, next, daysLeft };
+      const next = nextMonthlyDateISO(i.billing_day, today);
+      return { ...i, next, daysLeft: diffDaysISO(today, next) ?? 0 };
     })
     .sort((a, b) => a.daysLeft - b.daysLeft);
 

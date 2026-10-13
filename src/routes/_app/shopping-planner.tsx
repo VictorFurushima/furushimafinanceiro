@@ -34,6 +34,7 @@ import { useShoppingItems, type ShoppingItem } from "@/hooks/use-app-data";
 import { useFinancialContext } from "@/hooks/use-financial-context";
 import { useRole, VIEWER_MESSAGE } from "@/hooks/use-role";
 import { formatCurrency, toISODate } from "@/lib/format";
+import { formatDateOnlyPtBR } from "@/lib/date-only";
 import {
   analisarViabilidadeCompra,
   compararFormasPagamento,
@@ -444,7 +445,7 @@ function ShoppingPlannerPage() {
                             Faltam {formatCurrency(analise.plano.quantoFalta)}. Guardando{" "}
                             {formatCurrency(analise.plano.valorMensal)} por mês, em{" "}
                             {analise.plano.meses} mês(es) você compra com tranquilidade — a partir
-                            de {new Date(analise.plano.dataSegura).toLocaleDateString("pt-BR")}.
+                            de {formatDateOnlyPtBR(analise.plano.dataSegura)}.
                           </p>
                         </div>
                       )}

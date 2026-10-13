@@ -12,13 +12,20 @@ import {
 } from "@/hooks/use-finance-data";
 import { formatCurrency } from "@/lib/format";
 import { rechargeTypeLabel, rechargeTypeColor, rechargeStatusLabel } from "@/lib/finance-constants";
-import { formatDateOnlyPtBR, toLocalDateString, todayISO, parseDateOnly } from "@/lib/date-only";
+import {
+  addDaysISO,
+  diffDaysISO,
+  nextMonthlyDateISO,
+  parseDateOnly,
+  todayISO,
+} from "@/lib/date-only";
 
 export const Route = createFileRoute("/_app/timeline")({ component: TimelinePage });
 
 type TimelineEvent = {
   id: string;
-  date: Date;
+  /** Data do evento em "YYYY-MM-DD" (rótulo de calendário). */
+  date: string;
   title: string;
   subtitle: string;
   amount: number;
@@ -35,14 +42,13 @@ function TimelinePage() {
   const { data: recurring = [] } = useRecurring();
 
   const events = useMemo<TimelineEvent[]>(() => {
-    const now = new Date();
-    const horizon = new Date();
-    horizon.setDate(horizon.getDate() + 60);
+    const today = todayISO();
+    const horizon = addDaysISO(today, 60);
     const list: TimelineEvent[] = [];
 
     recharges.forEach((r) => {
-      const d = parseDateOnly(r.expected_date) ?? new Date();
-      if (d < now || d > horizon) return;
+      const d = r.expected_date;
+      if (d < today || d > horizon) return;
       if (r.status === "cancelada" || r.status === "recebida") return;
       list.push({
         id: `r-${r.id}`,
@@ -58,9 +64,9 @@ function TimelinePage() {
     });
 
     bills.forEach((b) => {
-      const d = parseDateOnly(b.due_date) ?? new Date();
-      if (d < now || d > horizon) return;
-      if (b.status === "paga") return;
+      const d = b.due_date;
+      if (d < today || d > horizon) return;
+      if (b.status === "paga" || b.amount <= 0) return;
       const card = cards.find((c) => c.id === b.card_id);
       list.push({
         id: `b-${b.id}`,
@@ -77,8 +83,7 @@ function TimelinePage() {
 
     recurring.forEach((s) => {
       if (s.status !== "active" || s.frequency !== "monthly") return;
-      const next = new Date(now.getFullYear(), now.getMonth(), s.billing_day);
-      if (next < now) next.setMonth(next.getMonth() + 1);
+      const next = nextMonthlyDateISO(s.billing_day, today);
       if (next > horizon) return;
       list.push({
         id: `s-${s.id}`,
@@ -93,13 +98,13 @@ function TimelinePage() {
       });
     });
 
-    return list.sort((a, b) => a.date.getTime() - b.date.getTime());
+    return list.sort((a, b) => a.date.localeCompare(b.date));
   }, [recharges, bills, cards, recurring]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, TimelineEvent[]>();
     events.forEach((e) => {
-      const key = toLocalDateString(e.date);
+      const key = e.date;
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(e);
     });
@@ -127,10 +132,8 @@ function TimelinePage() {
           ) : (
             <div className="relative pl-6 border-l border-border/50 space-y-6">
               {grouped.map(([day, items]) => {
-                const date = new Date(day);
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                const days = Math.ceil((date.getTime() - today.getTime()) / 86400000);
+                const date = parseDateOnly(day) ?? new Date();
+                const days = diffDaysISO(todayISO(), day) ?? 0;
                 return (
                   <div key={day} className="relative">
                     <span className="absolute -left-[31px] top-1 h-3 w-3 rounded-full bg-gradient-primary shadow-glow" />
