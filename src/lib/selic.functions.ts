@@ -9,7 +9,10 @@ export interface SelicResult {
 export const getSelicRate = createServerFn({ method: "GET" }).handler(
   async (): Promise<SelicResult> => {
     const url = "https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/1?formato=json";
-    const res = await fetch(url, { headers: { Accept: "application/json" } });
+    const res = await fetch(url, {
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(10_000),
+    });
     if (!res.ok) throw new Error(`BCB respondeu ${res.status}`);
     const json = (await res.json()) as { data: string; valor: string }[];
     const raw = json?.[0]?.valor;
