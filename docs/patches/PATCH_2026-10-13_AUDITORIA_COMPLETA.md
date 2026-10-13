@@ -132,8 +132,54 @@ O teste de fuso escolhe um fuso de sessão (Kiritimati ou Pago Pago) cujo "hoje"
 São Paulo naquele instante. Ele confirma que pagamento de fatura e recebimento usam o dia de São Paulo
 e que as duas ações continuam reversíveis no Histórico.
 
-Não houve verificação visual em navegador neste patch. As mudanças de front são de lógica de datas
-e de importação, cobertas por TypeScript, pela validação do helper e pela revisão do diff.
+## Testes ponta a ponta do site (pedido do titular em 13/10, tarde)
+
+O titular suspeitou que o import por print tinha quebrado e que outras telas tinham quebrado em cadeia.
+
+**Produção (somente leitura, mais uma simulação desfeita):**
+
+- Leitura dos prints: 11 prints enviados entre 14:17 e 14:22, todos lidos ("completed"), depois das
+  migrations.
+- Salvamentos: 9 compras salvas entre 14:18 e 14:20, com fatura, limite e histórico atualizados.
+- Pendentes: os 50 itens pendentes passaram por `save_ocr_review` como o titular (papel
+  `authenticated`), numa transação forçada a desfazer. Resultado: 34 salvariam, 15 voltariam como
+  "possível duplicação" (comparação esperada quando a mesma compra aparece em dois prints) e 1 está
+  sem data. Contagens conferidas depois: nada foi gravado.
+
+**Navegador:** a rede desta sessão bloqueia `*.lovable.app` e `*.supabase.co`, então o site publicado
+não pôde ser aberto daqui. Foi criado um teste ponta a ponta local e reutilizável (`npm run test:e2e`):
+
+- `tests/e2e/supabase-emulator.mjs`: emula auth, PostgREST (select com recursos embutidos, filtros,
+  contagem, insert/upsert/update/delete), RPC e storage sobre PGlite com todas as migrations. Cada
+  requisição roda como `authenticated` com o `sub` do JWT, com RLS, grants e triggers reais.
+- `tests/e2e/seed.mjs`: espaço sintético parecido com o real (cartão com fechamento 20 e vencimento
+  30, parcelas, fatura paga, assinaturas, salário recorrente, meta, investimento e um print com 5
+  itens pendentes).
+- `tests/e2e/site.e2e.mjs` e `flows.mjs`: o app real em `vite dev` com Chromium. São 19 telas e 22
+  fluxos: print (salvar, duplicata, avisos, sem data, lote, novo envio), transações, parcelas,
+  pagamento de fatura, assinaturas, recargas, metas, linha do tempo, CSV, histórico, investimentos,
+  configurações, convite e espectador. Cada fluxo confere a tela e o banco.
+
+| Código testado                      | Resultado                                                                                                                                                                     |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Este PR                             | **42/42**, duas rodadas seguidas, sem erros de console ou de API                                                                                                              |
+| `main` (código no ar) + banco atual | 38/42. Falham as assinaturas ("em hoje"), a linha do tempo de hoje e o CSV com transferência, além do histórico, que dependia do CSV. São exatamente bugs que este PR corrige |
+
+Conclusão: o import por print **não está quebrado**, nem no código no ar nem no banco. Não houve
+quebra em cadeia nas demais telas. A IA de leitura não foi emulada; em produção ela leu os 11 prints
+do dia.
+
+**Bugs novos encontrados pelos testes e corrigidos:**
+
+1. **Convites de espectador (produção):** `list_my_viewer_invitations()` era SECURITY INVOKER e lia
+   `auth.users`, que o papel `authenticated` não pode consultar. Toda abertura de Configurações
+   recebia 403 ("permission denied for table users") e o convidado nunca via o convite. A migration
+   `20261013130000_fix_viewer_invitations_listing.sql` segue o padrão de `list_my_viewers`: função
+   privada SECURITY DEFINER, filtrada por `auth.uid()`, mais um wrapper público. O teste
+   `npm run test:viewers` (5 verificações) reproduz o erro no schema anterior.
+2. **CSV, introduzido por este próprio patch:** escolher o arquivo antes de contas, categorias e
+   cartões carregarem marcava todas as linhas como "Conta não encontrada". A análise agora é
+   recalculada quando os cadastros chegam, e importar fica bloqueado até lá.
 
 ## Aplicação no banco
 
@@ -167,6 +213,9 @@ Conferência em produção (somente leitura), idêntica ao ensaio local:
 | Cópia do Salário de 20/10                                                                                     | `cancelada`; modelo `confirmada` intacto                                                                                                                                                     |
 | Receita fixa prevista de outubro                                                                              | R$ 2.750 em 1 recarga (antes R$ 5.500 em 2)                                                                                                                                                  |
 
+A terceira migration, `20261013130000_fix_viewer_invitations_listing.sql` (convites), foi criada
+depois dos testes ponta a ponta e **aguarda autorização** para ir ao banco pelo mesmo caminho.
+
 Próximo passo: fazer o merge do PR e publicar no Lovable (botão Publish). Não é preciso enviar
 prompt nem regenerar tipos, porque nenhuma assinatura mudou.
 
@@ -178,6 +227,8 @@ prompt nem regenerar tipos, porque nenhuma assinatura mudou.
    `20260904190200_full_project_hardening.sql` e `generate_recurring_recharges` de
    `20260807162849_9bdcd0d1-f9c6-4c98-9d8a-3f9edb7fe243.sql`.
 4. Dado: comando de reversão na seção "Ação de dados em produção".
+5. Convites: recriar `public.list_my_viewer_invitations` como em `20260904190200` e remover
+   `private.list_my_viewer_invitations`.
 
 ## Observações auditadas e mantidas (sem correção neste patch)
 
