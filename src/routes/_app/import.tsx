@@ -9,7 +9,7 @@ import { z } from "zod";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useCategories, useCreditCards } from "@/hooks/use-finance-data";
+import { useAccounts, useCategories, useCreditCards } from "@/hooks/use-finance-data";
 import { supabase } from "@/integrations/supabase/client";
 import { invalidateFinance } from "@/lib/query-keys";
 import { formatCurrency } from "@/lib/format";
@@ -26,6 +26,7 @@ interface Row {
   "Forma de Pagamento"?: string;
   Tipo?: string;
   Cartão?: string;
+  Conta?: string;
 }
 
 interface Parsed {
@@ -36,6 +37,7 @@ interface Parsed {
   category_id: string | null;
   payment_method: string | null;
   credit_card_id: string | null;
+  account_id: string | null;
   _row: number;
   _error?: string;
 }
@@ -71,12 +73,16 @@ function parseMoney(raw: string): number {
   return Number(value);
 }
 
+/** Linhas exportadas como transferência ou pagamento de fatura não são despesas novas. */
+const NON_IMPORTABLE_TYPES = /transfer|pagamento de fatura/;
+
 const MAX_CSV_BYTES = 5 * 1024 * 1024;
 const MAX_CSV_ROWS = 5000;
 
 function ImportPage() {
   const { data: categories = [] } = useCategories();
   const { data: cards = [] } = useCreditCards();
+  const { data: accounts = [] } = useAccounts();
   const [rows, setRows] = useState<Parsed[]>([]);
   const [importing, setImporting] = useState(false);
   const qc = useQueryClient();
@@ -96,53 +102,40 @@ function ImportPage() {
           return;
         }
         const parsed: Parsed[] = res.data.map((r, idx) => {
-          const v = rowSchema.safeParse(r);
-          if (!v.success)
-            return {
-              occurred_at: "",
-              amount: 0,
-              type: "expense",
-              description: null,
-              category_id: null,
-              payment_method: null,
-              credit_card_id: null,
-              _row: idx + 2,
-              _error: "Data e Valor obrigatórios",
-            };
+          const invalid = (error: string, fields: Partial<Parsed> = {}): Parsed => ({
+            occurred_at: "",
+            amount: 0,
+            type: "expense",
+            description: null,
+            category_id: null,
+            payment_method: null,
+            credit_card_id: null,
+            account_id: null,
+            ...fields,
+            _row: idx + 2,
+            _error: error,
+          });
+          if (!rowSchema.safeParse(r).success) return invalid("Data e Valor obrigatórios");
           const date = parseDate(r.Data);
           const amt = parseMoney(r.Valor);
-          if (!date)
-            return {
-              occurred_at: "",
-              amount: 0,
-              type: "expense",
-              description: null,
-              category_id: null,
-              payment_method: null,
-              credit_card_id: null,
-              _row: idx + 2,
-              _error: `Data inválida: ${r.Data}`,
-            };
+          if (!date) return invalid(`Data inválida: ${r.Data}`);
           if (!amt || isNaN(amt))
-            return {
-              occurred_at: date,
-              amount: 0,
-              type: "expense",
-              description: null,
-              category_id: null,
-              payment_method: null,
-              credit_card_id: null,
-              _row: idx + 2,
-              _error: `Valor inválido: ${r.Valor}`,
-            };
+            return invalid(`Valor inválido: ${r.Valor}`, { occurred_at: date });
+          const tipo = (r.Tipo ?? "").toLowerCase().trim();
+          if (NON_IMPORTABLE_TYPES.test(tipo))
+            return invalid(
+              "Transferências e pagamentos de fatura não entram por CSV: use Transações ou Cartões",
+              { occurred_at: date, amount: Math.abs(amt) },
+            );
           const type: "income" | "expense" =
-            (r.Tipo ?? "").toLowerCase().includes("entrada") ||
-            (r.Tipo ?? "").toLowerCase().includes("receita") ||
-            (amt > 0 && (r.Tipo ?? "").toLowerCase().includes("income"))
+            tipo.includes("entrada") ||
+            tipo.includes("receita") ||
+            (amt > 0 && tipo.includes("income"))
               ? "income"
               : "expense";
           const cat = categories.find(
-            (c) => c.name.toLowerCase() === (r.Categoria ?? "").toLowerCase().trim(),
+            (c) =>
+              c.type === type && c.name.toLowerCase() === (r.Categoria ?? "").toLowerCase().trim(),
           );
           const pm = PAYMENT_METHODS.find(
             (p) =>
@@ -152,29 +145,26 @@ function ImportPage() {
           const card = cards.find(
             (c) => c.name.toLowerCase() === (r.Cartão ?? "").toLowerCase().trim(),
           );
-          if (pm?.value === "credito" && !card) {
-            return {
-              occurred_at: date,
-              amount: Math.abs(amt),
-              type,
-              description: r.Descrição || null,
-              category_id: cat?.id ?? null,
-              payment_method: pm.value,
-              credit_card_id: null,
-              _row: idx + 2,
-              _error: "Compras no crédito exigem a coluna Cartão com um cartão cadastrado",
-            };
-          }
-          return {
+          const accountName = (r.Conta ?? "").toLowerCase().trim();
+          const account = accounts.find((a) => a.name.toLowerCase() === accountName);
+          const base = {
             occurred_at: date,
             amount: Math.abs(amt),
             type,
             description: r.Descrição || null,
             category_id: cat?.id ?? null,
             payment_method: pm?.value ?? null,
-            credit_card_id: pm?.value === "credito" ? (card?.id ?? null) : null,
-            _row: idx + 2,
           };
+          if (pm?.value === "credito") {
+            if (!card)
+              return invalid(
+                "Compras no crédito exigem a coluna Cartão com um cartão cadastrado",
+                base,
+              );
+            return { ...base, credit_card_id: card.id, account_id: null, _row: idx + 2 };
+          }
+          if (accountName && !account) return invalid(`Conta não encontrada: ${r.Conta}`, base);
+          return { ...base, credit_card_id: null, account_id: account?.id ?? null, _row: idx + 2 };
         });
         setRows(parsed);
       },
@@ -200,6 +190,7 @@ function ImportPage() {
         category_id: r.category_id,
         payment_method: r.payment_method,
         credit_card_id: r.credit_card_id,
+        account_id: r.account_id,
       }));
       const { error } = await supabase.from("transactions").insert(payload);
       if (error) throw error;
@@ -220,7 +211,7 @@ function ImportPage() {
         <p className="text-sm text-muted-foreground mt-1">
           Colunas aceitas:{" "}
           <code className="text-primary">
-            Data, Valor, Categoria, Descrição, Forma de Pagamento, Tipo, Cartão
+            Data, Valor, Categoria, Descrição, Forma de Pagamento, Tipo, Cartão, Conta
           </code>
         </p>
       </header>
