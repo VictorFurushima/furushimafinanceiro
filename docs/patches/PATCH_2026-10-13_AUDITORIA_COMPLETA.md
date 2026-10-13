@@ -7,8 +7,9 @@ Projeto: VictorFurushima/furushimafinanceiro, Lovable ec051308-bc31-4b3a-854d-14
 ## Resumo
 
 Revisão integral do projeto, com o banco conferido **contra produção** pelo conector Lovable. O acesso
-foi somente leitura, exceto duas escritas autorizadas pelo titular: o cancelamento da cópia duplicada e a
-aplicação das 2 migrations, ambos descritos abaixo. Foram encontrados e corrigidos 4 problemas
+foi somente leitura, exceto as escritas autorizadas pelo titular: o cancelamento da cópia duplicada, a
+aplicação das 2 migrations da auditoria e, depois dos testes ponta a ponta, a da migration de
+convites, todas descritas abaixo. Foram encontrados e corrigidos 4 problemas
 no banco, 5 no front e 2 no back. Um deles já tinha afetado dados reais: o salário de outubro aparecia
 em dobro na receita prevista.
 
@@ -36,7 +37,9 @@ em dobro na receita prevista.
    (3 diferem apenas por fim de linha CRLF). Contagens agregadas mediram o impacto de cada bug.
 4. **Back e front**: server functions, OCR, MCP, integrações Supabase, hooks e todas as telas.
 
-## Banco (2 migrations novas, nenhuma migration antiga editada)
+## Banco (2 migrations da auditoria, nenhuma migration antiga editada)
+
+A terceira, de convites, está na seção de testes ponta a ponta.
 
 ### `20261013120000_fix_recurrence_generation.sql`
 
@@ -213,8 +216,25 @@ Conferência em produção (somente leitura), idêntica ao ensaio local:
 | Cópia do Salário de 20/10                                                                                     | `cancelada`; modelo `confirmada` intacto                                                                                                                                                     |
 | Receita fixa prevista de outubro                                                                              | R$ 2.750 em 1 recarga (antes R$ 5.500 em 2)                                                                                                                                                  |
 
-A terceira migration, `20261013130000_fix_viewer_invitations_listing.sql` (convites), foi criada
-depois dos testes ponta a ponta e **aguarda autorização** para ir ao banco pelo mesmo caminho.
+### Convites de espectador (13/10/2026, autorizada pelo titular)
+
+A terceira migration, `20261013130000_fix_viewer_invitations_listing.sql`, foi criada depois dos
+testes ponta a ponta e aplicada pelo mesmo caminho: ensaio em PGlite e depois um bloco único
+`BEGIN … COMMIT` com o arquivo integral e o registro em `schema_migrations`. Nenhum dado foi alterado.
+
+Conferência em produção (somente leitura), idêntica ao ensaio local:
+
+| Item                                                   | Resultado                                                                                                                     |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| Estado anterior                                        | só `public.list_my_viewer_invitations()`, SECURITY INVOKER; 47 migrations                                                     |
+| md5 da função privada / do wrapper público             | `e1720a60…` / `7dace66c…` (iguais ao ensaio)                                                                                  |
+| SECURITY DEFINER                                       | privada sim (`search_path=public, pg_temp`); wrapper público não                                                              |
+| Permissões das 2 funções                               | `postgres`, `authenticated` e `service_role`; `anon` sem EXECUTE                                                              |
+| `schema_migrations`                                    | `20261013130000 fix_viewer_invitations_listing`; md5 do conteúdo igual ao arquivo do PR (`20c4f507…`); 48 migrations no total |
+| Chamada como titular (papel `authenticated`, desfeita) | executa sem "permission denied"; 0 convites pendentes                                                                         |
+
+A tabela `viewer_invitations` está vazia em produção: nenhum convite ficou perdido por causa do erro.
+Com o banco corrigido, a tela Configurações deixa de receber 403 já no código que está no ar.
 
 Próximo passo: fazer o merge do PR e publicar no Lovable (botão Publish). Não é preciso enviar
 prompt nem regenerar tipos, porque nenhuma assinatura mudou.
