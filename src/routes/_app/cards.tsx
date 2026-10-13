@@ -26,6 +26,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { invalidateFinance } from "@/lib/query-keys";
 import { formatCurrency } from "@/lib/format";
+import { diffDaysISO, formatDateOnlyPtBR, nextMonthlyDateISO, todayISO } from "@/lib/date-only";
 import { useAuth } from "@/hooks/use-auth";
 import { CardPreference } from "@/components/card-preference";
 import { CreditCardDialog } from "@/components/credit-card-dialog";
@@ -47,13 +48,6 @@ export const Route = createFileRoute("/_app/cards")({
     ],
   }),
 });
-
-function nextDueDate(dueDay: number): Date {
-  const now = new Date();
-  let next = new Date(now.getFullYear(), now.getMonth(), dueDay);
-  if (next < now) next = new Date(now.getFullYear(), now.getMonth() + 1, dueDay);
-  return next;
-}
 
 function CardsPage() {
   const { user } = useAuth();
@@ -99,7 +93,9 @@ function CardsPage() {
     invalidateFinance(qc, "cards", "accounts", "transactions");
   };
 
-  const openBills = bills.filter((b) => b.status !== "paga");
+  // Fatura zerada (compras excluídas) não tem o que pagar.
+  const openBills = bills.filter((b) => b.status !== "paga" && b.amount > 0);
+  const today = todayISO();
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1440px] mx-auto">
@@ -138,8 +134,8 @@ function CardsPage() {
           {cards.map((c) => {
             const available = c.total_limit - c.used_limit;
             const usedPct = c.total_limit > 0 ? (c.used_limit / c.total_limit) * 100 : 0;
-            const due = nextDueDate(c.due_day);
-            const daysToDue = Math.ceil((due.getTime() - Date.now()) / 86400000);
+            const due = nextMonthlyDateISO(c.due_day, today);
+            const daysToDue = diffDaysISO(today, due) ?? 0;
             const lowLimit = usedPct >= 80;
             return (
               <Card key={c.id} className="overflow-hidden">
@@ -190,7 +186,7 @@ function CardsPage() {
                     <div className="text-right">
                       <p className="text-muted-foreground">Próximo vencimento</p>
                       <p className="font-medium">
-                        {due.toLocaleDateString("pt-BR")}
+                        {formatDateOnlyPtBR(due)}
                         {daysToDue <= 5 && (
                           <Badge
                             variant="outline"

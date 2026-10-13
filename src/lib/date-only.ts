@@ -73,6 +73,23 @@ export function addDaysISO(value: string, days: number): string {
   return toLocalDateString(d);
 }
 
+/**
+ * Próxima ocorrência de um dia mensal (vencimento, cobrança) a partir de `today`.
+ * Hoje conta como próxima ocorrência; dias 29–31 são limitados ao fim de meses curtos.
+ */
+export function nextMonthlyDateISO(day: number, today: string = todayISO()): string {
+  const base = parseDateOnly(today);
+  if (!base) return today;
+  const occurrence = (monthOffset: number) => {
+    const y = base.getFullYear();
+    const m = base.getMonth() + monthOffset;
+    const lastDay = new Date(y, m + 1, 0).getDate();
+    return toLocalDateString(new Date(y, m, Math.min(Math.max(day, 1), lastDay), 12));
+  };
+  const current = occurrence(0);
+  return current >= today ? current : occurrence(1);
+}
+
 /** Diferença em dias inteiros entre duas DATEs (b - a). */
 export function diffDaysISO(a: string, b: string): number | null {
   const da = parseDateOnly(a);

@@ -35,6 +35,7 @@ import {
   SHOPPING_STATUS,
 } from "@/lib/shopping-constants";
 import { formatCurrency } from "@/lib/format";
+import { formatDateOnlyPtBR } from "@/lib/date-only";
 
 const parseNum = (v: string) => parseFloat(v.replace(/\./g, "").replace(",", ".")) || 0;
 
@@ -492,7 +493,7 @@ export function ShoppingDialog({
               <p className="text-xs text-muted-foreground">
                 Plano sugerido: guardar {formatCurrency(analise.plano.valorMensal)} por{" "}
                 {analise.plano.meses} mês(es) — comprar com segurança a partir de{" "}
-                {new Date(analise.plano.dataSegura).toLocaleDateString("pt-BR")}.
+                {formatDateOnlyPtBR(analise.plano.dataSegura)}.
               </p>
             )}
           </div>
