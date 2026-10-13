@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Papa from "papaparse";
 import { Upload, FileCheck, AlertCircle } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -76,14 +76,87 @@ function parseMoney(raw: string): number {
 /** Linhas exportadas como transferência ou pagamento de fatura não são despesas novas. */
 const NON_IMPORTABLE_TYPES = /transfer|pagamento de fatura/;
 
+interface Lookups {
+  categories: { id: string; name: string; type: string }[];
+  cards: { id: string; name: string }[];
+  accounts: { id: string; name: string }[];
+}
+
+/** Converte uma linha do CSV usando os cadastros atuais (recalculado quando eles carregam). */
+function parseRow(r: Row, idx: number, { categories, cards, accounts }: Lookups): Parsed {
+  const invalid = (error: string, fields: Partial<Parsed> = {}): Parsed => ({
+    occurred_at: "",
+    amount: 0,
+    type: "expense",
+    description: null,
+    category_id: null,
+    payment_method: null,
+    credit_card_id: null,
+    account_id: null,
+    ...fields,
+    _row: idx + 2,
+    _error: error,
+  });
+  if (!rowSchema.safeParse(r).success) return invalid("Data e Valor obrigatórios");
+  const date = parseDate(r.Data);
+  const amt = parseMoney(r.Valor);
+  if (!date) return invalid(`Data inválida: ${r.Data}`);
+  if (!amt || isNaN(amt)) return invalid(`Valor inválido: ${r.Valor}`, { occurred_at: date });
+  const tipo = (r.Tipo ?? "").toLowerCase().trim();
+  if (NON_IMPORTABLE_TYPES.test(tipo))
+    return invalid(
+      "Transferências e pagamentos de fatura não entram por CSV: use Transações ou Cartões",
+      { occurred_at: date, amount: Math.abs(amt) },
+    );
+  const type: "income" | "expense" =
+    tipo.includes("entrada") || tipo.includes("receita") || (amt > 0 && tipo.includes("income"))
+      ? "income"
+      : "expense";
+  const cat = categories.find(
+    (c) => c.type === type && c.name.toLowerCase() === (r.Categoria ?? "").toLowerCase().trim(),
+  );
+  const pm = PAYMENT_METHODS.find(
+    (p) =>
+      p.label.toLowerCase() === (r["Forma de Pagamento"] ?? "").toLowerCase().trim() ||
+      p.value === (r["Forma de Pagamento"] ?? "").toLowerCase().trim(),
+  );
+  const card = cards.find((c) => c.name.toLowerCase() === (r.Cartão ?? "").toLowerCase().trim());
+  const accountName = (r.Conta ?? "").toLowerCase().trim();
+  const account = accounts.find((a) => a.name.toLowerCase() === accountName);
+  const base = {
+    occurred_at: date,
+    amount: Math.abs(amt),
+    type,
+    description: r.Descrição || null,
+    category_id: cat?.id ?? null,
+    payment_method: pm?.value ?? null,
+  };
+  if (pm?.value === "credito") {
+    if (!card)
+      return invalid("Compras no crédito exigem a coluna Cartão com um cartão cadastrado", base);
+    return { ...base, credit_card_id: card.id, account_id: null, _row: idx + 2 };
+  }
+  if (accountName && !account) return invalid(`Conta não encontrada: ${r.Conta}`, base);
+  return { ...base, credit_card_id: null, account_id: account?.id ?? null, _row: idx + 2 };
+}
+
 const MAX_CSV_BYTES = 5 * 1024 * 1024;
 const MAX_CSV_ROWS = 5000;
 
 function ImportPage() {
-  const { data: categories = [] } = useCategories();
-  const { data: cards = [] } = useCreditCards();
-  const { data: accounts = [] } = useAccounts();
-  const [rows, setRows] = useState<Parsed[]>([]);
+  const categoriesQuery = useCategories();
+  const cardsQuery = useCreditCards();
+  const accountsQuery = useAccounts();
+  const categories = useMemo(() => categoriesQuery.data ?? [], [categoriesQuery.data]);
+  const cards = useMemo(() => cardsQuery.data ?? [], [cardsQuery.data]);
+  const accounts = useMemo(() => accountsQuery.data ?? [], [accountsQuery.data]);
+  // Cadastros precisam estar carregados para casar categoria, cartao e conta de cada linha.
+  const lookupsReady = categoriesQuery.isSuccess && cardsQuery.isSuccess && accountsQuery.isSuccess;
+  const [rawRows, setRawRows] = useState<Row[]>([]);
+  const rows = useMemo(
+    () => rawRows.map((r, idx) => parseRow(r, idx, { categories, cards, accounts })),
+    [rawRows, categories, cards, accounts],
+  );
   const [importing, setImporting] = useState(false);
   const qc = useQueryClient();
 
@@ -98,75 +171,10 @@ function ImportPage() {
       complete: (res) => {
         if (res.data.length > MAX_CSV_ROWS) {
           toast.error(`O CSV deve ter no máximo ${MAX_CSV_ROWS} linhas`);
-          setRows([]);
+          setRawRows([]);
           return;
         }
-        const parsed: Parsed[] = res.data.map((r, idx) => {
-          const invalid = (error: string, fields: Partial<Parsed> = {}): Parsed => ({
-            occurred_at: "",
-            amount: 0,
-            type: "expense",
-            description: null,
-            category_id: null,
-            payment_method: null,
-            credit_card_id: null,
-            account_id: null,
-            ...fields,
-            _row: idx + 2,
-            _error: error,
-          });
-          if (!rowSchema.safeParse(r).success) return invalid("Data e Valor obrigatórios");
-          const date = parseDate(r.Data);
-          const amt = parseMoney(r.Valor);
-          if (!date) return invalid(`Data inválida: ${r.Data}`);
-          if (!amt || isNaN(amt))
-            return invalid(`Valor inválido: ${r.Valor}`, { occurred_at: date });
-          const tipo = (r.Tipo ?? "").toLowerCase().trim();
-          if (NON_IMPORTABLE_TYPES.test(tipo))
-            return invalid(
-              "Transferências e pagamentos de fatura não entram por CSV: use Transações ou Cartões",
-              { occurred_at: date, amount: Math.abs(amt) },
-            );
-          const type: "income" | "expense" =
-            tipo.includes("entrada") ||
-            tipo.includes("receita") ||
-            (amt > 0 && tipo.includes("income"))
-              ? "income"
-              : "expense";
-          const cat = categories.find(
-            (c) =>
-              c.type === type && c.name.toLowerCase() === (r.Categoria ?? "").toLowerCase().trim(),
-          );
-          const pm = PAYMENT_METHODS.find(
-            (p) =>
-              p.label.toLowerCase() === (r["Forma de Pagamento"] ?? "").toLowerCase().trim() ||
-              p.value === (r["Forma de Pagamento"] ?? "").toLowerCase().trim(),
-          );
-          const card = cards.find(
-            (c) => c.name.toLowerCase() === (r.Cartão ?? "").toLowerCase().trim(),
-          );
-          const accountName = (r.Conta ?? "").toLowerCase().trim();
-          const account = accounts.find((a) => a.name.toLowerCase() === accountName);
-          const base = {
-            occurred_at: date,
-            amount: Math.abs(amt),
-            type,
-            description: r.Descrição || null,
-            category_id: cat?.id ?? null,
-            payment_method: pm?.value ?? null,
-          };
-          if (pm?.value === "credito") {
-            if (!card)
-              return invalid(
-                "Compras no crédito exigem a coluna Cartão com um cartão cadastrado",
-                base,
-              );
-            return { ...base, credit_card_id: card.id, account_id: null, _row: idx + 2 };
-          }
-          if (accountName && !account) return invalid(`Conta não encontrada: ${r.Conta}`, base);
-          return { ...base, credit_card_id: null, account_id: account?.id ?? null, _row: idx + 2 };
-        });
-        setRows(parsed);
+        setRawRows(res.data);
       },
       error: (err) => toast.error("Erro ao ler CSV: " + err.message),
     });
@@ -196,7 +204,7 @@ function ImportPage() {
       if (error) throw error;
       toast.success(`${valid.length} transações importadas!`);
       invalidateFinance(qc, "transactions");
-      setRows([]);
+      setRawRows([]);
     } catch (err) {
       toast.error(friendlyError(err, "Erro"));
     } finally {
@@ -252,10 +260,14 @@ function ImportPage() {
             </div>
             <Button
               onClick={importAll}
-              disabled={importing || valid.length === 0}
+              disabled={importing || !lookupsReady || valid.length === 0}
               className="bg-gradient-primary text-primary-foreground shadow-glow"
             >
-              {importing ? "Importando..." : `Importar ${valid.length} transações`}
+              {importing
+                ? "Importando..."
+                : !lookupsReady
+                  ? "Carregando cadastros..."
+                  : `Importar ${valid.length} transações`}
             </Button>
           </div>
 
