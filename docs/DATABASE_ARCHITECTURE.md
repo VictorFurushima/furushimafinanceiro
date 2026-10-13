@@ -173,3 +173,14 @@ Não usar `new Date("YYYY-MM-DD")` nem `toISOString().slice(0,10)` para esses ca
   igualdade de data/valor não recebe UNIQUE no ledger. Cache não é fonte de verdade.
 - Tipos Supabase, `financeKeys` e `invalidateFinance` acompanham os novos domínios.
 - Detalhes, limites e validação: [patch](patches/PATCH_2026-09-22_PARCELAS_IMPORTADOR.md).
+
+## Fuso horário e recorrências (2026-10-13)
+
+- O banco roda em UTC. Funções de negócio que usam `CURRENT_DATE` têm `SET timezone =
+  'America/Sao_Paulo'` na própria configuração; captura, conflitos e reversão do Histórico de ações
+  têm `SET timezone = 'UTC'` para que os snapshots jsonb fiquem sempre em UTC.
+- `CREATE OR REPLACE` remove o `SET timezone`: ao recriar uma dessas funções, reaplique o fuso na
+  mesma migration. Lista e motivo em `20261013120100_pin_financial_functions_timezone.sql`.
+- Recarga recorrente: o cadastro modelo é a primeira ocorrência; cópias só nos meses seguintes.
+- Assinatura: nunca gera cobrança antes de `start_date`; frequência `custom` não é gerada.
+- Detalhes e evidências: [patch](patches/PATCH_2026-10-13_AUDITORIA_COMPLETA.md).
