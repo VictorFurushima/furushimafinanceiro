@@ -28,6 +28,7 @@ import { formatCurrency } from "@/lib/format";
 import { formatDateOnlyPtBR, isValidDateOnly, todayISO } from "@/lib/date-only";
 import { extractTransactionsFromImage } from "@/lib/ocr.functions";
 import { sha256Hex } from "@/lib/ocr-schema";
+import { shrinkImageForOcr } from "@/lib/image-resize";
 import { friendlyError } from "@/lib/friendly-error";
 import {
   newOcrDraft,
@@ -185,14 +186,19 @@ function ImportPrintsPage() {
       return true;
     });
     setUploading(true);
-    const process = async (file: File) => {
+    const process = async (original: File) => {
       try {
+        const file = await shrinkImageForOcr(original);
+        // O servidor confere o hash do arquivo enviado; o do original também reconhece reenvios.
         const hash = await sha256Hex(await file.arrayBuffer());
+        const hashes =
+          file === original ? [hash] : [hash, await sha256Hex(await original.arrayBuffer())];
         const { data: existing, error: lookupError } = await supabase
           .from("uploaded_transaction_images")
           .select("id")
           .eq("user_id", user.id)
-          .eq("content_hash", hash)
+          .in("content_hash", hashes)
+          .limit(1)
           .maybeSingle();
         if (lookupError) throw lookupError;
         if (existing) {
@@ -244,7 +250,7 @@ function ImportPrintsPage() {
             `${file.name}: ${analysisLabels[result.status] ?? "Revise a leitura"}. Confira os avisos.`,
           );
       } catch (error) {
-        toast.error(`${file.name}: ${friendlyError(error, "Falha na importação")}`);
+        toast.error(`${original.name}: ${friendlyError(error, "Falha na importação")}`);
       }
     };
     try {
@@ -263,6 +269,12 @@ function ImportPrintsPage() {
   const reprocess = async (img: ImageRow) => {
     const date = imageDates[img.id] ?? img.reference_date;
     if (!isValidDateOnly(date)) return toast.error("Informe a data de referência do print");
+    if (
+      !confirm(
+        "Ler este print de novo com a IA? Itens ainda não salvos voltam ao resultado da nova leitura. Itens salvos ou ignorados são mantidos.",
+      )
+    )
+      return;
     setBusy(true);
     try {
       const r = await extract({

@@ -69,6 +69,11 @@ export const financeKeys = {
     ["ocr", "review", image, state, page] as const,
 };
 
+/** Categorias e contas só mudam por mutações deste app, que já invalidam a família. */
+export const CATALOG_STALE_TIME = 10 * 60_000;
+/** O cron atualiza as cotações a cada 30 min; consultar mais que a cada 10 min só gera requisições. */
+export const MARKET_REFRESH_INTERVAL = 10 * 60_000;
+
 export type FinanceDomain =
   | "transactions"
   | "accounts"

@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Wallet, PiggyBank, Banknote, CreditCard, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { financeKeys } from "@/lib/query-keys";
+import { financeKeys, MARKET_REFRESH_INTERVAL } from "@/lib/query-keys";
 import { formatCurrency } from "@/lib/format";
 import type { FinancialOverviewRow, AccountBalance } from "@/hooks/use-finance-aggregates";
 import type { InvestmentSummary } from "@/hooks/use-app-data";
@@ -36,8 +36,8 @@ export interface GlobalWalletData {
 function GlobalWallet() {
   const query = useQuery({
     queryKey: financeKeys.globalWallet,
-    staleTime: 60_000,
-    refetchInterval: 120_000,
+    staleTime: MARKET_REFRESH_INTERVAL / 2,
+    refetchInterval: MARKET_REFRESH_INTERVAL,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("get_global_wallet");
       if (error) throw error;
