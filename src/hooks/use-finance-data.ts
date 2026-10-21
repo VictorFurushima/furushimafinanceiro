@@ -1,6 +1,6 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { financeKeys, type TransactionFilters } from "@/lib/query-keys";
+import { CATALOG_STALE_TIME, financeKeys, type TransactionFilters } from "@/lib/query-keys";
 
 export type { TransactionFilters };
 
@@ -190,6 +190,8 @@ export const useRecentTransactions = (limit = 10) =>
 export const useCategories = () =>
   useQuery({
     queryKey: financeKeys.categories,
+    staleTime: CATALOG_STALE_TIME,
+    gcTime: 3 * CATALOG_STALE_TIME,
     queryFn: async (): Promise<Category[]> => {
       const { data, error } = await supabase
         .from("categories")
@@ -203,6 +205,8 @@ export const useCategories = () =>
 export const useAccounts = () =>
   useQuery({
     queryKey: financeKeys.accounts,
+    staleTime: CATALOG_STALE_TIME,
+    gcTime: 3 * CATALOG_STALE_TIME,
     queryFn: async (): Promise<Account[]> => {
       const { data, error } = await supabase
         .from("accounts")

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { financeKeys } from "@/lib/query-keys";
+import { financeKeys, MARKET_REFRESH_INTERVAL } from "@/lib/query-keys";
 
 export interface Investment {
   id: string;
@@ -125,8 +125,8 @@ export interface InvestmentPortfolio {
 export const useInvestmentPortfolio = () =>
   useQuery({
     queryKey: financeKeys.investments,
-    staleTime: 60_000,
-    refetchInterval: 120_000,
+    staleTime: MARKET_REFRESH_INTERVAL / 2,
+    refetchInterval: MARKET_REFRESH_INTERVAL,
     queryFn: async (): Promise<InvestmentPortfolio> => {
       const { data, error } = await supabase.rpc("get_investment_portfolio");
       if (error) throw error;
@@ -141,8 +141,8 @@ export const useInvestments = () => {
 export const useInvestmentValuations = () =>
   useQuery({
     queryKey: financeKeys.investmentValuations,
-    staleTime: 60_000,
-    refetchInterval: 120_000,
+    staleTime: MARKET_REFRESH_INTERVAL / 2,
+    refetchInterval: MARKET_REFRESH_INTERVAL,
     queryFn: async () => {
       const { data, error } = await supabase.rpc("get_investment_valuation_history");
       if (error) throw error;

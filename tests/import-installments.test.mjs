@@ -6,6 +6,8 @@ const bundle = await build({entryPoints:['src/lib/ocr-schema.ts'],bundle:true,pl
 const { normalizeOcrResponse } = await import('data:text/javascript;base64,'+Buffer.from(bundle.outputFiles[0].text).toString('base64'));
 const selectionBundle = await build({entryPoints:['src/lib/ocr-review.ts'],bundle:true,platform:'node',format:'esm',write:false});
 const { newOcrDraft, resolveOcrDraft, ocrDraftReady, ocrFields } = await import('data:text/javascript;base64,'+Buffer.from(selectionBundle.outputFiles[0].text).toString('base64'));
+const resizeBundle = await build({entryPoints:['src/lib/image-resize.ts'],bundle:true,platform:'node',format:'esm',write:false});
+const { ocrScale } = await import('data:text/javascript;base64,'+Buffer.from(resizeBundle.outputFiles[0].text).toString('base64'));
 const db = new PGlite();
 const owner='00000000-0000-4000-8000-000000000011', other='00000000-0000-4000-8000-000000000012', viewer='00000000-0000-4000-8000-000000000013';
 const q=async(sql,args=[]) => (await db.query(sql,args)).rows;
@@ -21,6 +23,12 @@ try {
  const item={review_status:'pending',detected_date:'2026-10-05',detected_amount:14.46,detected_type:'expense',detected_description:'Uber',detected_payment_method:'credito',detected_account:'Cartao XP final 5461',raw_text:'Cartao adicional final\n5461.',issues:[],transaction_status:'completed',confidence_level:'alta',movement_kind:'payment'};
  const draft = (overrides={})=>({...newOcrDraft(item),...overrides});
  const resolve = (cards,evidence=item,primary=null,d=draft())=>resolveOcrDraft(d,evidence,cards,primary);
+ await check('print reduction keeps screenshots and long captures legible and shrinks camera photos',async()=>{
+   for(const [w,h] of [[1170,2532],[1080,2400],[1920,1080],[1440,3200],[300,300]]) assert.equal(ocrScale(w,h),1);
+   const photo=ocrScale(4032,3024);assert.ok(Math.round(3024*photo)<=1600 && 4032*3024*photo**2<=6_000_000);
+   assert.ok(1170*ocrScale(1170,8000)>=900,'print longo mantem largura legivel');
+   assert.equal(ocrScale(0,100),1);
+ });
  await check('single card preselects without additional confirmation and serializes audit source',async()=>{
    const d=resolve([aCard]);assert.equal(d.card_id,'a');assert.equal(d.card_selection_source,'ocr_match');assert.equal(ocrDraftReady(item,d),true);
    assert.equal(ocrFields(d).card_selection_source,'ocr_match');
