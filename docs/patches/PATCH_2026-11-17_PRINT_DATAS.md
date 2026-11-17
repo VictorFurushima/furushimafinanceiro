@@ -84,12 +84,23 @@ calculadas têm o mesmo dia da semana escrito no print, o que confirma 2026 como
   nada.
 - A ajuda da data de referência explica que ela resolve Hoje, Ontem, dias da semana e datas sem ano.
 
+## Ação de dados em produção (17/11, pedido do titular)
+
+Os prints antigos foram removidos para serem reenviados com a regra nova:
+`DELETE FROM public.uploaded_transaction_images`, que apagou os 27 prints e, em cascata, os 140 itens.
+Nenhum item tinha virado transação e não havia registros de importação. O Histórico de ações não
+registrou nada, porque a exclusão rodou sem usuário logado.
+
+Os 27 arquivos de imagem continuam no bucket `transaction-prints`, sem uso pelo app. A exclusão
+direta pelo SQL é bloqueada pelo Supabase (`storage.protect_delete`) para não deixar arquivos órfãos.
+Podem ser apagados pela área de armazenamento do Cloud no Lovable.
+
 ## Depois de publicar
 
-1. Abrir **Importar por Print** e clicar em **Ler de novo**. Os 27 prints pendentes são relidos com a
-   regra nova; a referência gravada deles é 17/11/2026.
+1. Reenviar os prints em **Importar por Print**, com a data de referência do dia em que foram tirados.
 2. Clicar em **Selecionar prontos** e depois em **Salvar selecionados**.
 3. Itens restantes mostram o que falta; possíveis duplicatas pedem uma escolha.
+4. O aviso **Ler de novo** aparece quando houver prints pendentes lidos por uma versão anterior.
 
 ## Testes
 

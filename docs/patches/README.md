@@ -15,7 +15,7 @@ completo do patch.
 | 2026-10-05 | Carteira Global e investimentos                            | Código e banco aplicados; publicação confirmada                          | [PATCH_2026-10-05_Carteiras_Investimentos.md](./PATCH_2026-10-05_Carteiras_Investimentos.md)       |
 | 2026-10-13 | Auditoria completa: recorrências, fuso, datas e testes E2E | 3 migrations aplicadas; PR #8 integrado e publicação pedida em 13/10     | [PATCH_2026-10-13_AUDITORIA_COMPLETA.md](./PATCH_2026-10-13_AUDITORIA_COMPLETA.md)                 |
 | 2026-10-21 | Reset dos dados e redução de consumo                       | Reset aplicado e conferido; PR #9 integrado e publicação pedida em 21/10 | [PATCH_2026-10-21_RESET_E_CONSUMO.md](./PATCH_2026-10-21_RESET_E_CONSUMO.md)                       |
-| 2026-11-17 | Import por print: datas, itens cortados e tela             | Código pronto; aguarda merge e publicação                                | [PATCH_2026-11-17_PRINT_DATAS.md](./PATCH_2026-11-17_PRINT_DATAS.md)                               |
+| 2026-11-17 | Import por print: datas, itens cortados e tela             | Prints antigos removidos; PR #10 integrado e publicação pedida em 17/11  | [PATCH_2026-11-17_PRINT_DATAS.md](./PATCH_2026-11-17_PRINT_DATAS.md)                               |
 
 Documentos relacionados: `docs/BUGFIX_AUDIT_2026-08-31.md`, `docs/DATABASE_ARCHITECTURE.md`,
 `docs/CHANGE_CONVENTIONS.md`.
