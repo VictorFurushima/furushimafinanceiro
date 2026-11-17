@@ -27,12 +27,14 @@ import { PAYMENT_METHODS } from "@/lib/finance-constants";
 import { formatCurrency } from "@/lib/format";
 import { formatDateOnlyPtBR, isValidDateOnly, todayISO } from "@/lib/date-only";
 import { extractTransactionsFromImage } from "@/lib/ocr.functions";
+import { OCR_PROMPT_VERSION } from "@/lib/ocr-prompt";
 import { sha256Hex } from "@/lib/ocr-schema";
 import { shrinkImageForOcr } from "@/lib/image-resize";
 import { friendlyError } from "@/lib/friendly-error";
 import {
   newOcrDraft,
   resolveOcrDraft,
+  ocrDraftMissing,
   ocrDraftReady,
   ocrFields,
   requiresOcrConfirmation,
@@ -136,6 +138,26 @@ function ImportPrintsPage() {
       });
       if (error) throw error;
       return data as unknown as OcrReview;
+    },
+  });
+  // Prints com itens pendentes lidos por uma versão anterior da leitura (ex.: antes da regra de datas).
+  const staleQuery = useQuery({
+    queryKey: financeKeys.ocrStale,
+    enabled: isAdmin,
+    queryFn: async () => {
+      const { data: pending, error } = await supabase
+        .from("ocr_detected_transactions")
+        .select("image_id")
+        .in("review_status", ["pending", "needs_review"]);
+      if (error) throw error;
+      const ids = [...new Set((pending ?? []).map((r) => r.image_id))];
+      if (!ids.length) return [];
+      const { data: images, error: imagesError } = await supabase
+        .from("uploaded_transaction_images")
+        .select("id, reference_date, prompt_version")
+        .in("id", ids);
+      if (imagesError) throw imagesError;
+      return (images ?? []).filter((img) => img.prompt_version !== OCR_PROMPT_VERSION);
     },
   });
   const refresh = () => {
@@ -291,6 +313,46 @@ function ImportPrintsPage() {
       refresh();
     }
   };
+  const rereadStale = async () => {
+    const stale = staleQuery.data ?? [];
+    if (
+      !stale.length ||
+      !confirm(
+        `Ler de novo ${stale.length} prints com a leitura atual? Itens ainda não salvos voltam ao resultado da nova leitura. Itens salvos ou ignorados são mantidos.`,
+      )
+    )
+      return;
+    setBusy(true);
+    let done = 0;
+    let failed = 0;
+    try {
+      const queue = [...stale];
+      await Promise.all(
+        Array.from({ length: Math.min(2, queue.length) }, async () => {
+          for (let img = queue.shift(); img; img = queue.shift()) {
+            try {
+              await extract({
+                data: { imageId: img.id, referenceDate: img.reference_date, replacePrevious: true },
+              });
+              done++;
+            } catch {
+              failed++;
+            }
+          }
+        }),
+      );
+      if (failed)
+        toast.error(`${done} prints relidos e ${failed} com falha. Veja o aviso em cada print.`);
+      else toast.success(`${done} prints relidos. Confira a revisão.`);
+    } finally {
+      setBusy(false);
+      setDrafts({});
+      setResults({});
+      setSelected(new Set());
+      chooseImage("all");
+      refresh();
+    }
+  };
   const showImage = async (img: ImageRow) => {
     const { data, error } = await supabase.storage
       .from("transaction-prints")
@@ -368,6 +430,15 @@ function ImportPrintsPage() {
       setBusy(false);
     }
   };
+  // Itens da página que podem ser salvos sem nenhum ajuste e sem possível duplicata.
+  const readyIds = (reviewQuery.data?.rows ?? [])
+    .filter(
+      (item) =>
+        !["saved", "ignored"].includes(item.review_status) &&
+        !matchesOf(item).length &&
+        ocrDraftReady(item, draftOf(item)),
+    )
+    .map((item) => item.id);
   const saveSelected = async () => {
     setBusy(true);
     try {
@@ -448,7 +519,7 @@ function ImportPrintsPage() {
                 onChange={(e) => setReferenceDate(e.target.value)}
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Usada para Hoje e Ontem. Ajuste ao enviar um print antigo.
+                Dia em que o print foi tirado. Resolve Hoje, Ontem, dias da semana e datas sem ano.
               </p>
             </div>
             <label
@@ -484,6 +555,20 @@ function ImportPrintsPage() {
             <p role="alert">{friendlyError(error, "Não foi possível carregar a revisão")}</p>
             <Button variant="outline" onClick={refresh} className="mt-2">
               Tentar novamente
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+      {isAdmin && !!staleQuery.data?.length && (
+        <Card className="border-warning/50">
+          <CardContent className="p-4 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm">
+              {staleQuery.data.length === 1
+                ? "1 print com itens pendentes foi lido antes da correção de datas e de itens cortados."
+                : `${staleQuery.data.length} prints com itens pendentes foram lidos antes da correção de datas e de itens cortados.`}
+            </p>
+            <Button disabled={busy || uploading} onClick={rereadStale}>
+              {busy ? "Relendo..." : "Ler de novo"}
             </Button>
           </CardContent>
         </Card>
@@ -648,12 +733,21 @@ function ImportPrintsPage() {
               options={accounts.map((a) => [a.id, a.name])}
             />
           </div>
-          <Button
-            disabled={busy || !selected.size || reviewQuery.isFetching}
-            onClick={saveSelected}
-          >
-            {busy ? "Processando..." : `Salvar selecionados (${selected.size})`}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              disabled={busy || !readyIds.length || reviewQuery.isFetching}
+              onClick={() => setSelected(new Set(readyIds))}
+            >
+              Selecionar prontos ({readyIds.length})
+            </Button>
+            <Button
+              disabled={busy || !selected.size || reviewQuery.isFetching}
+              onClick={saveSelected}
+            >
+              {busy ? "Processando..." : `Salvar selecionados (${selected.size})`}
+            </Button>
+          </div>
         </div>
       )}
       {reviewQuery.isPending && <p>Carregando lançamentos...</p>}
@@ -941,6 +1035,9 @@ function ImportPrintsPage() {
                 {!saved && matches.length > 0 && (
                   <div className="rounded-md border border-warning/40 p-3 space-y-2">
                     <p className="font-medium text-sm">Compare com os registros encontrados</p>
+                    <p className="text-xs text-muted-foreground">
+                      Mesma compra: use o lançamento existente. Compra diferente: salve mesmo assim.
+                    </p>
                     {matches.map((match) => (
                       <div
                         key={`${match.source}:${match.id}`}
@@ -1014,14 +1111,8 @@ function ImportPrintsPage() {
                   <div className="flex flex-wrap gap-2">
                     {!ignored && (
                       <>
-                        <Button disabled={disabled || !ready} onClick={() => runSave(item)}>
-                          {matches.length
-                            ? "Rever duplicação antes de salvar"
-                            : "Salvar lançamento"}
-                        </Button>
-                        {matches.length > 0 && (
+                        {matches.length > 0 ? (
                           <Button
-                            variant="outline"
                             disabled={disabled || !ready}
                             onClick={() => {
                               if (
@@ -1032,7 +1123,11 @@ function ImportPrintsPage() {
                                 void runSave(item, true);
                             }}
                           >
-                            É outra movimentação
+                            É outra movimentação: salvar mesmo assim
+                          </Button>
+                        ) : (
+                          <Button disabled={disabled || !ready} onClick={() => runSave(item)}>
+                            Salvar lançamento
                           </Button>
                         )}
                         <Button
@@ -1048,6 +1143,11 @@ function ImportPrintsPage() {
                       {ignored ? "Reabrir revisão" : "Ignorar"}
                     </Button>
                   </div>
+                )}
+                {isAdmin && !saved && !ignored && !ready && (
+                  <p className="text-xs text-muted-foreground">
+                    Para salvar, falta: {ocrDraftMissing(item, draft).join(", ")}.
+                  </p>
                 )}
               </CardContent>
             </Card>

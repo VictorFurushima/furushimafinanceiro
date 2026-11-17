@@ -86,22 +86,36 @@ export function requiresOcrConfirmation(item: OcrItem) {
     item.confidence_level !== "alta"
   );
 }
-export function ocrDraftReady(item: OcrItem, d: OcrDraft) {
+/** O que ainda impede salvar o item, na ordem dos campos da tela. Vazio quando está pronto. */
+export function ocrDraftMissing(item: OcrItem, d: OcrDraft): string[] {
+  const missing: string[] = [];
   const n = Number(d.amount);
-  return (
-    isValidDateOnly(d.date) &&
-    d.amount.trim() !== "" &&
-    Number.isFinite(n) &&
-    n > 0 &&
-    Math.abs(n * 100 - Math.round(n * 100)) < 0.00001 &&
-    ["income", "expense", "transfer"].includes(d.type) &&
-    !!d.description.trim() &&
-    !!d.payment_method &&
-    (d.payment_method === "credito" ? d.type === "expense" && !!d.card_id : !!d.account_id) &&
-    (d.type !== "transfer" ||
-      (!!d.destination_account_id && d.destination_account_id !== d.account_id)) &&
-    (!requiresOcrConfirmation(item) || d.confirmed)
-  );
+  if (!isValidDateOnly(d.date)) missing.push("data");
+  if (
+    d.amount.trim() === "" ||
+    !Number.isFinite(n) ||
+    n <= 0 ||
+    Math.abs(n * 100 - Math.round(n * 100)) >= 0.00001
+  )
+    missing.push("valor");
+  if (!["income", "expense", "transfer"].includes(d.type)) missing.push("tipo");
+  if (!d.description.trim()) missing.push("descrição");
+  if (!d.payment_method) missing.push("pagamento");
+  else if (d.payment_method === "credito") {
+    if (d.type !== "expense") missing.push("tipo Saída para cartão de crédito");
+    if (!d.card_id) missing.push("cartão");
+  } else if (!d.account_id) missing.push("conta");
+  if (
+    d.type === "transfer" &&
+    (!d.destination_account_id || d.destination_account_id === d.account_id)
+  )
+    missing.push("conta de destino");
+  if (requiresOcrConfirmation(item) && !d.confirmed) missing.push("confirmação dos avisos");
+  return missing;
+}
+
+export function ocrDraftReady(item: OcrItem, d: OcrDraft) {
+  return ocrDraftMissing(item, d).length === 0;
 }
 export function ocrFields(draft: OcrDraft): Json {
   return {

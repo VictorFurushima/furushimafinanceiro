@@ -5,6 +5,7 @@ import type { Json } from "@/integrations/supabase/types";
 import { isValidDateOnly } from "@/lib/date-only";
 import { buildOcrPrompt, OCR_PROMPT_VERSION } from "@/lib/ocr-prompt";
 import { normalizeOcrResponse, normalizeOcrText, sha256Hex } from "@/lib/ocr-schema";
+import { cardLastFour } from "@/lib/ocr-card-selection";
 
 function detectImageMime(bytes: Uint8Array): string | null {
   if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "image/jpeg";
@@ -83,6 +84,15 @@ export const extractTransactionsFromImage = createServerFn({ method: "POST" })
         .select("id, name, type")
         .eq("user_id", userId);
       if (categoriesError) throw categoriesError;
+      const { data: cards, error: cardsError } = await supabase
+        .from("credit_cards")
+        .select("name, last_four")
+        .eq("user_id", userId)
+        .eq("status", "active");
+      if (cardsError) throw cardsError;
+      const creditCardFinals = (cards ?? [])
+        .map((c) => c.last_four || cardLastFour(c.name)[0])
+        .filter((n): n is string => !!n);
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
         headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -129,7 +139,13 @@ export const extractTransactionsFromImage = createServerFn({ method: "POST" })
         );
       let normalized;
       try {
-        normalized = normalizeOcrResponse(JSON.parse(payload.choices?.[0]?.message?.content ?? ""));
+        normalized = normalizeOcrResponse(
+          JSON.parse(payload.choices?.[0]?.message?.content ?? ""),
+          {
+            referenceDate,
+            creditCardFinals,
+          },
+        );
       } catch {
         throw new Error(
           "A IA devolveu dados incompletos ou fora do formato esperado. A revisão anterior foi preservada. Tente uma imagem mais legível.",
