@@ -5,7 +5,9 @@ import { build } from 'esbuild';
 const bundle = await build({entryPoints:['src/lib/ocr-schema.ts'],bundle:true,platform:'node',format:'esm',write:false});
 const { normalizeOcrResponse } = await import('data:text/javascript;base64,'+Buffer.from(bundle.outputFiles[0].text).toString('base64'));
 const selectionBundle = await build({entryPoints:['src/lib/ocr-review.ts'],bundle:true,platform:'node',format:'esm',write:false});
-const { newOcrDraft, resolveOcrDraft, ocrDraftReady, ocrFields } = await import('data:text/javascript;base64,'+Buffer.from(selectionBundle.outputFiles[0].text).toString('base64'));
+const { newOcrDraft, resolveOcrDraft, ocrDraftReady, ocrDraftMissing, ocrFields } = await import('data:text/javascript;base64,'+Buffer.from(selectionBundle.outputFiles[0].text).toString('base64'));
+const dateBundle = await build({entryPoints:['src/lib/ocr-date.ts'],bundle:true,platform:'node',format:'esm',write:false});
+const { resolveOcrDateLabel } = await import('data:text/javascript;base64,'+Buffer.from(dateBundle.outputFiles[0].text).toString('base64'));
 const resizeBundle = await build({entryPoints:['src/lib/image-resize.ts'],bundle:true,platform:'node',format:'esm',write:false});
 const { ocrScale } = await import('data:text/javascript;base64,'+Buffer.from(resizeBundle.outputFiles[0].text).toString('base64'));
 const db = new PGlite();
@@ -61,9 +63,10 @@ try {
   const parsed=normalizeOcrResponse(result([row({date:'31/02/2026',type:null})]));
   assert.equal(parsed.transactions[0].date,null);assert.equal(parsed.transactions[0].type,null);assert.equal(parsed.analysis_status,'partial');
  });
- await check('partial rows and two legitimate equal purchases are preserved',async()=>{
-  const parsed=normalizeOcrResponse(result([row(),row(),row({amount:null,raw_text:'Loja R$ ...'})]));
-  assert.equal(parsed.transactions.length,3);assert.equal(parsed.transactions[2].amount,null);assert.ok(parsed.transactions[2].issues.length);
+ await check('cut rows are ignored with a warning and two legitimate equal purchases are preserved',async()=>{
+  const parsed=normalizeOcrResponse(result([row(),row(),row({amount:null,raw_text:'Loja R$ ...'})],{visible_transaction_count:3}));
+  assert.equal(parsed.transactions.length,2);assert.equal(parsed.analysis_status,'complete');
+  assert.ok(parsed.warnings.some(w=>/cortada ou ilegível foi ignorada/.test(w)));
  });
  await check('missing JSON structure and oversized results fail instead of saving empty',async()=>{
   assert.throws(()=>normalizeOcrResponse({}));assert.throws(()=>normalizeOcrResponse(result(Array.from({length:501},()=>row()))));
@@ -74,8 +77,44 @@ try {
   assert.equal(parsed.analysis_status,'partial');assert.ok(parsed.warnings.length);assert.ok(parsed.transactions[0].issues.length);
  });
  await check('negative amount or fractional cent never silently becomes a valid positive amount',async()=>{
-  assert.equal(normalizeOcrResponse(result([row({amount:-20})])).transactions[0].amount,null);
-  assert.equal(normalizeOcrResponse(result([row({amount:12.345})])).transactions[0].amount,null);
+  for(const amount of [-20,12.345]){
+   const parsed=normalizeOcrResponse(result([row({amount})]));
+   assert.equal(parsed.transactions.length,0);assert.ok(parsed.warnings.some(w=>/ignorada/.test(w)));
+  }
+ });
+ await check('date labels without year, weekday-only and relative days resolve against the print date',async()=>{
+  const ref='2026-11-17';
+  for(const [label,expected] of [['sex., 6 de nov., 19:30','2026-11-06'],['sexta-feira, 19:29','2026-11-13'],['quinta-feira','2026-11-12'],
+   ['terça-feira','2026-11-10'],['Hoje','2026-11-17'],['Ontem, 08:12','2026-11-16'],['12/08','2026-08-12'],['20/12','2025-12-20'],
+   ['06/11/2025','2025-11-06'],['2026-10-01','2026-10-01'],['6 de novembro de 2024','2024-11-06'],['31/02',null],['19:30',null],[null,null]])
+   assert.equal(resolveOcrDateLabel(label,ref),expected,String(label));
+  assert.equal(resolveOcrDateLabel('28 de dez.','2026-01-05'),'2025-12-28');
+  assert.equal(resolveOcrDateLabel('sábado','2026-01-05'),'2026-01-03');
+ });
+ await check('SMS card purchase gets date from its header and credit from the registered card final',async()=>{
+  const sms=row({date:null,date_text:'sex., 6 de nov.',payment_method:null,account:'Cartao XP',description:'DL*UberRides',amount:9.28,
+   raw_text:'Cartao XP: Compra Aprovada de R$ 9,28 em DL*UberRides no seu cartao adicional final 5461.',
+   issues:['Data: ano não visível','Forma de pagamento (crédito/débito) não especificada'],confidence:'alta'});
+  const parsed=normalizeOcrResponse(result([sms]),{referenceDate:'2026-11-17',creditCardFinals:['5461']});
+  const t=parsed.transactions[0];
+  assert.equal(t.date,'2026-11-06');assert.equal(t.payment_method,'credito');assert.deepEqual(t.issues,[]);assert.equal(t.confidence,'alta');
+  assert.equal(parsed.analysis_status,'complete');
+  const other=normalizeOcrResponse(result([sms]),{referenceDate:'2026-11-17',creditCardFinals:['1234']}).transactions[0];
+  assert.equal(other.payment_method,null);assert.ok(other.issues.some(i=>/Pagamento/.test(i)));
+ });
+ await check('declined purchases and messages without any visible date are not imported',async()=>{
+  const parsed=normalizeOcrResponse(result([row(),row({transaction_status:'cancelled'}),row({date:null,date_text:null})],{visible_transaction_count:3}),{referenceDate:'2026-11-17'});
+  assert.equal(parsed.transactions.length,1);assert.equal(parsed.analysis_status,'complete');
+  assert.ok(parsed.warnings.some(w=>/negada ou cancelada/.test(w)));assert.ok(parsed.warnings.some(w=>/sem data visível/.test(w)));
+  assert.equal(normalizeOcrResponse(result([row({amount:null})],{visible_transaction_count:1})).analysis_status,'complete');
+ });
+ await check('review explains exactly what is missing before an item can be saved',async()=>{
+  const pending={...item,detected_date:null,issues:['Data: informe uma data completa e válida.'],confidence_level:'baixa'};
+  const d=resolve([aCard],pending,null,newOcrDraft(pending));
+  assert.deepEqual(ocrDraftMissing(pending,d),['data','confirmação dos avisos']);assert.equal(ocrDraftReady(pending,d),false);
+  const filled={...d,date:'2026-11-06',confirmed:true};
+  assert.deepEqual(ocrDraftMissing(pending,filled),[]);assert.equal(ocrDraftReady(pending,filled),true);
+  assert.deepEqual(ocrDraftMissing(item,{...draft(),payment_method:'pix',account_id:''}),['conta']);
  });
  await check('missing payment method or source evidence is visibly incomplete',async()=>{
   const parsed=normalizeOcrResponse(result([row({payment_method:null,raw_text:''})]));

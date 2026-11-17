@@ -65,6 +65,8 @@ export const financeKeys = {
   historyDetail: (id: string) => ["financial-history", "detail", id] as const,
   ocr: ["ocr"] as const,
   ocrImages: (page: number) => ["ocr", "images", page] as const,
+  /** Prints com itens pendentes lidos por uma versão anterior da leitura. */
+  ocrStale: ["ocr", "stale"] as const,
   ocrReview: (image: string, state: string, page: number) =>
     ["ocr", "review", image, state, page] as const,
 };

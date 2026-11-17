@@ -54,6 +54,8 @@ export async function run(ctx) {
     ])
       await ocrCard(text).waitFor({ timeout: 20_000 });
     await ocrCard("Farmácia Vida").getByText("Possível duplicada").waitFor();
+    await page.getByText(/1 print com itens pendentes foi lido antes da correção/).waitFor();
+    await page.getByRole("button", { name: "Ler de novo" }).waitFor();
     await shot("print-revisao-inicial");
   });
 
@@ -85,6 +87,7 @@ export async function run(ctx) {
     const card = ocrCard("Padaria");
     const save = card.getByRole("button", { name: "Salvar lançamento" });
     assert.equal(await save.isDisabled(), true, "salvar deveria exigir confirmação");
+    await card.getByText("Para salvar, falta: confirmação dos avisos.").waitFor();
     await card.getByText("Conferi os campos, os avisos e a efetivação desta movimentação.").click();
     await save.click();
     await toast(/Transação salva/);
@@ -92,6 +95,7 @@ export async function run(ctx) {
 
   await scenario("print: item sem data é completado e salvo", async () => {
     const card = ocrCard("Compra sem data");
+    await card.getByText("Para salvar, falta: data, confirmação dos avisos.").waitFor();
     await card.getByLabel("Data do lançamento").fill(today);
     await card.getByText("Conferi os campos, os avisos e a efetivação desta movimentação.").click();
     await card.getByRole("button", { name: "Salvar lançamento" }).click();
@@ -103,8 +107,8 @@ export async function run(ctx) {
   });
 
   await scenario("print: salvar selecionados em lote", async () => {
-    const card = ocrCard("Posto Shell");
-    await card.getByRole("checkbox").first().check();
+    await page.getByRole("button", { name: "Selecionar prontos (1)" }).click();
+    assert.equal(await ocrCard("Posto Shell").getByRole("checkbox").first().isChecked(), true);
     await page.getByRole("button", { name: /Salvar selecionados \(1\)/ }).click();
     await toast(/Transação salva/);
     await page
